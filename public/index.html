@@ -91,7 +91,16 @@
   </div>
 
   <div id="linkWrap" style="display:none">
-    <div class="linkbox"><strong>Share this link</strong><div id="link"></div></div>
+    <div class="linkbox">
+      <strong>Share this link</strong>
+      <div id="link"></div>
+      <button id="copyLinkBtn" style="margin-top: 12px;">Copy Link</button>
+    </div>
+  </div>
+
+  <div id="connectionStats" style="display:none; margin-top: 16px; background: #2d3748; padding: 12px; border-radius: 8px; font-size: 13px;">
+    <strong>Connection Quality:</strong>
+    <div id="statsContent" class="muted"></div>
   </div>
 
 <script type="module" src="/client.js"></script>

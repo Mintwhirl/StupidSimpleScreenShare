@@ -17,6 +17,9 @@ const remoteVideo = document.getElementById('remote');
 const statusEl = document.getElementById('status');
 const linkWrap = document.getElementById('linkWrap');
 const linkEl = document.getElementById('link');
+const copyLinkBtn = document.getElementById('copyLinkBtn');
+const connectionStats = document.getElementById('connectionStats');
+const statsContent = document.getElementById('statsContent');
 
 let localStream = null;
 let pc = null;
@@ -24,6 +27,9 @@ let roomId = null;
 let role = null; // 'host' or 'viewer'
 let seenCandidates = new Set();
 let pollIntervals = [];
+let statsInterval = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 3;
 
 function setStatus(s){ statusEl.textContent = 'Status: ' + s; }
 
@@ -72,6 +78,96 @@ async function fetchCandidates(roomId, role){ return apiGet(`/candidate?roomId=$
 function startPolling(fn, ms=1000){ const id = setInterval(fn, ms); pollIntervals.push(id); return id; }
 function stopAllPolling(){ pollIntervals.forEach(i=>clearInterval(i)); pollIntervals = []; }
 
+// Copy link to clipboard
+async function copyLink() {
+  const shareUrl = linkEl.textContent;
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    copyLinkBtn.textContent = 'Copied!';
+    setTimeout(() => {
+      copyLinkBtn.textContent = 'Copy Link';
+    }, 2000);
+  } catch (e) {
+    console.error('Failed to copy:', e);
+    copyLinkBtn.textContent = 'Failed to copy';
+    setTimeout(() => {
+      copyLinkBtn.textContent = 'Copy Link';
+    }, 2000);
+  }
+}
+
+// Monitor connection quality
+function startConnectionStats() {
+  if (!pc) return;
+
+  connectionStats.style.display = 'block';
+
+  statsInterval = setInterval(async () => {
+    if (!pc) return;
+
+    try {
+      const stats = await pc.getStats();
+      let bytesReceived = 0;
+      let bytesSent = 0;
+      let currentRoundTripTime = 0;
+      let packetsLost = 0;
+
+      stats.forEach(report => {
+        if (report.type === 'inbound-rtp' && report.mediaType === 'video') {
+          bytesReceived = report.bytesReceived || 0;
+          packetsLost = report.packetsLost || 0;
+        }
+        if (report.type === 'outbound-rtp' && report.mediaType === 'video') {
+          bytesSent = report.bytesSent || 0;
+        }
+        if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+          currentRoundTripTime = report.currentRoundTripTime || 0;
+        }
+      });
+
+      const rtt = (currentRoundTripTime * 1000).toFixed(0);
+      const quality = rtt < 100 ? 'Excellent' : rtt < 200 ? 'Good' : rtt < 300 ? 'Fair' : 'Poor';
+
+      statsContent.innerHTML = `
+        State: ${pc.connectionState} |
+        RTT: ${rtt}ms (${quality}) |
+        Packets Lost: ${packetsLost}
+      `;
+    } catch (e) {
+      console.error('Error getting stats:', e);
+    }
+  }, 2000);
+}
+
+function stopConnectionStats() {
+  if (statsInterval) {
+    clearInterval(statsInterval);
+    statsInterval = null;
+  }
+  connectionStats.style.display = 'none';
+}
+
+// Handle reconnection
+async function handleReconnection() {
+  if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+    setStatus('Connection failed after multiple attempts. Please refresh.');
+    return;
+  }
+
+  reconnectAttempts++;
+  setStatus(`Connection lost. Reconnecting (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+
+  // Wait a bit before reconnecting
+  await new Promise(resolve => setTimeout(resolve, 2000));
+
+  if (role === 'viewer' && roomId) {
+    // Restart viewer connection
+    seenCandidates.clear();
+    stopAllPolling();
+    await viewRoom(roomId);
+  }
+}
+
 // Host flow
 async function startShare(){
   role = 'host';
@@ -96,6 +192,16 @@ async function startShare(){
 
   pc.onconnectionstatechange = () => {
     setStatus('pc state: ' + pc.connectionState);
+
+    if (pc.connectionState === 'connected') {
+      reconnectAttempts = 0;
+      startConnectionStats();
+    } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+      stopConnectionStats();
+      if (role === 'viewer') {
+        handleReconnection();
+      }
+    }
   };
 
   const offer = await pc.createOffer();
@@ -178,6 +284,18 @@ async function viewRoom(suppliedRoomId){
     }
   };
 
+  pc.onconnectionstatechange = () => {
+    setStatus('pc state: ' + pc.connectionState);
+
+    if (pc.connectionState === 'connected') {
+      reconnectAttempts = 0;
+      startConnectionStats();
+    } else if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+      stopConnectionStats();
+      handleReconnection();
+    }
+  };
+
   await pc.setRemoteDescription(offerDesc);
   const answer = await pc.createAnswer();
   await pc.setLocalDescription(answer);
@@ -206,6 +324,7 @@ async function viewRoom(suppliedRoomId){
 
 function stopSharing(){
   stopAllPolling();
+  stopConnectionStats();
   if (pc) {
     try { pc.close(); } catch(e){}
     pc = null;
@@ -218,6 +337,7 @@ function stopSharing(){
   startShareBtn.disabled = false;
   stopShareBtn.disabled = true;
   linkWrap.style.display = 'none';
+  reconnectAttempts = 0;
   setStatus('stopped');
 }
 
@@ -228,6 +348,7 @@ viewRoomBtn.addEventListener('click', () => {
   const id = roomInput.value.trim();
   viewRoom(id);
 });
+copyLinkBtn.addEventListener('click', copyLink);
 
 // Auto view if ?room=... in URL
 const params = new URLSearchParams(window.location.search);
