@@ -29,6 +29,10 @@ const chatBox = document.getElementById('chatBox');
 const chatMessages = document.getElementById('chatMessages');
 const chatInput = document.getElementById('chatInput');
 const sendChatBtn = document.getElementById('sendChatBtn');
+const runDiagnosticsBtn = document.getElementById('runDiagnostics');
+const diagnosticsModal = document.getElementById('diagnosticsModal');
+const diagnosticsContent = document.getElementById('diagnosticsContent');
+const closeDiagnosticsBtn = document.getElementById('closeDiagnostics');
 
 let localStream = null;
 let pc = null;
@@ -64,20 +68,69 @@ async function apiPost(path, body){
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(body)
     });
+
     if (!r.ok) {
-      const errorText = await r.text();
-      throw new Error(`API error: ${r.status} ${r.statusText} - ${errorText}`);
+      let errorMsg;
+      try {
+        const errorData = await r.json();
+        errorMsg = errorData.error || errorData.message || r.statusText;
+      } catch (e) {
+        errorMsg = await r.text() || r.statusText;
+      }
+
+      // Provide user-friendly error messages
+      if (r.status === 400) {
+        throw new Error(`Invalid request: ${errorMsg}`);
+      } else if (r.status === 404) {
+        throw new Error(`Resource not found: ${errorMsg}`);
+      } else if (r.status === 410) {
+        throw new Error(`Room expired or not found. Please create a new room.`);
+      } else if (r.status >= 500) {
+        throw new Error(`Server error: ${errorMsg}. Please try again later.`);
+      } else {
+        throw new Error(`API error (${r.status}): ${errorMsg}`);
+      }
     }
+
     return r.json();
   } catch (e) {
     console.error('Error in apiPost:', e);
-    setStatus(`API Post Error: ${e.message}`);
-    throw e; // Re-throw to propagate the error
+    setStatus(`Error: ${e.message}`);
+    throw e;
   }
 }
+
 async function apiGet(path){
-  const r = await fetch(API_BASE + path);
-  return r.json();
+  try {
+    const r = await fetch(API_BASE + path);
+
+    if (!r.ok) {
+      let errorMsg;
+      try {
+        const errorData = await r.json();
+        errorMsg = errorData.error || errorData.message || r.statusText;
+      } catch (e) {
+        errorMsg = await r.text() || r.statusText;
+      }
+
+      if (r.status === 410) {
+        throw new Error(`Room expired or not found`);
+      } else if (r.status === 404) {
+        // 404 is sometimes expected (e.g., no answer yet), return null
+        return null;
+      }
+
+      throw new Error(`API error (${r.status}): ${errorMsg}`);
+    }
+
+    return r.json();
+  } catch (e) {
+    // Don't log 404s as they're expected during polling
+    if (!e.message.includes('404')) {
+      console.error('Error in apiGet:', e);
+    }
+    throw e;
+  }
 }
 
 async function createRoom(){
@@ -101,6 +154,7 @@ async function postViewerHeartbeat(roomId, viewerId){ return apiPost('/viewers',
 async function fetchViewerCount(roomId){ return apiGet(`/viewers?roomId=${roomId}`); }
 async function postChatMessage(roomId, sender, message){ return apiPost('/chat', { roomId, sender, message }); }
 async function fetchChatMessages(roomId, since){ return apiGet(`/chat?roomId=${roomId}&since=${since}`); }
+async function fetchDiagnostics(roomId){ return apiGet(`/diagnostics${roomId ? '?roomId=' + roomId : ''}`); }
 
 // Poll helper
 function startPolling(fn, ms=1000){ const id = setInterval(fn, ms); pollIntervals.push(id); return id; }
@@ -196,6 +250,146 @@ function startChatPolling() {
       console.error('Error fetching chat messages:', e);
     }
   }, 2000);
+}
+
+// Network Diagnostics
+async function runDiagnostics() {
+  diagnosticsModal.style.display = 'block';
+  diagnosticsContent.innerHTML = '<div style="text-align: center;">Running diagnostics...</div>';
+
+  try {
+    // Test WebRTC support
+    const webrtcSupport = checkWebRTCSupport();
+
+    // Test STUN server connectivity
+    const stunTest = await testSTUNConnectivity();
+
+    // Test API server
+    const serverDiag = await fetchDiagnostics(roomId);
+
+    // Build report
+    let report = '<div style="color: #00f5d4; font-weight: bold; margin-bottom: 16px;">📊 Diagnostic Report</div>';
+
+    // Browser support
+    report += '<div style="margin-bottom: 12px;"><strong>Browser Support:</strong><br/>';
+    report += `  getUserMedia: ${webrtcSupport.getUserMedia ? '✅' : '❌'}<br/>`;
+    report += `  RTCPeerConnection: ${webrtcSupport.rtcPeerConnection ? '✅' : '❌'}<br/>`;
+    report += `  MediaRecorder: ${webrtcSupport.mediaRecorder ? '✅' : '❌'}</div>`;
+
+    // STUN connectivity
+    report += '<div style="margin-bottom: 12px;"><strong>STUN Server:</strong><br/>';
+    report += `  Status: ${stunTest.success ? '✅ Connected' : '❌ Failed'}<br/>`;
+    if (stunTest.candidate) {
+      report += `  Your IP: ${stunTest.candidate}<br/>`;
+    }
+    report += `  Latency: ${stunTest.latency}ms</div>`;
+
+    // Server status
+    if (serverDiag.server) {
+      report += '<div style="margin-bottom: 12px;"><strong>Server Status:</strong><br/>';
+      report += `  Status: ${serverDiag.server.status === 'online' ? '✅' : '❌'} ${serverDiag.server.status}<br/>`;
+      report += `  Redis: ${serverDiag.server.redis === 'connected' ? '✅' : '❌'} ${serverDiag.server.redis}<br/>`;
+      report += `  Region: ${serverDiag.server.region}</div>`;
+    }
+
+    // Room status (if in a room)
+    if (serverDiag.room) {
+      report += '<div style="margin-bottom: 12px;"><strong>Room Status:</strong><br/>';
+      report += `  Exists: ${serverDiag.room.exists ? '✅' : '❌'}<br/>`;
+      if (serverDiag.room.exists) {
+        report += `  Has Offer: ${serverDiag.room.hasOffer ? '✅' : '❌'}<br/>`;
+        report += `  Has Answer: ${serverDiag.room.hasAnswer ? '✅' : '❌'}<br/>`;
+        report += `  Active Viewers: ${serverDiag.room.viewerCount || 0}<br/>`;
+        report += `  Chat Messages: ${serverDiag.room.chatMessageCount || 0}</div>`;
+      }
+    }
+
+    // Connection state
+    if (pc) {
+      report += '<div style="margin-bottom: 12px;"><strong>WebRTC Connection:</strong><br/>';
+      report += `  Connection State: ${pc.connectionState}<br/>`;
+      report += `  ICE Connection State: ${pc.iceConnectionState}<br/>`;
+      report += `  Signaling State: ${pc.signalingState}</div>`;
+    }
+
+    // Recommendations
+    report += '<div style="margin-top: 16px; padding: 12px; background: #2d3748; border-radius: 6px;">';
+    report += '<strong>💡 Recommendations:</strong><br/>';
+
+    if (!webrtcSupport.getUserMedia || !webrtcSupport.rtcPeerConnection) {
+      report += '⚠️ Your browser does not fully support WebRTC. Please use Chrome, Firefox, or Edge.<br/>';
+    }
+
+    if (!stunTest.success) {
+      report += '⚠️ Cannot connect to STUN servers. You may need a TURN relay for NAT traversal.<br/>';
+    }
+
+    if (pc && (pc.connectionState === 'failed' || pc.iceConnectionState === 'failed')) {
+      report += '⚠️ Connection failed. This usually indicates firewall/NAT issues. Try a different network.<br/>';
+    }
+
+    report += '</div>';
+
+    diagnosticsContent.innerHTML = report;
+  } catch (error) {
+    console.error('Diagnostics error:', error);
+    diagnosticsContent.innerHTML = `<div style="color: #f56565;">Error running diagnostics: ${error.message}</div>`;
+  }
+}
+
+function checkWebRTCSupport() {
+  return {
+    getUserMedia: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+    rtcPeerConnection: !!window.RTCPeerConnection,
+    mediaRecorder: !!window.MediaRecorder
+  };
+}
+
+async function testSTUNConnectivity() {
+  const startTime = Date.now();
+
+  try {
+    const pc = new RTCPeerConnection({ iceServers: STUN_SERVERS });
+
+    return new Promise((resolve) => {
+      let resolved = false;
+
+      pc.onicecandidate = (e) => {
+        if (resolved) return;
+
+        if (e.candidate && e.candidate.type === 'srflx') {
+          resolved = true;
+          pc.close();
+          resolve({
+            success: true,
+            candidate: e.candidate.address || e.candidate.ip,
+            latency: Date.now() - startTime
+          });
+        }
+      };
+
+      pc.createDataChannel('test');
+      pc.createOffer().then(offer => pc.setLocalDescription(offer));
+
+      // Timeout after 5 seconds
+      setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          pc.close();
+          resolve({
+            success: false,
+            latency: Date.now() - startTime
+          });
+        }
+      }, 5000);
+    });
+  } catch (e) {
+    return {
+      success: false,
+      error: e.message,
+      latency: Date.now() - startTime
+    };
+  }
 }
 
 // Copy link to clipboard
@@ -607,6 +801,10 @@ chatInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') {
     sendChatMessage();
   }
+});
+runDiagnosticsBtn.addEventListener('click', runDiagnostics);
+closeDiagnosticsBtn.addEventListener('click', () => {
+  diagnosticsModal.style.display = 'none';
 });
 
 // Auto view if ?room=... in URL

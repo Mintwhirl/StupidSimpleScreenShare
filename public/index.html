@@ -111,6 +111,7 @@
     <button id="stopShare" disabled aria-label="Stop screen sharing">Stop sharing</button>
     <button id="startRecording" disabled aria-label="Start recording">Start Recording</button>
     <button id="stopRecording" disabled aria-label="Stop recording">Stop Recording</button>
+    <button id="runDiagnostics" aria-label="Run network diagnostics">🔧 Diagnostics</button>
   </div>
 
   <div class="controls">
@@ -155,6 +156,16 @@
     <div id="chatInputContainer">
       <input id="chatInput" type="text" placeholder="Type a message..." maxlength="500" aria-label="Chat message input" />
       <button id="sendChatBtn" aria-label="Send chat message">Send</button>
+    </div>
+  </div>
+
+  <div id="diagnosticsModal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto;" role="dialog" aria-modal="true" aria-labelledby="diagTitle">
+    <div style="background: #1a202c; border: 2px solid #00f5d4; border-radius: 12px; max-width: 700px; margin: 50px auto; padding: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 id="diagTitle" style="margin: 0;">Network Diagnostics</h2>
+        <button id="closeDiagnostics" style="background: transparent; border: none; color: #e2e8f0; font-size: 24px; cursor: pointer;" aria-label="Close diagnostics">×</button>
+      </div>
+      <div id="diagnosticsContent" style="font-family: monospace; font-size: 13px; line-height: 1.6;"></div>
     </div>
   </div>
 
