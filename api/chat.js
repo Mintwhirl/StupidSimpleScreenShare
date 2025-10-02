@@ -6,6 +6,8 @@ import {
   validateRoomId,
   validateMessage,
   validateSender,
+  checkRateLimit,
+  chatRateLimit,
   TTL_ROOM,
   MAX_MESSAGES
 } from "./_utils.js";
@@ -49,6 +51,11 @@ async function handleChat(req, res) {
     if (!senderValidation.valid) {
       return sendError(res, 400, senderValidation.error);
     }
+
+    // Rate limiting: 60 messages per minute per room+sender combo
+    const rateLimitId = `${roomId}:${sender.trim().substring(0, 50)}`;
+    const rateLimitError = await checkRateLimit(chatRateLimit, rateLimitId, res);
+    if (rateLimitError) return rateLimitError;
 
     // Create message object
     const chatMessage = {

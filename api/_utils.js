@@ -1,4 +1,5 @@
 import { Redis } from "@upstash/redis";
+import { Ratelimit } from "@upstash/ratelimit";
 
 // Initialize Redis connection with validation
 export function createRedisClient() {
@@ -11,6 +12,33 @@ export function createRedisClient() {
 
   return new Redis({ url, token });
 }
+
+// Initialize rate limiters
+const redis = createRedisClient();
+
+// Rate limiter for room creation (10 per hour per IP)
+export const roomCreationRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(10, "1 h"),
+  analytics: true,
+  prefix: "@upstash/ratelimit/room-creation",
+});
+
+// Rate limiter for chat messages (60 per minute per room+user)
+export const chatRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(60, "1 m"),
+  analytics: true,
+  prefix: "@upstash/ratelimit/chat",
+});
+
+// Rate limiter for API calls (1000 per minute per IP - generous but prevents abuse)
+export const apiRateLimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(1000, "1 m"),
+  analytics: true,
+  prefix: "@upstash/ratelimit/api",
+});
 
 // CORS headers helper
 export function setCorsHeaders(res) {
@@ -146,6 +174,38 @@ export function sendError(res, status, message, error = null) {
     error: message,
     timestamp: new Date().toISOString()
   });
+}
+
+// Rate limit helper
+export async function checkRateLimit(ratelimit, identifier, res) {
+  const { success, limit, reset, remaining } = await ratelimit.limit(identifier);
+
+  // Add rate limit headers
+  res.setHeader('X-RateLimit-Limit', limit.toString());
+  res.setHeader('X-RateLimit-Remaining', remaining.toString());
+  res.setHeader('X-RateLimit-Reset', reset.toString());
+
+  if (!success) {
+    const resetDate = new Date(reset);
+    return sendError(
+      res,
+      429,
+      `Rate limit exceeded. Try again at ${resetDate.toISOString()}`
+    );
+  }
+
+  return null; // No error
+}
+
+// Get client identifier (IP address)
+export function getClientIdentifier(req) {
+  // Try various headers for IP (Vercel/proxy compatible)
+  return (
+    req.headers['x-forwarded-for']?.split(',')[0] ||
+    req.headers['x-real-ip'] ||
+    req.connection?.remoteAddress ||
+    'unknown'
+  );
 }
 
 // Async error wrapper for handlers

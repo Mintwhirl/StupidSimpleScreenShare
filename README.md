@@ -66,8 +66,19 @@ A professional, production-ready browser-based screen sharing application with W
    ```
    UPSTASH_REDIS_REST_URL=your_url_here
    UPSTASH_REDIS_REST_TOKEN=your_token_here
+
+   # Optional but HIGHLY recommended for personal use:
+   AUTH_SECRET=generate_random_string_here
    ```
-5. Deploy!
+
+   Generate AUTH_SECRET with: `openssl rand -hex 32`
+
+5. If you set AUTH_SECRET, update `/public/client.js` line 9:
+   ```javascript
+   const AUTH_SECRET = 'your-secret-here'; // Must match server
+   ```
+
+6. Deploy!
 
 ### Step 3: Verify Deployment
 
@@ -154,7 +165,9 @@ A professional, production-ready browser-based screen sharing application with W
 - **Unguessable IDs**: Cryptographically secure random room IDs (24 hex characters)
 - **No persistence**: No video data stored on servers
 - **Input validation**: All user inputs sanitized to prevent XSS/injection attacks
-- **Rate limiting ready**: Architecture supports rate limiting (can be added via Vercel/Upstash)
+- **Rate limiting**: Upstash-powered rate limiting (10 rooms/hour, 60 chat msgs/min, 1000 API calls/min)
+- **Optional auth**: Set AUTH_SECRET to prevent unauthorized room creation
+- **Zero cost abuse**: Rate limits prevent bandwidth/compute abuse
 
 ## 🏢 Production Considerations
 
@@ -164,23 +177,17 @@ A professional, production-ready browser-based screen sharing application with W
 ✅ Comprehensive security measures
 ✅ Professional logging and monitoring
 
-### Optional Enhancements
+### ✅ Included Enhancements
 
-1. **TURN Server** (for strict NATs)
-   - Deploy coturn on a VPS
-   - Update `STUN_SERVERS` in `client.js`
+1. **Rate Limiting** - Upstash-powered (10 rooms/hr per IP)
+2. **Analytics** - Vercel Analytics integrated
+3. **TURN Support** - Ready to configure (see TURN_SETUP.md)
+4. **Auth Protection** - Optional AUTH_SECRET for private deployments
 
-2. **Analytics**
-   - Add Vercel Analytics
-   - Track room creation, connection success rates
+### Optional Additions
 
-3. **Rate Limiting**
-   - Upstash rate limiting API
-   - Prevent abuse of room creation endpoint
-
-4. **Custom Domain**
-   - Add via Vercel dashboard
-   - SSL certificate automatic
+1. **TURN Server** (for strict NATs) - See `TURN_SETUP.md`
+2. **Custom Domain** - Add via Vercel dashboard (SSL automatic)
 
 ## 📁 Project Structure
 
@@ -214,9 +221,27 @@ This project follows professional development practices:
 
 Pull requests welcome! Please maintain the code quality standards.
 
+## 💰 Costs & Limits
+
+**TL;DR: $0/month for personal use (few hours/month)**
+
+All services used are free tier:
+- Vercel: 100 GB bandwidth/month (API only, video is P2P!)
+- Upstash: 10k commands/day (you'll use ~50-100 per session)
+- Video traffic: Peer-to-peer (doesn't hit servers at all)
+
+See `COSTS_AND_LIMITS.md` for detailed breakdown and monitoring guide.
+
 ## 📄 License
 
-MIT License - feel free to use in your own projects!
+**CC BY-NC-SA 4.0** (Creative Commons Attribution-NonCommercial-ShareAlike 4.0)
+
+✅ Free for personal/educational use
+✅ Can view and modify code
+✅ Must credit original author
+❌ Cannot use commercially without permission
+
+Want to use commercially? Contact for licensing.
 
 ## 🙏 Acknowledgments
 

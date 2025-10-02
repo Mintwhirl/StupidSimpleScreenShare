@@ -1,11 +1,32 @@
 
 // client.js (vanilla JS)
 const API_BASE = window.location.origin + '/api';
+
+// Optional: Auth secret for creating rooms (set in environment variables)
+// If you set AUTH_SECRET on server, you need to provide it here
+// This prevents random people from creating rooms on your deployment
+// Leave empty/null if AUTH_SECRET is not set on server
+const AUTH_SECRET = null; // or 'your-secret-key'
+
+// ICE servers configuration (STUN + optional TURN)
+// To add TURN server: Set environment variables TURN_URL, TURN_USERNAME, TURN_CREDENTIAL
 const STUN_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'stun:stun.stunprotocol.org:3478' }
 ];
+
+// TURN server configuration (optional - for strict NAT/firewall environments)
+// Format: { urls: 'turn:your-turn-server.com:3478', username: 'user', credential: 'pass' }
+// Uncomment and configure if needed:
+/*
+const TURN_SERVER = {
+  urls: 'turn:your-turn-server.com:3478',
+  username: 'your-username',
+  credential: 'your-password'
+};
+STUN_SERVERS.push(TURN_SERVER);
+*/
 
 // UI refs
 const startShareBtn = document.getElementById('startShare');
@@ -135,7 +156,11 @@ async function apiGet(path){
 
 async function createRoom(){
   try {
-    const res = await apiPost('/create-room', {});
+    const body = {};
+    if (AUTH_SECRET) {
+      body.authSecret = AUTH_SECRET;
+    }
+    const res = await apiPost('/create-room', body);
     return res.roomId;
   } catch (e) {
     console.error('Error creating room:', e);

@@ -1,6 +1,15 @@
 
 import { randomBytes } from "crypto";
-import { createRedisClient, setCorsHeaders, asyncHandler, sendError, TTL_ROOM } from "./_utils.js";
+import {
+  createRedisClient,
+  setCorsHeaders,
+  asyncHandler,
+  sendError,
+  checkRateLimit,
+  getClientIdentifier,
+  roomCreationRateLimit,
+  TTL_ROOM
+} from "./_utils.js";
 
 const redis = createRedisClient();
 
@@ -14,6 +23,20 @@ async function handleCreateRoom(req, res) {
   if (req.method !== 'POST') {
     return sendError(res, 405, 'Method not allowed');
   }
+
+  // Optional authentication (set AUTH_SECRET in environment variables)
+  const authSecret = process.env.AUTH_SECRET;
+  if (authSecret) {
+    const providedSecret = req.headers['x-auth-secret'] || req.body?.authSecret;
+    if (providedSecret !== authSecret) {
+      return sendError(res, 401, 'Unauthorized - Invalid or missing auth secret');
+    }
+  }
+
+  // Rate limiting: 10 rooms per hour per IP
+  const clientId = getClientIdentifier(req);
+  const rateLimitError = await checkRateLimit(roomCreationRateLimit, clientId, res);
+  if (rateLimitError) return rateLimitError;
 
   try {
     const roomId = randomBytes(12).toString('hex'); // 24 hex chars, cryptographically secure
