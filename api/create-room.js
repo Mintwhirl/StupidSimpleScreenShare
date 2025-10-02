@@ -1,23 +1,38 @@
 
-import { Redis } from "@upstash/redis";
 import { randomBytes } from "crypto";
+import { createRedisClient, setCorsHeaders, asyncHandler, sendError, TTL_ROOM } from "./_utils.js";
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN
-});
+const redis = createRedisClient();
 
-export default async function handler(req, res) {
-  // CORS
-  res.setHeader('Access-Control-Allow-Origin','*');
-  res.setHeader('Access-Control-Allow-Headers','Content-Type');
-  if (req.method === 'OPTIONS') { res.status(204).end(); return; }
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Only POST' });
+async function handleCreateRoom(req, res) {
+  setCorsHeaders(res);
 
-  const roomId = randomBytes(12).toString('hex'); // 24 hex chars, unguessable
-  // create a marker key and set TTL (e.g., 30 minutes)
-  await redis.set(`room:${roomId}:meta`, JSON.stringify({ createdAt: Date.now() }));
-  await redis.expire(`room:${roomId}:meta`, 60 * 30);
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
 
-  res.json({ roomId });
+  if (req.method !== 'POST') {
+    return sendError(res, 405, 'Method not allowed');
+  }
+
+  try {
+    const roomId = randomBytes(12).toString('hex'); // 24 hex chars, cryptographically secure
+
+    const roomMeta = JSON.stringify({
+      createdAt: Date.now(),
+      version: '1.0'
+    });
+
+    await redis.set(`room:${roomId}:meta`, roomMeta);
+    await redis.expire(`room:${roomId}:meta`, TTL_ROOM);
+
+    return res.status(201).json({
+      roomId,
+      expiresIn: TTL_ROOM
+    });
+  } catch (error) {
+    return sendError(res, 500, 'Failed to create room', error);
+  }
 }
+
+export default asyncHandler(handleCreateRoom);
