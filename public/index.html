@@ -68,15 +68,54 @@
       opacity: 0.6;
       font-size: 14px;
     }
+    #chatBox {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 20px;
+      background: #2d3748;
+      border-radius: 8px;
+      padding: 16px;
+      border: 1px solid #4a5568;
+    }
+    #chatMessages {
+      height: 200px;
+      overflow-y: auto;
+      background: #1a202c;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+    .chat-message {
+      margin-bottom: 8px;
+      padding: 6px;
+      border-radius: 4px;
+      background: #2d3748;
+    }
+    .chat-message strong {
+      color: #00f5d4;
+    }
+    #chatInputContainer {
+      display: flex;
+      gap: 8px;
+    }
+    #chatInput {
+      flex: 1;
+    }
   </style>
 </head>
 <body>
   <h1>Stupid-Simple Screen Share</h1>
   <div class="controls">
-    <button id="startShare">Start sharing my screen</button>
-    <button id="stopShare" disabled>Stop sharing</button>
-    <button id="viewRoom">Open room link (viewer)</button>
-    <input id="roomInput" placeholder="Paste room id here" style="width:240px;margin-left:8px" />
+    <button id="startShare" aria-label="Start screen sharing">Start sharing my screen</button>
+    <button id="stopShare" disabled aria-label="Stop screen sharing">Stop sharing</button>
+    <button id="startRecording" disabled aria-label="Start recording">Start Recording</button>
+    <button id="stopRecording" disabled aria-label="Stop recording">Stop Recording</button>
+  </div>
+
+  <div class="controls">
+    <button id="viewRoom" aria-label="Join room as viewer">Open room link (viewer)</button>
+    <input id="roomInput" placeholder="Paste room id here" style="width:240px;margin-left:8px" aria-label="Room ID input" />
   </div>
 
   <div id="status" class="muted">Status: idle</div>
@@ -95,12 +134,28 @@
       <strong>Share this link</strong>
       <div id="link"></div>
       <button id="copyLinkBtn" style="margin-top: 12px;">Copy Link</button>
+      <div id="viewerCount" style="margin-top: 12px; font-size: 13px;" class="muted">
+        Active viewers: <strong id="viewerCountNum">0</strong>
+      </div>
     </div>
   </div>
 
-  <div id="connectionStats" style="display:none; margin-top: 16px; background: #2d3748; padding: 12px; border-radius: 8px; font-size: 13px;">
+  <div id="connectionStats" style="display:none; margin-top: 16px; background: #2d3748; padding: 12px; border-radius: 8px; font-size: 13px;" role="status" aria-live="polite">
     <strong>Connection Quality:</strong>
     <div id="statsContent" class="muted"></div>
+  </div>
+
+  <div id="recordingStatus" style="display:none; margin-top: 16px; background: #c53030; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold;" role="status" aria-live="assertive">
+    🔴 Recording in progress... <span id="recordingTime">00:00</span>
+  </div>
+
+  <div id="chatBox" style="display:none;">
+    <h3 style="margin-top: 0;">Chat</h3>
+    <div id="chatMessages" role="log" aria-live="polite" aria-label="Chat messages"></div>
+    <div id="chatInputContainer">
+      <input id="chatInput" type="text" placeholder="Type a message..." maxlength="500" aria-label="Chat message input" />
+      <button id="sendChatBtn" aria-label="Send chat message">Send</button>
+    </div>
   </div>
 
 <script type="module" src="/client.js"></script>

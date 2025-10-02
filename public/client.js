@@ -10,6 +10,8 @@ const STUN_SERVERS = [
 // UI refs
 const startShareBtn = document.getElementById('startShare');
 const stopShareBtn = document.getElementById('stopShare');
+const startRecordingBtn = document.getElementById('startRecording');
+const stopRecordingBtn = document.getElementById('stopRecording');
 const viewRoomBtn = document.getElementById('viewRoom');
 const roomInput = document.getElementById('roomInput');
 const localVideo = document.getElementById('local');
@@ -20,6 +22,13 @@ const linkEl = document.getElementById('link');
 const copyLinkBtn = document.getElementById('copyLinkBtn');
 const connectionStats = document.getElementById('connectionStats');
 const statsContent = document.getElementById('statsContent');
+const recordingStatus = document.getElementById('recordingStatus');
+const recordingTime = document.getElementById('recordingTime');
+const viewerCountEl = document.getElementById('viewerCountNum');
+const chatBox = document.getElementById('chatBox');
+const chatMessages = document.getElementById('chatMessages');
+const chatInput = document.getElementById('chatInput');
+const sendChatBtn = document.getElementById('sendChatBtn');
 
 let localStream = null;
 let pc = null;
@@ -30,6 +39,21 @@ let pollIntervals = [];
 let statsInterval = null;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 3;
+
+// Recording state
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordingStartTime = null;
+let recordingTimerInterval = null;
+
+// Viewer tracking
+let viewerId = null;
+let heartbeatInterval = null;
+
+// Chat state
+let lastChatTimestamp = 0;
+let chatPollInterval = null;
+let userName = null;
 
 function setStatus(s){ statusEl.textContent = 'Status: ' + s; }
 
@@ -73,10 +97,106 @@ async function postAnswer(roomId, desc){ return apiPost('/answer', { roomId, des
 async function fetchAnswer(roomId){ return apiGet(`/answer?roomId=${roomId}`); }
 async function postCandidate(roomId, role, candidate){ return apiPost('/candidate', { roomId, role, candidate }); }
 async function fetchCandidates(roomId, role){ return apiGet(`/candidate?roomId=${roomId}&role=${role}`); }
+async function postViewerHeartbeat(roomId, viewerId){ return apiPost('/viewers', { roomId, viewerId }); }
+async function fetchViewerCount(roomId){ return apiGet(`/viewers?roomId=${roomId}`); }
+async function postChatMessage(roomId, sender, message){ return apiPost('/chat', { roomId, sender, message }); }
+async function fetchChatMessages(roomId, since){ return apiGet(`/chat?roomId=${roomId}&since=${since}`); }
 
 // Poll helper
 function startPolling(fn, ms=1000){ const id = setInterval(fn, ms); pollIntervals.push(id); return id; }
 function stopAllPolling(){ pollIntervals.forEach(i=>clearInterval(i)); pollIntervals = []; }
+
+// Viewer presence tracking
+function startViewerHeartbeat() {
+  if (!roomId || !viewerId) return;
+
+  // Send immediate heartbeat
+  postViewerHeartbeat(roomId, viewerId).catch(console.error);
+
+  // Send heartbeat every 15 seconds
+  heartbeatInterval = setInterval(() => {
+    postViewerHeartbeat(roomId, viewerId).catch(console.error);
+  }, 15000);
+}
+
+function stopViewerHeartbeat() {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+}
+
+// Poll viewer count (host only)
+function startViewerCountPolling() {
+  if (role !== 'host' || !roomId) return;
+
+  startPolling(async () => {
+    try {
+      const result = await fetchViewerCount(roomId);
+      if (viewerCountEl) {
+        viewerCountEl.textContent = result.count || 0;
+      }
+    } catch (e) {
+      console.error('Error fetching viewer count:', e);
+    }
+  }, 5000);
+}
+
+// Chat functionality
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function displayChatMessage(msg) {
+  const messageEl = document.createElement('div');
+  messageEl.className = 'chat-message';
+
+  const time = new Date(msg.timestamp).toLocaleTimeString();
+  messageEl.innerHTML = `<strong>${escapeHtml(msg.sender)}</strong> <span class="muted">${time}</span><br>${escapeHtml(msg.message)}`;
+
+  chatMessages.appendChild(messageEl);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+async function sendChatMessage() {
+  const message = chatInput.value.trim();
+  if (!message || !roomId) return;
+
+  if (!userName) {
+    userName = prompt('Enter your name:') || 'Anonymous';
+  }
+
+  try {
+    await postChatMessage(roomId, userName, message);
+    chatInput.value = '';
+  } catch (e) {
+    console.error('Error sending chat message:', e);
+    setStatus('Failed to send message');
+  }
+}
+
+function startChatPolling() {
+  if (!roomId) return;
+
+  chatBox.style.display = 'block';
+
+  // Poll for new messages every 2 seconds
+  startPolling(async () => {
+    try {
+      const result = await fetchChatMessages(roomId, lastChatTimestamp);
+      if (result.messages && result.messages.length > 0) {
+        result.messages.forEach(msg => {
+          displayChatMessage(msg);
+          lastChatTimestamp = Math.max(lastChatTimestamp, msg.timestamp);
+        });
+      }
+    } catch (e) {
+      console.error('Error fetching chat messages:', e);
+    }
+  }, 2000);
+}
 
 // Copy link to clipboard
 async function copyLink() {
@@ -168,6 +288,109 @@ async function handleReconnection() {
   }
 }
 
+// Recording functionality
+function startRecording() {
+  if (!localStream) {
+    setStatus('No stream available to record');
+    return;
+  }
+
+  try {
+    // Determine best codec
+    const options = { mimeType: 'video/webm;codecs=vp9' };
+
+    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+      options.mimeType = 'video/webm;codecs=vp8';
+
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options.mimeType = 'video/webm';
+
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+          throw new Error('No supported video codec found');
+        }
+      }
+    }
+
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(localStream, options);
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data && event.data.size > 0) {
+        recordedChunks.push(event.data);
+      }
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recordedChunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+
+      // Create download link
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `screen-recording-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.webm`;
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+
+      setStatus('Recording saved successfully');
+    };
+
+    mediaRecorder.onerror = (event) => {
+      console.error('MediaRecorder error:', event);
+      setStatus('Recording error: ' + (event.error?.message || 'Unknown error'));
+      stopRecording();
+    };
+
+    // Start recording with 1 second chunks
+    mediaRecorder.start(1000);
+
+    recordingStartTime = Date.now();
+    startRecordingBtn.disabled = true;
+    stopRecordingBtn.disabled = false;
+    recordingStatus.style.display = 'block';
+
+    // Update recording timer
+    updateRecordingTimer();
+    recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
+
+    setStatus('Recording started');
+  } catch (error) {
+    console.error('Failed to start recording:', error);
+    setStatus('Failed to start recording: ' + error.message);
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+  }
+
+  if (recordingTimerInterval) {
+    clearInterval(recordingTimerInterval);
+    recordingTimerInterval = null;
+  }
+
+  startRecordingBtn.disabled = false;
+  stopRecordingBtn.disabled = true;
+  recordingStatus.style.display = 'none';
+  recordingStartTime = null;
+}
+
+function updateRecordingTimer() {
+  if (!recordingStartTime) return;
+
+  const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+  const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+  const seconds = (elapsed % 60).toString().padStart(2, '0');
+  recordingTime.textContent = `${minutes}:${seconds}`;
+}
+
 // Host flow
 async function startShare(){
   role = 'host';
@@ -216,7 +439,14 @@ async function startShare(){
   linkEl.textContent = shareUrl;
   startShareBtn.disabled = true;
   stopShareBtn.disabled = false;
+  startRecordingBtn.disabled = false;
   setStatus('waiting for viewer to connect... (share link)');
+
+  // Start viewer count polling
+  startViewerCountPolling();
+
+  // Start chat
+  startChatPolling();
 
   // poll for answer
   const answerPoll = async () => {
@@ -259,6 +489,12 @@ async function startShare(){
 async function viewRoom(suppliedRoomId){
   role = 'viewer';
   roomId = suppliedRoomId;
+
+  // Generate unique viewer ID
+  if (!viewerId) {
+    viewerId = 'viewer_' + Math.random().toString(36).substring(2, 15);
+  }
+
   if (!roomId) {
     setStatus('no room id supplied');
     return;
@@ -303,6 +539,12 @@ async function viewRoom(suppliedRoomId){
 
   setStatus('sent answer, waiting for media...');
 
+  // Start viewer heartbeat
+  startViewerHeartbeat();
+
+  // Start chat
+  startChatPolling();
+
   // poll for host candidates and add
   startPolling(async () => {
     try {
@@ -325,6 +567,13 @@ async function viewRoom(suppliedRoomId){
 function stopSharing(){
   stopAllPolling();
   stopConnectionStats();
+  stopViewerHeartbeat();
+
+  // Stop recording if active
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    stopRecording();
+  }
+
   if (pc) {
     try { pc.close(); } catch(e){}
     pc = null;
@@ -336,6 +585,8 @@ function stopSharing(){
   }
   startShareBtn.disabled = false;
   stopShareBtn.disabled = true;
+  startRecordingBtn.disabled = true;
+  stopRecordingBtn.disabled = true;
   linkWrap.style.display = 'none';
   reconnectAttempts = 0;
   setStatus('stopped');
@@ -344,11 +595,19 @@ function stopSharing(){
 // Wire up buttons
 startShareBtn.addEventListener('click', startShare);
 stopShareBtn.addEventListener('click', stopSharing);
+startRecordingBtn.addEventListener('click', startRecording);
+stopRecordingBtn.addEventListener('click', stopRecording);
 viewRoomBtn.addEventListener('click', () => {
   const id = roomInput.value.trim();
   viewRoom(id);
 });
 copyLinkBtn.addEventListener('click', copyLink);
+sendChatBtn.addEventListener('click', sendChatMessage);
+chatInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    sendChatMessage();
+  }
+});
 
 // Auto view if ?room=... in URL
 const params = new URLSearchParams(window.location.search);
