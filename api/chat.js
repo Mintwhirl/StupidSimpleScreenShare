@@ -1,70 +1,79 @@
-import { Redis } from "@upstash/redis";
+import {
+  createRedisClient,
+  setCorsHeaders,
+  asyncHandler,
+  sendError,
+  validateRoomId,
+  validateMessage,
+  validateSender,
+  TTL_ROOM,
+  MAX_MESSAGES
+} from "./_utils.js";
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN
-});
+const redis = createRedisClient();
 
 /**
  * Simple chat API for room participants
  * POST /chat - Send a chat message
  * GET /chat?roomId=X&since=timestamp - Get messages since timestamp
  */
-export default async function handler(req, res) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+async function handleChat(req, res) {
+  setCorsHeaders(res);
 
   if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return;
+    return res.status(204).end();
   }
 
-  const { roomId } = req.method === 'POST' ? req.body : req.query;
+  const { roomId } = req.method === 'POST' ? req.body || {} : req.query || {};
 
-  if (!roomId) {
-    return res.status(400).json({ error: 'Missing roomId' });
+  const roomValidation = validateRoomId(roomId);
+  if (!roomValidation.valid) {
+    return sendError(res, 400, roomValidation.error);
   }
 
   // Validate room exists
   const roomExists = await redis.get(`room:${roomId}:meta`);
   if (!roomExists) {
-    return res.status(410).json({ error: 'Room expired or not found' });
+    return sendError(res, 410, 'Room expired or not found');
   }
 
   if (req.method === 'POST') {
-    const { message, sender } = req.body;
+    const { message, sender } = req.body || {};
 
-    if (!message || !sender) {
-      return res.status(400).json({ error: 'Missing message or sender' });
+    const messageValidation = validateMessage(message);
+    if (!messageValidation.valid) {
+      return sendError(res, 400, messageValidation.error);
     }
 
-    // Validate message length
-    if (message.length > 500) {
-      return res.status(400).json({ error: 'Message too long (max 500 chars)' });
+    const senderValidation = validateSender(sender);
+    if (!senderValidation.valid) {
+      return sendError(res, 400, senderValidation.error);
     }
 
     // Create message object
     const chatMessage = {
-      id: Date.now() + '_' + Math.random().toString(36).substring(7),
-      sender: sender.substring(0, 50), // Limit sender name
-      message: message.substring(0, 500), // Limit message length
+      id: `${Date.now()}_${Math.random().toString(36).substring(7)}`,
+      sender: sender.trim().substring(0, 50),
+      message: message.trim().substring(0, 500),
       timestamp: Date.now()
     };
 
-    // Store in list (keep last 50 messages)
+    // Store in list (keep last MAX_MESSAGES)
     const key = `room:${roomId}:chat`;
     await redis.lpush(key, JSON.stringify(chatMessage));
-    await redis.ltrim(key, 0, 49); // Keep only last 50 messages
-    await redis.expire(key, 60 * 30); // 30 min TTL
+    await redis.ltrim(key, 0, MAX_MESSAGES - 1);
+    await redis.expire(key, TTL_ROOM);
 
     return res.json({ ok: true, message: chatMessage });
   }
 
   if (req.method === 'GET') {
-    const { since } = req.query;
+    const { since } = req.query || {};
     const sinceTimestamp = parseInt(since) || 0;
+
+    if (isNaN(sinceTimestamp) || sinceTimestamp < 0) {
+      return sendError(res, 400, 'Invalid since timestamp');
+    }
 
     // Get all messages
     const messages = await redis.lrange(`room:${roomId}:chat`, 0, -1) || [];
@@ -75,6 +84,7 @@ export default async function handler(req, res) {
         try {
           return JSON.parse(msg);
         } catch (e) {
+          console.error('Failed to parse chat message:', e);
           return null;
         }
       })
@@ -84,5 +94,7 @@ export default async function handler(req, res) {
     return res.json({ messages: parsed });
   }
 
-  res.status(405).json({ error: 'Method not allowed' });
+  return sendError(res, 405, 'Method not allowed');
 }
+
+export default asyncHandler(handleChat);

@@ -1,53 +1,57 @@
-import { Redis } from "@upstash/redis";
+import {
+  createRedisClient,
+  setCorsHeaders,
+  asyncHandler,
+  sendError,
+  validateRoomId,
+  validateViewerId,
+  TTL_ROOM,
+  TTL_HEARTBEAT
+} from "./_utils.js";
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN
-});
+const redis = createRedisClient();
 
 /**
  * API endpoint to track active viewers in a room (viewer presence)
  * POST /viewers - Register viewer heartbeat
  * GET /viewers?roomId=X - Get active viewer count
  */
-export default async function handler(req, res) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+async function handleViewers(req, res) {
+  setCorsHeaders(res);
 
   if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return;
+    return res.status(204).end();
   }
 
-  const { roomId } = req.method === 'POST' ? req.body : req.query;
+  const { roomId } = req.method === 'POST' ? req.body || {} : req.query || {};
 
-  if (!roomId) {
-    return res.status(400).json({ error: 'Missing roomId' });
+  const roomValidation = validateRoomId(roomId);
+  if (!roomValidation.valid) {
+    return sendError(res, 400, roomValidation.error);
   }
 
   // Validate room exists
   const roomExists = await redis.get(`room:${roomId}:meta`);
   if (!roomExists) {
-    return res.status(410).json({ error: 'Room expired or not found' });
+    return sendError(res, 410, 'Room expired or not found');
   }
 
   if (req.method === 'POST') {
-    const { viewerId } = req.body;
+    const { viewerId } = req.body || {};
 
-    if (!viewerId) {
-      return res.status(400).json({ error: 'Missing viewerId' });
+    const viewerValidation = validateViewerId(viewerId);
+    if (!viewerValidation.valid) {
+      return sendError(res, 400, viewerValidation.error);
     }
 
-    // Update viewer heartbeat (30 second TTL)
+    // Update viewer heartbeat
     const key = `room:${roomId}:viewer:${viewerId}:heartbeat`;
     await redis.set(key, Date.now());
-    await redis.expire(key, 30); // 30 second heartbeat
+    await redis.expire(key, TTL_HEARTBEAT);
 
     // Add to viewers set
     await redis.sadd(`room:${roomId}:viewers`, viewerId);
-    await redis.expire(`room:${roomId}:viewers`, 60 * 30);
+    await redis.expire(`room:${roomId}:viewers`, TTL_ROOM);
 
     return res.json({ ok: true });
   }
@@ -68,5 +72,7 @@ export default async function handler(req, res) {
     return res.json({ count: activeViewers.length, viewers: activeViewers });
   }
 
-  res.status(405).json({ error: 'Method not allowed' });
+  return sendError(res, 405, 'Method not allowed');
 }
+
+export default asyncHandler(handleViewers);
