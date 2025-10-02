@@ -1,0 +1,99 @@
+
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Stupid Simple Screen Share</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+      background-color: #1a202c;
+      color: #e2e8f0;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      color: #00f5d4;
+    }
+    button {
+      background-color: #00f5d4;
+      color: #1a202c;
+      border: none;
+      padding: 12px 18px;
+      margin: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #00e0c4;
+    }
+    button:disabled {
+      background-color: #4a5568;
+      cursor: not-allowed;
+    }
+    input {
+      background-color: #2d3748;
+      border: 1px solid #4a5568;
+      color: #e2e8f0;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    #local, #remote {
+      width: 100%;
+      max-height: 60vh;
+      background: #000;
+      border-radius: 8px;
+      border: 2px solid #2d3748;
+    }
+    .controls {
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+    }
+    .linkbox {
+      margin-top: 16px;
+      background: #2d3748;
+      padding: 16px;
+      border-radius: 8px;
+      word-break: break-all;
+      border: 1px solid #4a5568;
+    }
+    .muted {
+      opacity: 0.6;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Stupid-Simple Screen Share</h1>
+  <div class="controls">
+    <button id="startShare">Start sharing my screen</button>
+    <button id="stopShare" disabled>Stop sharing</button>
+    <button id="viewRoom">Open room link (viewer)</button>
+    <input id="roomInput" placeholder="Paste room id here" style="width:240px;margin-left:8px" />
+  </div>
+
+  <div id="status" class="muted">Status: idle</div>
+
+  <div>
+    <h3>Local preview</h3>
+    <video id="local" autoplay muted playsinline></video>
+  </div>
+  <div>
+    <h3>Remote preview</h3>
+    <video id="remote" autoplay playsinline></video>
+  </div>
+
+  <div id="linkWrap" style="display:none">
+    <div class="linkbox"><strong>Share this link</strong><div id="link"></div></div>
+  </div>
+
+<script type="module" src="/client.js"></script>
+</body>
+</html>

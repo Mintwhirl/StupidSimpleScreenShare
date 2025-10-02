@@ -1,0 +1,10 @@
+{
+  "name": "stupid-simple-screen-share",
+  "version": "1.0.0",
+  "description": "A minimal proof-of-concept browser-only screen-share app.",
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "@upstash/redis": "^1.35.4"
+  }
+}
