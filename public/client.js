@@ -92,11 +92,15 @@ async function apiPost(path, body){
 
     if (!r.ok) {
       let errorMsg;
+      // Read the response body once as text first
+      const responseText = await r.text();
+
       try {
-        const errorData = await r.json();
+        const errorData = JSON.parse(responseText);
         errorMsg = errorData.error || errorData.message || r.statusText;
       } catch (e) {
-        errorMsg = await r.text() || r.statusText;
+        // If parsing fails, use the text directly
+        errorMsg = responseText || r.statusText;
       }
 
       // Provide user-friendly error messages
@@ -127,11 +131,15 @@ async function apiGet(path){
 
     if (!r.ok) {
       let errorMsg;
+      // Read the response body once as text first
+      const responseText = await r.text();
+
       try {
-        const errorData = await r.json();
+        const errorData = JSON.parse(responseText);
         errorMsg = errorData.error || errorData.message || r.statusText;
       } catch (e) {
-        errorMsg = await r.text() || r.statusText;
+        // If parsing fails, use the text directly
+        errorMsg = responseText || r.statusText;
       }
 
       if (r.status === 410) {

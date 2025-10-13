@@ -3,8 +3,8 @@ import { Ratelimit } from "@upstash/ratelimit";
 
 // Initialize Redis connection with validation
 export function createRedisClient() {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
 
   if (!url || !token) {
     throw new Error('Missing required environment variables: UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN');
@@ -13,32 +13,52 @@ export function createRedisClient() {
   return new Redis({ url, token });
 }
 
-// Initialize rate limiters
-const redis = createRedisClient();
+// Lazy-loaded rate limiters (initialized on first use)
+let _roomCreationRateLimit = null;
+let _chatRateLimit = null;
+let _apiRateLimit = null;
 
 // Rate limiter for room creation (10 per hour per IP)
-export const roomCreationRateLimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(10, "1 h"),
-  analytics: true,
-  prefix: "@upstash/ratelimit/room-creation",
-});
+export function getRoomCreationRateLimit() {
+  if (!_roomCreationRateLimit) {
+    const redis = createRedisClient();
+    _roomCreationRateLimit = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(10, "1 h"),
+      analytics: true,
+      prefix: "@upstash/ratelimit/room-creation",
+    });
+  }
+  return _roomCreationRateLimit;
+}
 
 // Rate limiter for chat messages (60 per minute per room+user)
-export const chatRateLimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(60, "1 m"),
-  analytics: true,
-  prefix: "@upstash/ratelimit/chat",
-});
+export function getChatRateLimit() {
+  if (!_chatRateLimit) {
+    const redis = createRedisClient();
+    _chatRateLimit = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(60, "1 m"),
+      analytics: true,
+      prefix: "@upstash/ratelimit/chat",
+    });
+  }
+  return _chatRateLimit;
+}
 
 // Rate limiter for API calls (1000 per minute per IP - generous but prevents abuse)
-export const apiRateLimit = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(1000, "1 m"),
-  analytics: true,
-  prefix: "@upstash/ratelimit/api",
-});
+export function getApiRateLimit() {
+  if (!_apiRateLimit) {
+    const redis = createRedisClient();
+    _apiRateLimit = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(1000, "1 m"),
+      analytics: true,
+      prefix: "@upstash/ratelimit/api",
+    });
+  }
+  return _apiRateLimit;
+}
 
 // CORS headers helper
 export function setCorsHeaders(res) {

@@ -7,12 +7,10 @@ import {
   validateMessage,
   validateSender,
   checkRateLimit,
-  chatRateLimit,
+  getChatRateLimit,
   TTL_ROOM,
   MAX_MESSAGES
 } from "./_utils.js";
-
-const redis = createRedisClient();
 
 /**
  * Simple chat API for room participants
@@ -20,6 +18,7 @@ const redis = createRedisClient();
  * GET /chat?roomId=X&since=timestamp - Get messages since timestamp
  */
 async function handleChat(req, res) {
+  const redis = createRedisClient();
   setCorsHeaders(res);
 
   if (req.method === 'OPTIONS') {
@@ -54,7 +53,7 @@ async function handleChat(req, res) {
 
     // Rate limiting: 60 messages per minute per room+sender combo
     const rateLimitId = `${roomId}:${sender.trim().substring(0, 50)}`;
-    const rateLimitError = await checkRateLimit(chatRateLimit, rateLimitId, res);
+    const rateLimitError = await checkRateLimit(getChatRateLimit(), rateLimitId, res);
     if (rateLimitError) return rateLimitError;
 
     // Create message object

@@ -1,19 +1,19 @@
 # Costs & Data Limits Breakdown
 
 ## TL;DR - Personal Use Estimates
-**For a few hours per month of personal use: $0/month (100% free)**
+For a few hours per month of personal use: $0/month (100% free)
 
 ---
 
 ## Free Tier Limits
 
 ### Vercel (Hosting)
-**Free Hobby Plan:**
-- ✅ 100 GB bandwidth/month
-- ✅ 100 GB-hours compute/month
-- ✅ Unlimited API calls
-- ✅ Automatic HTTPS
-- ✅ Analytics included
+Free Hobby Plan:
+- 100 GB bandwidth/month
+- 100 GB-hours compute/month
+- Unlimited API calls
+- Automatic HTTPS
+- Analytics included
 
 **What this means:**
 - API calls use minimal bandwidth (~1KB each)
@@ -26,10 +26,10 @@
 - **Total: < 0.02 GB/month out of 100 GB**
 
 ### Upstash Redis (Database)
-**Free Plan:**
-- ✅ 10,000 commands/day
-- ✅ 256 MB storage
-- ✅ 1 GB bandwidth/month
+Free Plan:
+- 10,000 commands/day
+- 256 MB storage
+- 1 GB bandwidth/month
 
 **What you use:**
 - Room creation: 2 commands
@@ -51,20 +51,20 @@
 
 ---
 
-## Important: Video Traffic Does NOT Go Through Servers!
+## Important: Video Traffic Does NOT Go Through Servers
 
-🎯 **Key Point:** WebRTC is peer-to-peer. Your video stream goes DIRECTLY from your browser to the viewer's browser.
+Key Point: WebRTC is peer-to-peer. Your video stream goes DIRECTLY from your browser to the viewer's browser.
 
-**What hits Vercel/Upstash:**
+What hits Vercel/Upstash:
 - Creating room: tiny JSON (~0.1 KB)
 - WebRTC signaling (SDP offer/answer): ~2-5 KB each
 - ICE candidates: ~100 bytes each, maybe 20 of them
 - Chat messages: ~500 bytes each
 
-**What does NOT hit servers:**
-- ❌ Video stream (goes P2P via WebRTC)
-- ❌ Screen content (goes P2P)
-- ❌ Recording (stored locally on your device)
+What does NOT hit servers:
+- Video stream (goes P2P via WebRTC)
+- Screen content (goes P2P)
+- Recording (stored locally on your device)
 
 ---
 
@@ -118,11 +118,11 @@
 ## Security & Liability
 
 ### Current Protection (with AUTH_SECRET)
-✅ Rate limiting (10 rooms/hour per IP)
-✅ Optional auth secret (prevents random room creation)
-✅ 30-minute room expiration (ephemeral data)
-✅ Input validation (prevents abuse)
-✅ No persistent storage (nothing to leak)
+- Rate limiting (10 rooms/hour per IP)
+- Optional auth secret (prevents random room creation)
+- 30-minute room expiration (ephemeral data)
+- Input validation (prevents abuse)
+- No persistent storage (nothing to leak)
 
 ### Recommended Security Setup
 
@@ -192,15 +192,15 @@ Both platforms can email you at 80% of quota usage.
 
 ## Bottom Line
 
-**For your use case ("a few hours a month, personal use"):**
-- ✅ 100% free
-- ✅ No risk of surprise charges
-- ✅ Can't exceed limits with reasonable personal use
-- ✅ Protected with auth secret + rate limiting
-- ✅ Easy to monitor
-- ✅ Can shut down anytime
+For your use case ("a few hours a month, personal use"):
+- 100% free
+- No risk of surprise charges
+- Can't exceed limits with reasonable personal use
+- Protected with auth secret + rate limiting
+- Easy to monitor
+- Can shut down anytime
 
-**You'd need to try REALLY HARD to hit free tier limits with personal use.**
+You'd need to try REALLY HARD to hit free tier limits with personal use.
 
 ---
 

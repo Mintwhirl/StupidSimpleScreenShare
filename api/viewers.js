@@ -9,14 +9,13 @@ import {
   TTL_HEARTBEAT
 } from "./_utils.js";
 
-const redis = createRedisClient();
-
 /**
  * API endpoint to track active viewers in a room (viewer presence)
  * POST /viewers - Register viewer heartbeat
  * GET /viewers?roomId=X - Get active viewer count
  */
 async function handleViewers(req, res) {
+  const redis = createRedisClient();
   setCorsHeaders(res);
 
   if (req.method === 'OPTIONS') {

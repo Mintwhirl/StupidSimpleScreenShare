@@ -1,16 +1,15 @@
 import { Redis } from "@upstash/redis";
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN
-});
-
 /**
  * API endpoint for network and system diagnostics
  * GET /diagnostics - Get server health status
  * GET /diagnostics?roomId=X - Get room-specific diagnostics
  */
 export default async function handler(req, res) {
+  const redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL?.trim(),
+    token: process.env.UPSTASH_REDIS_REST_TOKEN?.trim()
+  });
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');

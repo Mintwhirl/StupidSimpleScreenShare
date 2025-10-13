@@ -8,9 +8,8 @@ import {
   TTL_ROOM
 } from "./_utils.js";
 
-const redis = createRedisClient();
-
 async function handleAnswer(req, res) {
+  const redis = createRedisClient();
   setCorsHeaders(res);
 
   if (req.method === 'OPTIONS') {

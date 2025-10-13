@@ -7,13 +7,12 @@ import {
   sendError,
   checkRateLimit,
   getClientIdentifier,
-  roomCreationRateLimit,
+  getRoomCreationRateLimit,
   TTL_ROOM
 } from "./_utils.js";
 
-const redis = createRedisClient();
-
 async function handleCreateRoom(req, res) {
+  const redis = createRedisClient();
   setCorsHeaders(res);
 
   if (req.method === 'OPTIONS') {
@@ -35,7 +34,7 @@ async function handleCreateRoom(req, res) {
 
   // Rate limiting: 10 rooms per hour per IP
   const clientId = getClientIdentifier(req);
-  const rateLimitError = await checkRateLimit(roomCreationRateLimit, clientId, res);
+  const rateLimitError = await checkRateLimit(getRoomCreationRateLimit(), clientId, res);
   if (rateLimitError) return rateLimitError;
 
   try {
