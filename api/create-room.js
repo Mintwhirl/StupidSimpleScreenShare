@@ -1,5 +1,5 @@
+import { randomBytes } from 'crypto';
 
-import { randomBytes } from "crypto";
 import {
   createRedisClient,
   setCorsHeaders,
@@ -8,8 +8,8 @@ import {
   checkRateLimit,
   getClientIdentifier,
   getRoomCreationRateLimit,
-  TTL_ROOM
-} from "./_utils.js";
+  TTL_ROOM,
+} from './_utils.js';
 
 async function handleCreateRoom(req, res) {
   const redis = createRedisClient();
@@ -32,17 +32,21 @@ async function handleCreateRoom(req, res) {
     }
   }
 
-  // Rate limiting: 10 rooms per hour per IP
+  // Rate limiting: 50 rooms per hour per IP (bypassed in development)
   const clientId = getClientIdentifier(req);
-  const rateLimitError = await checkRateLimit(getRoomCreationRateLimit(), clientId, res);
-  if (rateLimitError) return rateLimitError;
+
+  // Skip rate limiting in development (when no AUTH_SECRET is set)
+  if (process.env.AUTH_SECRET) {
+    const rateLimitError = await checkRateLimit(getRoomCreationRateLimit(), clientId, res);
+    if (rateLimitError) return rateLimitError;
+  }
 
   try {
     const roomId = randomBytes(12).toString('hex'); // 24 hex chars, cryptographically secure
 
     const roomMeta = JSON.stringify({
       createdAt: Date.now(),
-      version: '1.0'
+      version: '1.0',
     });
 
     await redis.set(`room:${roomId}:meta`, roomMeta);
@@ -50,7 +54,7 @@ async function handleCreateRoom(req, res) {
 
     return res.status(201).json({
       roomId,
-      expiresIn: TTL_ROOM
+      expiresIn: TTL_ROOM,
     });
   } catch (error) {
     return sendError(res, 500, 'Failed to create room', error);

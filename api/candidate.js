@@ -6,8 +6,8 @@ import {
   validateRoomId,
   validateRole,
   validateICECandidate,
-  TTL_ROOM
-} from "./_utils.js";
+  TTL_ROOM,
+} from './_utils.js';
 
 async function handleCandidate(req, res) {
   const redis = createRedisClient();
@@ -66,14 +66,15 @@ async function handleCandidate(req, res) {
     }
 
     const key = `room:${roomId}:${role}:candidates`;
-    const arr = await redis.lrange(key, 0, -1) || [];
+    const arr = (await redis.lrange(key, 0, -1)) || [];
 
     if (arr.length > 0) {
       await redis.del(key); // Remove after fetching to prevent duplicates
     }
 
     try {
-      const parsed = arr.map(a => JSON.parse(a));
+      // Upstash Redis auto-parses JSON, so check if it's already an object
+      const parsed = arr.map((a) => (typeof a === 'string' ? JSON.parse(a) : a));
       return res.json({ candidates: parsed });
     } catch (error) {
       return sendError(res, 500, 'Failed to parse candidate data', error);

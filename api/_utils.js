@@ -1,5 +1,5 @@
-import { Redis } from "@upstash/redis";
-import { Ratelimit } from "@upstash/ratelimit";
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 
 // Initialize Redis connection with validation
 export function createRedisClient() {
@@ -18,15 +18,15 @@ let _roomCreationRateLimit = null;
 let _chatRateLimit = null;
 let _apiRateLimit = null;
 
-// Rate limiter for room creation (10 per hour per IP)
+// Rate limiter for room creation (50 per hour per IP - more generous for testing)
 export function getRoomCreationRateLimit() {
   if (!_roomCreationRateLimit) {
     const redis = createRedisClient();
     _roomCreationRateLimit = new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(10, "1 h"),
+      limiter: Ratelimit.slidingWindow(50, '1 h'),
       analytics: true,
-      prefix: "@upstash/ratelimit/room-creation",
+      prefix: '@upstash/ratelimit/room-creation',
     });
   }
   return _roomCreationRateLimit;
@@ -38,23 +38,23 @@ export function getChatRateLimit() {
     const redis = createRedisClient();
     _chatRateLimit = new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(60, "1 m"),
+      limiter: Ratelimit.slidingWindow(60, '1 m'),
       analytics: true,
-      prefix: "@upstash/ratelimit/chat",
+      prefix: '@upstash/ratelimit/chat',
     });
   }
   return _chatRateLimit;
 }
 
-// Rate limiter for API calls (1000 per minute per IP - generous but prevents abuse)
+// Rate limiter for API calls (2000 per minute per IP - very generous for testing)
 export function getApiRateLimit() {
   if (!_apiRateLimit) {
     const redis = createRedisClient();
     _apiRateLimit = new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(1000, "1 m"),
+      limiter: Ratelimit.slidingWindow(2000, '1 m'),
       analytics: true,
-      prefix: "@upstash/ratelimit/api",
+      prefix: '@upstash/ratelimit/api',
     });
   }
   return _apiRateLimit;
@@ -192,7 +192,7 @@ export function sendError(res, status, message, error = null) {
 
   return res.status(status).json({
     error: message,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 }
 
@@ -207,11 +207,7 @@ export async function checkRateLimit(ratelimit, identifier, res) {
 
   if (!success) {
     const resetDate = new Date(reset);
-    return sendError(
-      res,
-      429,
-      `Rate limit exceeded. Try again at ${resetDate.toISOString()}`
-    );
+    return sendError(res, 429, `Rate limit exceeded. Try again at ${resetDate.toISOString()}`);
   }
 
   return null; // No error

@@ -1,4 +1,4 @@
-import { createRedisClient } from "../_utils.js";
+import { createRedisClient } from '../_utils.js';
 
 /**
  * Vercel Cron Job - Health Check
@@ -29,13 +29,13 @@ export default async function handler(req, res) {
     return res.status(200).json({
       status: 'healthy',
       timestamp,
-      message: 'Redis connection active'
+      message: 'Redis connection active',
     });
   } catch (error) {
     console.error('Health check failed:', error);
     return res.status(500).json({
       status: 'unhealthy',
-      error: error.message
+      error: error.message,
     });
   }
 }

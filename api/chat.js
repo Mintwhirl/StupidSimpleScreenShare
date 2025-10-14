@@ -9,8 +9,8 @@ import {
   checkRateLimit,
   getChatRateLimit,
   TTL_ROOM,
-  MAX_MESSAGES
-} from "./_utils.js";
+  MAX_MESSAGES,
+} from './_utils.js';
 
 /**
  * Simple chat API for room participants
@@ -61,7 +61,7 @@ async function handleChat(req, res) {
       id: `${Date.now()}_${Math.random().toString(36).substring(7)}`,
       sender: sender.trim().substring(0, 50),
       message: message.trim().substring(0, 500),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     // Store in list (keep last MAX_MESSAGES)
@@ -82,19 +82,20 @@ async function handleChat(req, res) {
     }
 
     // Get all messages
-    const messages = await redis.lrange(`room:${roomId}:chat`, 0, -1) || [];
+    const messages = (await redis.lrange(`room:${roomId}:chat`, 0, -1)) || [];
 
     // Parse and filter messages
     const parsed = messages
-      .map(msg => {
+      .map((msg) => {
         try {
-          return JSON.parse(msg);
+          // Upstash Redis auto-parses JSON, so check if it's already an object
+          return typeof msg === 'string' ? JSON.parse(msg) : msg;
         } catch (e) {
           console.error('Failed to parse chat message:', e);
           return null;
         }
       })
-      .filter(msg => msg && msg.timestamp > sinceTimestamp)
+      .filter((msg) => msg && msg.timestamp > sinceTimestamp)
       .reverse(); // Oldest first
 
     return res.json({ messages: parsed });

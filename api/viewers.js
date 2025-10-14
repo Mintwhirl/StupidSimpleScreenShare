@@ -6,8 +6,8 @@ import {
   validateRoomId,
   validateViewerId,
   TTL_ROOM,
-  TTL_HEARTBEAT
-} from "./_utils.js";
+  TTL_HEARTBEAT,
+} from './_utils.js';
 
 /**
  * API endpoint to track active viewers in a room (viewer presence)
@@ -57,7 +57,7 @@ async function handleViewers(req, res) {
 
   if (req.method === 'GET') {
     // Get all viewers and filter by those with active heartbeats
-    const viewers = await redis.smembers(`room:${roomId}:viewers`) || [];
+    const viewers = (await redis.smembers(`room:${roomId}:viewers`)) || [];
 
     // Check which viewers are still active
     const activeViewers = [];

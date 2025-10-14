@@ -1,4 +1,4 @@
-import { Redis } from "@upstash/redis";
+import { Redis } from '@upstash/redis';
 
 /**
  * API endpoint for network and system diagnostics
@@ -8,7 +8,7 @@ import { Redis } from "@upstash/redis";
 export default async function handler(req, res) {
   const redis = new Redis({
     url: process.env.UPSTASH_REDIS_REST_URL?.trim(),
-    token: process.env.UPSTASH_REDIS_REST_TOKEN?.trim()
+    token: process.env.UPSTASH_REDIS_REST_TOKEN?.trim(),
   });
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -28,20 +28,20 @@ export default async function handler(req, res) {
 
   try {
     // Test Redis connection
-    const redisHealthy = await testRedisConnection();
+    const redisHealthy = await testRedisConnection(redis);
 
     const diagnostics = {
       timestamp: Date.now(),
       server: {
         status: 'online',
         region: process.env.VERCEL_REGION || 'unknown',
-        redis: redisHealthy ? 'connected' : 'disconnected'
-      }
+        redis: redisHealthy ? 'connected' : 'disconnected',
+      },
     };
 
     // If roomId provided, check room-specific diagnostics
     if (roomId) {
-      const roomDiag = await getRoomDiagnostics(roomId);
+      const roomDiag = await getRoomDiagnostics(roomId, redis);
       diagnostics.room = roomDiag;
     }
 
@@ -50,28 +50,30 @@ export default async function handler(req, res) {
     console.error('Diagnostics error:', error);
     return res.status(500).json({
       error: 'Diagnostics failed',
-      message: error.message
+      message: error.message,
     });
   }
 }
 
-async function testRedisConnection() {
+async function testRedisConnection(redis) {
   try {
-    await redis.ping();
+    const result = await redis.ping();
+    console.log('Redis ping result:', result);
     return true;
   } catch (e) {
+    console.error('Redis connection test failed:', e);
     return false;
   }
 }
 
-async function getRoomDiagnostics(roomId) {
+async function getRoomDiagnostics(roomId, redis) {
   try {
     const meta = await redis.get(`room:${roomId}:meta`);
 
     if (!meta) {
       return {
         exists: false,
-        status: 'not_found'
+        status: 'not_found',
       };
     }
 
@@ -79,23 +81,34 @@ async function getRoomDiagnostics(roomId) {
       redis.get(`room:${roomId}:offer`),
       redis.get(`room:${roomId}:answer`),
       redis.smembers(`room:${roomId}:viewers`),
-      redis.lrange(`room:${roomId}:chat`, 0, -1)
+      redis.lrange(`room:${roomId}:chat`, 0, -1),
     ]);
+
+    // Check which viewers are still active (have recent heartbeats)
+    const activeViewers = [];
+    if (viewers && viewers.length > 0) {
+      for (const viewerId of viewers) {
+        const heartbeat = await redis.get(`room:${roomId}:viewer:${viewerId}:heartbeat`);
+        if (heartbeat) {
+          activeViewers.push(viewerId);
+        }
+      }
+    }
 
     return {
       exists: true,
       status: 'active',
       hasOffer: !!offer,
       hasAnswer: !!answer,
-      viewerCount: (viewers || []).length,
+      viewerCount: activeViewers.length,
       chatMessageCount: (chatMsgs || []).length,
-      created: JSON.parse(meta).createdAt
+      created: typeof meta === 'string' ? JSON.parse(meta).createdAt : meta.createdAt,
     };
   } catch (e) {
     return {
       exists: false,
       status: 'error',
-      error: e.message
+      error: e.message,
     };
   }
 }

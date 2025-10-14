@@ -5,8 +5,8 @@ import {
   sendError,
   validateRoomId,
   validateRTCDescriptor,
-  TTL_ROOM
-} from "./_utils.js";
+  TTL_ROOM,
+} from './_utils.js';
 
 async function handleAnswer(req, res) {
   const redis = createRedisClient();
@@ -63,7 +63,8 @@ async function handleAnswer(req, res) {
     }
 
     try {
-      const desc = JSON.parse(raw);
+      // Upstash Redis auto-parses JSON, so check if it's already an object
+      const desc = typeof raw === 'string' ? JSON.parse(raw) : raw;
       return res.json({ desc });
     } catch (error) {
       return sendError(res, 500, 'Failed to parse answer data', error);
