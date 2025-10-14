@@ -39,13 +39,7 @@ jobs:
 
       - name: Run unit tests
         run: npm run test
-        timeout-minutes: 10
-        env:
-          AUTH_SECRET: test-secret-key-for-ci-123
-
-      - name: Run tests with coverage
-        run: npm run test:coverage
-        timeout-minutes: 10
+        timeout-minutes: 5
         env:
           AUTH_SECRET: test-secret-key-for-ci-123
 
