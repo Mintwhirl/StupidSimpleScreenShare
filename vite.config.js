@@ -37,7 +37,7 @@ export default defineConfig({
 
   // Environment variables
   define: {
-    'process.env': {},
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
   },
 
   // Optimize dependencies

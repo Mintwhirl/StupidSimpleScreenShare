@@ -12,7 +12,14 @@ export function useApi() {
       setError(null);
 
       // Check if we're in development mode
-      const isDevelopment = import.meta.env.DEV;
+      const isDevelopment =
+        import.meta.env.DEV || import.meta.env.MODE === 'development' || window.location.hostname === 'localhost';
+      console.log('Environment check:', {
+        DEV: import.meta.env.DEV,
+        MODE: import.meta.env.MODE,
+        hostname: window.location.hostname,
+        isDevelopment,
+      });
 
       if (isDevelopment) {
         // Use mock configuration for development
