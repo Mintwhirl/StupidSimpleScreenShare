@@ -74,6 +74,18 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     pc.onconnectionstatechange = () => {
       console.log('Connection state changed:', pc.connectionState);
       setConnectionState(pc.connectionState);
+
+      // Clear polling intervals when connected or failed
+      if (pc.connectionState === 'connected' || pc.connectionState === 'failed') {
+        if (answerIntervalRef.current) {
+          clearInterval(answerIntervalRef.current);
+          answerIntervalRef.current = null;
+        }
+        if (candidateIntervalRef.current) {
+          clearInterval(candidateIntervalRef.current);
+          candidateIntervalRef.current = null;
+        }
+      }
     };
 
     // Handle ICE connection state changes
@@ -170,9 +182,21 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
 
     let pollCount = 0;
     let pollInterval = 1000; // Start with 1 second
+    const maxPolls = 60; // 60 seconds timeout
 
     const pollForOffer = async () => {
       try {
+        pollCount++;
+
+        // Timeout after maxPolls attempts
+        if (pollCount > maxPolls) {
+          clearInterval(answerIntervalRef.current);
+          answerIntervalRef.current = null;
+          setError('Connection timeout: No offer received from host. Make sure the host has started sharing.');
+          setConnectionState('failed');
+          return;
+        }
+
         const response = await fetch(`/api/offer?roomId=${roomId}`);
 
         if (response.ok) {
@@ -195,7 +219,6 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           }
         } else if (response.status === 404) {
           // Expected 404 - no offer yet, but reduce polling frequency after initial attempts
-          pollCount++;
           if (pollCount > 10) {
             // After 10 seconds, reduce to polling every 5 seconds
             clearInterval(answerIntervalRef.current);
@@ -205,9 +228,17 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         } else {
           // Unexpected error
           console.error('Unexpected error polling for offers:', response.status);
+          clearInterval(answerIntervalRef.current);
+          answerIntervalRef.current = null;
+          setError(`Server error: ${response.status}`);
+          setConnectionState('failed');
         }
       } catch (err) {
         console.error('Error polling for offers:', err);
+        clearInterval(answerIntervalRef.current);
+        answerIntervalRef.current = null;
+        setError(`Network error: ${err.message}`);
+        setConnectionState('failed');
       }
     };
 
@@ -277,10 +308,17 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
             const pc = peerConnectionRef.current;
             if (pc) {
               for (const candidate of data.candidates) {
-                await pc.addIceCandidate(candidate);
+                try {
+                  await pc.addIceCandidate(candidate);
+                } catch (candidateErr) {
+                  console.warn('Failed to add ICE candidate:', candidateErr);
+                }
               }
             }
           }
+        } else if (response.status !== 404) {
+          // 404 is expected when no candidates, but other errors are concerning
+          console.error('Error polling for ICE candidates:', response.status);
         }
       } catch (err) {
         console.error('Error polling for ICE candidates:', err);
