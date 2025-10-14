@@ -88,6 +88,17 @@ export default defineConfig({
       },
     },
     projects: [
+      // Unit and Integration Tests (Node.js environment)
+      {
+        test: {
+          name: 'unit-integration',
+          include: ['tests/**/*.test.js', 'src/**/*.test.js'],
+          exclude: ['src/**/*.stories.*', '**/*.mdx'],
+          environment: 'jsdom',
+          setupFiles: ['./src/test-setup.js'],
+        },
+      },
+      // Storybook Tests (Browser environment)
       {
         extends: true,
         plugins: [

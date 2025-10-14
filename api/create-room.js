@@ -34,8 +34,7 @@ async function handleCreateRoom(req, res) {
         'Client secret:',
         `${providedSecret?.substring(0, 10) || 'undefined'}...`
       );
-      // For now, allow requests without auth to fix the button
-      // return sendError(res, 401, 'Unauthorized - Invalid or missing auth secret');
+      return sendError(res, 401, 'Unauthorized - Invalid or missing auth secret');
     }
   }
 

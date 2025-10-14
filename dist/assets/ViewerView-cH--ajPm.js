@@ -1,5 +1,5 @@
-import { r as t, j as e } from './main-C8fQYyf5.js';
-import { u as V, V as I } from './useWebRTC-V30adTSf.js';
+import { r as t, j as e } from './main-D7pVtrmc.js';
+import { u as V, V as I } from './useWebRTC-DSn2GDwW.js';
 function $({ roomId: n, viewerId: m, setViewerId: g, config: w, onGoHome: v }) {
   const [b, C] = t.useState('disconnected'),
     [r, k] = t.useState(!1),
@@ -310,4 +310,4 @@ function $({ roomId: n, viewerId: m, setViewerId: g, config: w, onGoHome: v }) {
   });
 }
 export { $ as default };
-//# sourceMappingURL=ViewerView-DBHpJwjN.js.map
+//# sourceMappingURL=ViewerView-cH--ajPm.js.map

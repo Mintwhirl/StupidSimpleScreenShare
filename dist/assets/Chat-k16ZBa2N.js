@@ -1,4 +1,4 @@
-import { r as t, u as U, j as e } from './main-C8fQYyf5.js';
+import { r as t, u as U, j as e } from './main-D7pVtrmc.js';
 function z(l, R, u) {
   const [r, g] = t.useState([]),
     [c, h] = t.useState(!1),
@@ -358,4 +358,4 @@ function G({ roomId: l, role: R, viewerId: u }) {
   });
 }
 export { G as default };
-//# sourceMappingURL=Chat-B0NNttqE.js.map
+//# sourceMappingURL=Chat-k16ZBa2N.js.map

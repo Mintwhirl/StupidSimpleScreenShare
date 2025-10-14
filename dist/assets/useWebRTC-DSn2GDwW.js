@@ -1,4 +1,4 @@
-import { r, j as M } from './main-C8fQYyf5.js';
+import { r, j as M } from './main-D7pVtrmc.js';
 const W = r.forwardRef(({ className: a, ...l }, i) => {
   const T = r.useRef(null),
     v = i || T;
@@ -323,4 +323,4 @@ function z(a, l, i, T = null) {
   );
 }
 export { W as V, z as u };
-//# sourceMappingURL=useWebRTC-V30adTSf.js.map
+//# sourceMappingURL=useWebRTC-DSn2GDwW.js.map
