@@ -1,5 +1,4 @@
 import { useRoomManagement } from '../hooks/useRoomManagement';
-import { useAnalytics } from '../hooks/useAnalytics';
 
 /**
  * HomeView Component
@@ -9,12 +8,10 @@ import { useAnalytics } from '../hooks/useAnalytics';
  */
 function HomeView({ roomId, setRoomId, onNavigateToHost, onNavigateToViewer, showDiagnostics, setShowDiagnostics }) {
   const { handleCreateRoom, handleJoinRoom } = useRoomManagement();
-  const { trackUserInteraction } = useAnalytics();
 
   // Handle room creation
   const handleCreateRoomClick = async () => {
     try {
-      trackUserInteraction('start_sharing_button', 'click');
       const data = await handleCreateRoom();
       onNavigateToHost(data.roomId);
     } catch (error) {
