@@ -110,7 +110,21 @@ export function useApi() {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to create room: ${response.status}`);
+        let errorText = '';
+        try {
+          errorText = await response.text();
+        } catch (e) {
+          errorText = 'Unable to read error response';
+        }
+        console.error('Room creation failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText,
+          headers: response.headers ? Object.fromEntries(response.headers.entries()) : 'No headers',
+        });
+        throw new Error(
+          `Failed to create room: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ''}`
+        );
       }
 
       const data = await response.json();

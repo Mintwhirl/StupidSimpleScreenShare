@@ -15,7 +15,8 @@ function HomeView({ roomId, setRoomId, onNavigateToHost, onNavigateToViewer, sho
       const data = await handleCreateRoom();
       onNavigateToHost(data.roomId);
     } catch (error) {
-      alert('Failed to create room. Please try again.');
+      console.error('Room creation error:', error);
+      alert(`Failed to create room: ${error.message}. Please try again.`);
     }
   };
 

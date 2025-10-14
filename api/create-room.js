@@ -23,6 +23,16 @@ async function handleCreateRoom(req, res) {
     return sendError(res, 405, 'Method not allowed');
   }
 
+  // Log request details for debugging (only in development)
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Create room request:', {
+      method: req.method,
+      headers: req.headers,
+      body: req.body,
+      query: req.query,
+    });
+  }
+
   // Optional authentication (set AUTH_SECRET in environment variables)
   const authSecret = process.env.AUTH_SECRET;
   if (authSecret) {

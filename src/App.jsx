@@ -100,7 +100,7 @@ function App() {
       {/* Copyright Notice */}
       <footer className='fixed bottom-0 left-0 right-0 z-0 pointer-events-none'>
         <div className='text-center py-2'>
-          <p className='text-purple-400 text-xs opacity-60 font-mono'>© 2025 Mintwhirl Dev - Kevin Stewart</p>
+          <p className='text-purple-400 text-sm opacity-60 font-mono'>© 2025 Mintwhirl Dev - Kevin Stewart</p>
         </div>
       </footer>
     </div>

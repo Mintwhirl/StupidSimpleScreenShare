@@ -6,6 +6,13 @@ export function createRedisClient() {
   const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
 
+  // In test environment, use fallback values if not provided
+  if (process.env.NODE_ENV === 'test') {
+    const testUrl = url || 'http://localhost:6379';
+    const testToken = token || 'test-token';
+    return new Redis({ url: testUrl, token: testToken });
+  }
+
   if (!url || !token) {
     throw new Error('Missing required environment variables: UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN');
   }
