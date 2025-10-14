@@ -96,141 +96,327 @@ function App() {
   }
 
   return (
-    <div className='min-h-screen bg-gray-100'>
-      {/* Header */}
-      <header className='bg-white shadow-sm border-b'>
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='flex justify-between items-center h-16'>
-            <div className='flex items-center'>
-              <h1 className='text-xl font-semibold text-gray-900'>Stupid Simple Screen Share</h1>
-              {currentView !== 'home' && <span className='ml-4 text-sm text-gray-500'>Room: {roomId}</span>}
+    <div className='min-h-screen relative overflow-hidden'>
+      {/* Synthwave Background */}
+      <div className='fixed inset-0 z-0'>
+        {/* Deep purple sky with stars */}
+        <div className='absolute inset-0 bg-gradient-to-b from-purple-900 via-purple-800 to-indigo-900'>
+          {/* Animated stars */}
+          <div className='absolute inset-0'>
+            {[...Array(50)].map((_, i) => (
+              <div
+                key={i}
+                className='absolute w-1 h-1 bg-white rounded-full animate-pulse'
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 3}s`,
+                  animationDuration: `${2 + Math.random() * 2}s`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Glowing sun */}
+        <div className='absolute top-10 right-10 w-32 h-32 bg-gradient-radial from-yellow-400 via-orange-500 to-red-500 rounded-full blur-xl opacity-80 animate-pulse' />
+
+        {/* Geometric mountains */}
+        <div className='absolute bottom-0 left-0 right-0 h-64'>
+          {/* Mountain 1 */}
+          <div className='absolute bottom-0 left-0 w-64 h-48 bg-gradient-to-t from-purple-700 to-purple-500 transform -skew-x-12 opacity-80' />
+          {/* Mountain 2 */}
+          <div className='absolute bottom-0 left-32 w-48 h-36 bg-gradient-to-t from-blue-700 to-blue-500 transform -skew-x-6 opacity-70' />
+          {/* Mountain 3 */}
+          <div className='absolute bottom-0 right-0 w-56 h-52 bg-gradient-to-t from-purple-600 to-purple-400 transform skew-x-12 opacity-75' />
+          {/* Mountain highlights */}
+          <div className='absolute bottom-0 left-0 w-64 h-48 bg-gradient-to-t from-pink-400 to-transparent transform -skew-x-12 opacity-30' />
+          <div className='absolute bottom-0 right-0 w-56 h-52 bg-gradient-to-t from-pink-400 to-transparent transform skew-x-12 opacity-30' />
+        </div>
+
+        {/* Animated electric grid plane */}
+        <div className='absolute bottom-0 left-0 right-0 h-32 opacity-40'>
+          <div className='relative w-full h-full'>
+            {[...Array(20)].map((_, i) => (
+              <div
+                key={i}
+                className='absolute w-full h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent animate-pulse'
+                style={{
+                  top: `${i * 8}px`,
+                  animationDelay: `${i * 0.1}s`,
+                  animationDuration: '3s',
+                }}
+              />
+            ))}
+            {[...Array(15)].map((_, i) => (
+              <div
+                key={i}
+                className='absolute h-full w-px bg-gradient-to-b from-transparent via-purple-400 to-transparent animate-pulse'
+                style={{
+                  left: `${i * 8}%`,
+                  animationDelay: `${i * 0.2}s`,
+                  animationDuration: '4s',
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Main App Content */}
+      <div className='relative z-10 min-h-screen flex items-center justify-center p-4'>
+        {currentView === 'home' ? (
+          <div className='w-full max-w-md mx-auto'>
+            {/* Application Title */}
+            <div className='text-center mb-8'>
+              <h1
+                className='text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 uppercase tracking-wider drop-shadow-lg'
+                style={{
+                  fontFamily: '"Righteous", cursive',
+                  textShadow:
+                    '0 0 20px rgba(59, 130, 246, 0.5), 0 0 40px rgba(147, 51, 234, 0.5), 0 0 60px rgba(236, 72, 153, 0.5)',
+                  fontWeight: '400',
+                  fontStyle: 'normal',
+                }}
+              >
+                STUPID-SIMPLE SCREEN SHARE
+              </h1>
             </div>
 
-            <div className='flex items-center space-x-4'>
-              {currentView !== 'home' && (
-                <>
+            {/* Main UI Panel */}
+            <div
+              className='bg-purple-900 bg-opacity-30 backdrop-blur-md border border-purple-400 border-opacity-40 rounded-2xl p-6 shadow-2xl'
+              style={{
+                boxShadow:
+                  '0 0 30px rgba(147, 51, 234, 0.3), 0 0 60px rgba(59, 130, 246, 0.2), inset 0 0 20px rgba(255, 255, 255, 0.1)',
+              }}
+            >
+              {/* Interactive Controls */}
+              <div className='space-y-4 mb-6'>
+                {/* Top Row - Sharing Controls */}
+                <div className='grid grid-cols-2 gap-3'>
                   <button
-                    onClick={() => setShowChat(!showChat)}
-                    className={`px-3 py-1 text-sm rounded ${
-                      showChat ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
+                    onClick={handleCreateRoom}
+                    className='bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 transform hover:scale-105 shadow-lg'
+                    style={{
+                      boxShadow: '0 0 20px rgba(236, 72, 153, 0.4), 0 0 40px rgba(147, 51, 234, 0.3)',
+                    }}
                   >
-                    Chat
+                    Start sharing my screen
+                  </button>
+                  <button className='bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30'>
+                    Stop sharing
+                  </button>
+                </div>
+
+                {/* Middle Row - Recording and Diagnostics */}
+                <div className='grid grid-cols-2 gap-3'>
+                  <button className='bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30'>
+                    Start Recording
                   </button>
                   <button
                     onClick={() => setShowDiagnostics(!showDiagnostics)}
-                    className={`px-3 py-1 text-sm rounded ${
-                      showDiagnostics ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
+                    className='bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30 flex items-center justify-center space-x-2'
                   >
-                    Diagnostics
+                    <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'
+                      />
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
+                      />
+                    </svg>
+                    <span>Diagnostics</span>
                   </button>
-                  <button
-                    onClick={handleGoHome}
-                    className='px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300'
-                  >
-                    Home
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
+                </div>
 
-      {/* Main Content */}
-      <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
-        {currentView === 'home' && (
-          <div className='text-center'>
-            <h2 className='text-3xl font-bold text-gray-900 mb-8'>Share Your Screen Instantly</h2>
-
-            <div className='grid md:grid-cols-2 gap-8 max-w-4xl mx-auto'>
-              {/* Host Section */}
-              <div className='bg-white rounded-lg shadow-md p-6'>
-                <h3 className='text-xl font-semibold text-gray-900 mb-4'>🖥️ Share Your Screen</h3>
-                <p className='text-gray-600 mb-6'>
-                  Create a room and share your screen with others. Perfect for presentations, demos, or remote
-                  collaboration.
-                </p>
-                <button
-                  onClick={handleCreateRoom}
-                  className='w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors'
-                >
-                  Create Room
-                </button>
-              </div>
-
-              {/* Viewer Section */}
-              <div className='bg-white rounded-lg shadow-md p-6'>
-                <h3 className='text-xl font-semibold text-gray-900 mb-4'>👀 Join a Room</h3>
-                <p className='text-gray-600 mb-6'>
-                  Enter a room ID to view someone's screen. No downloads or installations required.
-                </p>
-                <div className='space-y-4'>
-                  <input
-                    type='text'
-                    placeholder='Enter Room ID'
-                    value={roomId}
-                    onChange={(e) => setRoomId(e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
-                  />
+                {/* Bottom Row - Room Link and ID */}
+                <div className='grid grid-cols-2 gap-3'>
                   <button
                     onClick={handleJoinRoom}
-                    className='w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors'
+                    className='bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 transform hover:scale-105 shadow-lg'
+                    style={{
+                      boxShadow: '0 0 20px rgba(59, 130, 246, 0.4), 0 0 40px rgba(6, 182, 212, 0.3)',
+                    }}
                   >
-                    Join Room
+                    Open room link (viewer)
                   </button>
+                  <input
+                    type='text'
+                    placeholder='Paste room id here'
+                    value={roomId}
+                    onChange={(e) => setRoomId(e.target.value)}
+                    className='bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white placeholder-gray-300 font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50'
+                  />
+                </div>
+              </div>
+
+              {/* Status Indicator */}
+              <div className='text-center mb-6'>
+                <p className='text-white text-sm font-medium'>Status: idle</p>
+              </div>
+
+              {/* Preview Sections */}
+              <div className='space-y-6'>
+                {/* Local Preview */}
+                <div>
+                  <h3 className='text-white text-sm font-bold mb-3 uppercase tracking-wide'>Local preview</h3>
+                  <div className='grid grid-cols-2 gap-3'>
+                    {/* Video Player Placeholder 1 */}
+                    <div className='bg-purple-800 bg-opacity-40 border border-purple-400 border-opacity-30 rounded-xl p-3 flex flex-col items-center justify-center min-h-[120px]'>
+                      <div className='flex items-center space-x-2 mb-2'>
+                        <svg className='w-4 h-4 text-white' fill='currentColor' viewBox='0 0 24 24'>
+                          <path d='M8 5v14l11-7z' />
+                        </svg>
+                        <span className='text-white text-xs'>0:00</span>
+                      </div>
+                      <div className='flex items-center space-x-2 mb-2'>
+                        <svg className='w-4 h-4 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z'
+                          />
+                        </svg>
+                        <svg className='w-4 h-4 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z'
+                          />
+                        </svg>
+                      </div>
+                      <div className='w-full h-0.5 bg-white bg-opacity-30 rounded'></div>
+                    </div>
+
+                    {/* Video Player Placeholder 2 */}
+                    <div className='bg-purple-800 bg-opacity-40 border border-purple-400 border-opacity-30 rounded-xl p-3 flex flex-col items-center justify-center min-h-[120px]'>
+                      <div className='flex items-center space-x-2 mb-2'>
+                        <svg className='w-4 h-4 text-white' fill='currentColor' viewBox='0 0 24 24'>
+                          <path d='M8 5v14l11-7z' />
+                        </svg>
+                        <span className='text-white text-xs'>0:00</span>
+                      </div>
+                      <div className='flex items-center space-x-2 mb-2'>
+                        <svg className='w-4 h-4 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z'
+                          />
+                        </svg>
+                        <svg className='w-4 h-4 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z'
+                          />
+                        </svg>
+                      </div>
+                      <div className='w-full h-0.5 bg-white bg-opacity-30 rounded'></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Remote Preview */}
+                <div>
+                  <h3 className='text-white text-sm font-bold mb-3 uppercase tracking-wide'>Remote preview</h3>
+                  <div className='bg-purple-800 bg-opacity-40 border border-purple-400 border-opacity-30 rounded-xl p-8 flex items-center justify-center min-h-[120px]'>
+                    <p className='text-white text-sm opacity-60'>No remote connection</p>
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
+        ) : (
+          // Existing host/viewer views with updated styling
+          <div className='w-full max-w-7xl mx-auto'>
+            {/* Header for non-home views */}
+            <header className='bg-black bg-opacity-30 backdrop-blur-sm border-b border-purple-500 border-opacity-30 mb-8'>
+              <div className='px-4 sm:px-6 lg:px-8'>
+                <div className='flex justify-between items-center h-16'>
+                  <div className='flex items-center'>
+                    <h1 className='text-xl font-semibold text-white'>Stupid Simple Screen Share</h1>
+                    {currentView !== 'home' && <span className='ml-4 text-sm text-purple-300'>Room: {roomId}</span>}
+                  </div>
 
-            {/* Features */}
-            <div className='mt-12 grid md:grid-cols-3 gap-6 max-w-4xl mx-auto'>
-              <div className='text-center'>
-                <div className='text-2xl mb-2'>⚡</div>
-                <h4 className='font-semibold text-gray-900 mb-2'>Instant Setup</h4>
-                <p className='text-gray-600 text-sm'>No downloads, no installations. Works in any modern browser.</p>
+                  <div className='flex items-center space-x-4'>
+                    {currentView !== 'home' && (
+                      <>
+                        <button
+                          onClick={() => setShowChat(!showChat)}
+                          className={`px-3 py-1 text-sm rounded transition-all ${
+                            showChat
+                              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500 shadow-opacity-50'
+                              : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
+                          }`}
+                        >
+                          Chat
+                        </button>
+                        <button
+                          onClick={() => setShowDiagnostics(!showDiagnostics)}
+                          className={`px-3 py-1 text-sm rounded transition-all ${
+                            showDiagnostics
+                              ? 'bg-green-600 text-white shadow-lg shadow-green-500 shadow-opacity-50'
+                              : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
+                          }`}
+                        >
+                          Diagnostics
+                        </button>
+                        <button
+                          onClick={handleGoHome}
+                          className='px-3 py-1 text-sm bg-white bg-opacity-20 text-white rounded hover:bg-opacity-30 transition-all'
+                        >
+                          Home
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className='text-center'>
-                <div className='text-2xl mb-2'>🔒</div>
-                <h4 className='font-semibold text-gray-900 mb-2'>Secure</h4>
-                <p className='text-gray-600 text-sm'>Peer-to-peer connections with optional authentication.</p>
+            </header>
+
+            {/* Main Content */}
+            <main className='px-4 sm:px-6 lg:px-8'>
+              {currentView === 'host' && <HostView roomId={roomId} config={config} onGoHome={handleGoHome} />}
+
+              {currentView === 'viewer' && (
+                <ViewerView
+                  roomId={roomId}
+                  viewerId={viewerId}
+                  setViewerId={setViewerId}
+                  config={config}
+                  onGoHome={handleGoHome}
+                />
+              )}
+            </main>
+
+            {/* Chat Panel */}
+            {showChat && currentView !== 'home' && (
+              <div className='fixed right-0 top-16 bottom-0 w-80 bg-black bg-opacity-80 backdrop-blur-sm shadow-lg border-l border-purple-500 border-opacity-30 z-50'>
+                <Chat roomId={roomId} role={currentView === 'host' ? 'host' : 'viewer'} viewerId={viewerId} />
               </div>
-              <div className='text-center'>
-                <div className='text-2xl mb-2'>💬</div>
-                <h4 className='font-semibold text-gray-900 mb-2'>Built-in Chat</h4>
-                <p className='text-gray-600 text-sm'>Communicate with participants while screen sharing.</p>
+            )}
+
+            {/* Diagnostics Panel */}
+            {showDiagnostics && currentView !== 'home' && (
+              <div className='fixed left-0 top-16 bottom-0 w-80 bg-black bg-opacity-80 backdrop-blur-sm shadow-lg border-r border-purple-500 border-opacity-30 z-50'>
+                <Diagnostics roomId={roomId} role={currentView === 'host' ? 'host' : 'viewer'} />
               </div>
-            </div>
+            )}
           </div>
         )}
-
-        {currentView === 'host' && <HostView roomId={roomId} config={config} onGoHome={handleGoHome} />}
-
-        {currentView === 'viewer' && (
-          <ViewerView
-            roomId={roomId}
-            viewerId={viewerId}
-            setViewerId={setViewerId}
-            config={config}
-            onGoHome={handleGoHome}
-          />
-        )}
-      </main>
-
-      {/* Chat Panel */}
-      {showChat && currentView !== 'home' && (
-        <div className='fixed right-0 top-16 bottom-0 w-80 bg-white shadow-lg border-l z-50'>
-          <Chat roomId={roomId} role={currentView === 'host' ? 'host' : 'viewer'} viewerId={viewerId} />
-        </div>
-      )}
-
-      {/* Diagnostics Panel */}
-      {showDiagnostics && currentView !== 'home' && (
-        <div className='fixed left-0 top-16 bottom-0 w-80 bg-white shadow-lg border-r z-50'>
-          <Diagnostics roomId={roomId} role={currentView === 'host' ? 'host' : 'viewer'} />
-        </div>
-      )}
+      </div>
     </div>
   );
 }
