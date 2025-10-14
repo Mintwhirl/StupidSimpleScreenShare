@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import VideoPlayer from './VideoPlayer';
 import { useWebRTC } from '../hooks/useWebRTC';
 import { useRoomContext } from '../contexts/RoomContext';
@@ -96,8 +96,8 @@ function HostView({ config, onGoHome }) {
       });
   };
 
-  // Get connection status color
-  const getStatusColor = () => {
+  // Memoized status helpers to prevent re-creation on every render
+  const statusColor = useMemo(() => {
     switch (connectionStatus) {
       case 'connected':
         return 'text-green-600';
@@ -108,10 +108,9 @@ function HostView({ config, onGoHome }) {
       default:
         return 'text-gray-600';
     }
-  };
+  }, [connectionStatus]);
 
-  // Get connection status text
-  const getStatusText = () => {
+  const statusText = useMemo(() => {
     switch (connectionStatus) {
       case 'connected':
         return 'Connected';
@@ -122,7 +121,7 @@ function HostView({ config, onGoHome }) {
       default:
         return 'Unknown';
     }
-  };
+  }, [connectionStatus]);
 
   return (
     <div className='space-y-6'>
@@ -134,7 +133,7 @@ function HostView({ config, onGoHome }) {
             <p className='text-gray-600'>Share your screen with others. Viewers can join using the room ID below.</p>
           </div>
           <div className='text-right'>
-            <div className={`text-sm font-medium ${getStatusColor()}`}>Status: {getStatusText()}</div>
+            <div className={`text-sm font-medium ${statusColor}`}>Status: {statusText}</div>
             <div className='text-sm text-gray-500'>Viewers: {viewerCount}</div>
           </div>
         </div>

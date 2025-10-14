@@ -85,10 +85,13 @@ async function handleChat(req, res) {
       timestamp: Date.now(),
     };
 
-    // Store in list (keep last MAX_MESSAGES)
+    // Store in sorted set with timestamp as score (more efficient for polling)
     const key = `room:${roomId}:chat`;
-    await redis.lpush(key, JSON.stringify(chatMessage));
-    await redis.ltrim(key, 0, MAX_MESSAGES - 1);
+    const score = chatMessage.timestamp;
+    await redis.zadd(key, score, JSON.stringify(chatMessage));
+
+    // Keep only the most recent messages and set expiration
+    await redis.zremrangebyrank(key, 0, -(MAX_MESSAGES + 1));
     await redis.expire(key, TTL_ROOM);
 
     return res.json({ ok: true, message: chatMessage });
@@ -102,10 +105,14 @@ async function handleChat(req, res) {
       return sendError(res, 400, 'Invalid since timestamp');
     }
 
-    // Get all messages
-    const messages = (await redis.lrange(`room:${roomId}:chat`, 0, -1)) || [];
+    // Get messages since timestamp using sorted set (much more efficient)
+    const key = `room:${roomId}:chat`;
+    const messages =
+      sinceTimestamp > 0
+        ? (await redis.zrangebyscore(key, sinceTimestamp + 1, '+inf')) || []
+        : (await redis.zrange(key, -MAX_MESSAGES, -1)) || [];
 
-    // Parse and filter messages
+    // Parse messages
     const parsed = messages
       .map((msg) => {
         try {

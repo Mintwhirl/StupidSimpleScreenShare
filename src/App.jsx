@@ -1,7 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { useApi } from './hooks/useApi';
-import useAppState from './hooks/useAppState';
-import { RoomProvider } from './contexts/RoomContext';
+import { RoomProvider, useRoomContext } from './contexts/RoomContext';
 import { checkBrowserCompatibility } from './utils/browserSupport';
 import SynthwaveBackground from './components/SynthwaveBackground';
 import HomeView from './components/HomeView';
@@ -14,7 +13,7 @@ import ErrorState from './components/ErrorState';
 const HostView = lazy(() => import('./components/HostView'));
 const ViewerView = lazy(() => import('./components/ViewerView'));
 
-function App() {
+function AppContent() {
   const { config, loading: configLoading, error: configError } = useApi();
   const [browserCompatible, setBrowserCompatible] = useState(true);
   const [browserIssues, setBrowserIssues] = useState([]);
@@ -25,18 +24,18 @@ function App() {
     setBrowserCompatible(compatibility.compatible);
     setBrowserIssues(compatibility.issues);
   }, []);
+
+  // Get all state from context (eliminates prop drilling)
   const {
     currentView,
-    roomId,
     showChat,
     showDiagnostics,
-    setRoomId,
     handleGoHome,
     handleNavigateToHost,
     handleNavigateToViewer,
     toggleChat,
     toggleDiagnostics,
-  } = useAppState();
+  } = useRoomContext();
 
   // Browser compatibility check
   if (!browserCompatible) {
@@ -68,56 +67,62 @@ function App() {
   }
 
   return (
-    <RoomProvider>
-      <div className='min-h-screen relative overflow-hidden'>
-        {/* Synthwave Background */}
-        <SynthwaveBackground />
+    <div className='min-h-screen relative overflow-hidden'>
+      {/* Synthwave Background */}
+      <SynthwaveBackground />
 
-        {/* Main App Content */}
-        <div className='relative z-10 min-h-screen flex items-center justify-center p-4'>
-          {currentView === 'home' ? (
-            <HomeView
-              roomId={roomId}
-              setRoomId={setRoomId}
-              onNavigateToHost={handleNavigateToHost}
-              onNavigateToViewer={handleNavigateToViewer}
+      {/* Main App Content */}
+      <div className='relative z-10 min-h-screen flex items-center justify-center p-4'>
+        {currentView === 'home' ? (
+          <HomeView
+            roomId={roomId}
+            setRoomId={setRoomId}
+            onNavigateToHost={handleNavigateToHost}
+            onNavigateToViewer={handleNavigateToViewer}
+            showDiagnostics={showDiagnostics}
+            setShowDiagnostics={toggleDiagnostics}
+          />
+        ) : (
+          <div className='w-full max-w-7xl mx-auto'>
+            {/* Header for non-home views */}
+            <AppHeader
+              currentView={currentView}
+              showChat={showChat}
               showDiagnostics={showDiagnostics}
-              setShowDiagnostics={toggleDiagnostics}
+              onToggleChat={toggleChat}
+              onToggleDiagnostics={toggleDiagnostics}
+              onGoHome={handleGoHome}
             />
-          ) : (
-            <div className='w-full max-w-7xl mx-auto'>
-              {/* Header for non-home views */}
-              <AppHeader
-                currentView={currentView}
-                showChat={showChat}
-                showDiagnostics={showDiagnostics}
-                onToggleChat={toggleChat}
-                onToggleDiagnostics={toggleDiagnostics}
-                onGoHome={handleGoHome}
-              />
 
-              {/* Main Content */}
-              <main className='px-4 sm:px-6 lg:px-8'>
-                <Suspense fallback={<div className='text-center text-white'>Loading...</div>}>
-                  {currentView === 'host' && <HostView config={config} onGoHome={handleGoHome} />}
+            {/* Main Content */}
+            <main className='px-4 sm:px-6 lg:px-8'>
+              <Suspense fallback={<div className='text-center text-white'>Loading...</div>}>
+                {currentView === 'host' && <HostView config={config} onGoHome={handleGoHome} />}
 
-                  {currentView === 'viewer' && <ViewerView config={config} onGoHome={handleGoHome} />}
-                </Suspense>
-              </main>
+                {currentView === 'viewer' && <ViewerView config={config} onGoHome={handleGoHome} />}
+              </Suspense>
+            </main>
 
-              {/* Sidebar Panels */}
-              <SidebarPanels currentView={currentView} showChat={showChat} showDiagnostics={showDiagnostics} />
-            </div>
-          )}
-        </div>
-
-        {/* Copyright Notice */}
-        <footer className='fixed bottom-0 left-0 right-0 z-0 pointer-events-none'>
-          <div className='text-center py-2'>
-            <p className='text-purple-400 text-sm opacity-60 font-mono'>© 2025 Mintwhirl Dev - Kevin Stewart</p>
+            {/* Sidebar Panels */}
+            <SidebarPanels currentView={currentView} showChat={showChat} showDiagnostics={showDiagnostics} />
           </div>
-        </footer>
+        )}
       </div>
+
+      {/* Copyright Notice */}
+      <footer className='fixed bottom-0 left-0 right-0 z-0 pointer-events-none'>
+        <div className='text-center py-2'>
+          <p className='text-purple-400 text-sm opacity-60 font-mono'>© 2025 Mintwhirl Dev - Kevin Stewart</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <RoomProvider>
+      <AppContent />
     </RoomProvider>
   );
 }

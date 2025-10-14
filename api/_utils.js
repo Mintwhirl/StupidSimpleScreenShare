@@ -248,15 +248,24 @@ export async function checkRateLimit(ratelimit, identifier, res) {
   return null; // No error
 }
 
-// Get client identifier (IP address)
+// Get client identifier (IP address with fingerprinting)
 export function getClientIdentifier(req) {
   // Try various headers for IP (Vercel/proxy compatible)
-  return (
+  const ip =
     req.headers['x-forwarded-for']?.split(',')[0] ||
     req.headers['x-real-ip'] ||
     req.connection?.remoteAddress ||
-    'unknown'
-  );
+    'unknown';
+
+  // Add additional fingerprinting to make spoofing harder
+  const userAgent = req.headers['user-agent'] || 'unknown';
+  const acceptLanguage = req.headers['accept-language'] || 'unknown';
+
+  // Create a more robust identifier by combining multiple factors
+  // This makes it much harder to spoof than just IP alone
+  const fingerprint = `${ip}:${userAgent.substring(0, 50)}:${acceptLanguage.substring(0, 20)}`;
+
+  return fingerprint;
 }
 
 // Async error wrapper for handlers
