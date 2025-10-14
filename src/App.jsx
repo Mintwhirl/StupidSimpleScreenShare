@@ -11,7 +11,7 @@ function App() {
   const [viewerId, setViewerId] = useState('');
   const [showChat, setShowChat] = useState(false);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
-  const { config, loading: configLoading, error: configError } = useApi();
+  const { config, loading: configLoading, error: configError, createRoom } = useApi();
 
   // Generate static random values for background elements to prevent infinite re-renders
   const backgroundElements = useMemo(() => {
@@ -51,19 +51,7 @@ function App() {
   // Handle room creation
   const handleCreateRoom = async () => {
     try {
-      const response = await fetch('/api/create-room', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to create room: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await createRoom();
       setRoomId(data.roomId);
       setCurrentView('host');
     } catch (error) {

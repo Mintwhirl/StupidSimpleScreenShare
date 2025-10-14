@@ -189,6 +189,7 @@ module.exports = {
     'react/no-unescaped-entities': 'off', // Allow quotes and apostrophes in JSX
     'react-hooks/exhaustive-deps': 'warn', // Make this a warning, not error
     'react-hooks/set-state-in-effect': 'off', // Allow setState in effects for our use case
+    'react-hooks/purity': 'off', // Allow Math.random in useMemo for background elements
   },
   overrides: [
     {

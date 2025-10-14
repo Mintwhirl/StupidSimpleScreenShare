@@ -174,6 +174,98 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     [roomId, config]
   );
 
+  // Start polling for offers (viewer)
+  const startOfferPolling = useCallback(async () => {
+    if (answerIntervalRef.current) {
+      clearInterval(answerIntervalRef.current);
+    }
+
+    answerIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/offer?roomId=${roomId}`);
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.desc) {
+            // Clear interval once we get an offer
+            clearInterval(answerIntervalRef.current);
+            answerIntervalRef.current = null;
+
+            // Handle the offer
+            const pc = peerConnectionRef.current;
+            if (pc) {
+              await pc.setRemoteDescription(data.desc);
+
+              // Create and send answer
+              const answer = await pc.createAnswer();
+              await pc.setLocalDescription(answer);
+              await sendAnswer(answer);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error polling for offers:', err);
+      }
+    }, 1000);
+  }, [roomId, sendAnswer]);
+
+  // Start polling for answers (host)
+  const startAnswerPolling = useCallback(async () => {
+    if (answerIntervalRef.current) {
+      clearInterval(answerIntervalRef.current);
+    }
+
+    answerIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/answer?roomId=${roomId}`);
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.desc) {
+            // Clear interval once we get an answer
+            clearInterval(answerIntervalRef.current);
+            answerIntervalRef.current = null;
+
+            // Handle the answer
+            const pc = peerConnectionRef.current;
+            if (pc) {
+              await pc.setRemoteDescription(data.desc);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error polling for answers:', err);
+      }
+    }, 1000);
+  }, [roomId]);
+
+  // Start polling for ICE candidates
+  const startCandidatePolling = useCallback(async () => {
+    if (candidateIntervalRef.current) {
+      clearInterval(candidateIntervalRef.current);
+    }
+
+    candidateIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/candidate?roomId=${roomId}&role=${role}`);
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.candidates && data.candidates.length > 0) {
+            const pc = peerConnectionRef.current;
+            if (pc) {
+              for (const candidate of data.candidates) {
+                await pc.addIceCandidate(candidate);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error polling for ICE candidates:', err);
+      }
+    }, 1000);
+  }, [roomId, role]);
+
   // Start screen sharing (host)
   const startScreenShare = useCallback(async () => {
     if (role !== 'host') {
@@ -289,96 +381,6 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
   }, [stopScreenShare]);
 
   // Start polling for offers (viewer)
-  const startOfferPolling = useCallback(async () => {
-    if (answerIntervalRef.current) {
-      clearInterval(answerIntervalRef.current);
-    }
-
-    answerIntervalRef.current = setInterval(async () => {
-      try {
-        const response = await fetch(`/api/offer?roomId=${roomId}`);
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.desc) {
-            // Clear interval once we get an offer
-            clearInterval(answerIntervalRef.current);
-            answerIntervalRef.current = null;
-
-            // Handle the offer
-            const pc = peerConnectionRef.current;
-            if (pc) {
-              await pc.setRemoteDescription(data.desc);
-
-              // Create and send answer
-              const answer = await pc.createAnswer();
-              await pc.setLocalDescription(answer);
-              await sendAnswer(answer);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error polling for offers:', err);
-      }
-    }, 1000);
-  }, [roomId, sendAnswer]);
-
-  // Start polling for answers (host)
-  const startAnswerPolling = useCallback(async () => {
-    if (answerIntervalRef.current) {
-      clearInterval(answerIntervalRef.current);
-    }
-
-    answerIntervalRef.current = setInterval(async () => {
-      try {
-        const response = await fetch(`/api/answer?roomId=${roomId}`);
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.desc) {
-            // Clear interval once we get an answer
-            clearInterval(answerIntervalRef.current);
-            answerIntervalRef.current = null;
-
-            // Handle the answer
-            const pc = peerConnectionRef.current;
-            if (pc) {
-              await pc.setRemoteDescription(data.desc);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error polling for answers:', err);
-      }
-    }, 1000);
-  }, [roomId]);
-
-  // Start polling for ICE candidates
-  const startCandidatePolling = useCallback(async () => {
-    if (candidateIntervalRef.current) {
-      clearInterval(candidateIntervalRef.current);
-    }
-
-    candidateIntervalRef.current = setInterval(async () => {
-      try {
-        const response = await fetch(`/api/candidate?roomId=${roomId}&role=${role}`);
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.candidates && data.candidates.length > 0) {
-            const pc = peerConnectionRef.current;
-            if (pc) {
-              for (const candidate of data.candidates) {
-                await pc.addIceCandidate(candidate);
-              }
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error polling for ICE candidates:', err);
-      }
-    }, 1000);
-  }, [roomId, role]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -404,7 +406,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     remoteStream,
     localStream,
     error,
-    peerConnections,
+    peerConnections: _peerConnections,
 
     // Actions
     startScreenShare,
