@@ -2,3 +2,6 @@ node_modules/
 .env
 .vercel
 .claude/
+
+*storybook.log
+storybook-static

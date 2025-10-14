@@ -40,11 +40,12 @@ export function useApi() {
 
       const data = await response.json();
 
-      if (data.success && data.config) {
-        setConfig(data.config);
-      } else {
-        throw new Error('Invalid config response format');
-      }
+          if (data.success && data.config) {
+            console.log('Setting config:', data.config);
+            setConfig(data.config);
+          } else {
+            throw new Error('Invalid config response format');
+          }
     } catch (err) {
       console.error('Failed to fetch client configuration:', err);
       setError(err.message);
@@ -75,12 +76,16 @@ export function useApi() {
         };
       }
 
+      console.log('Creating room with config:', config);
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
+      };
+      console.log('Request headers:', headers);
+      
       const response = await fetch('/api/create-room', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
-        },
+        headers,
       });
 
       if (!response.ok) {

@@ -1,9 +1,13 @@
-import { useState, useEffect, useMemo } from 'react';
-import HostView from './components/HostView';
-import ViewerView from './components/ViewerView';
-import Chat from './components/Chat';
-import Diagnostics from './components/Diagnostics';
+import { useState, useEffect, useMemo, Suspense, lazy } from 'react';
 import { useApi } from './hooks/useApi';
+import { trackMetric, trackError, trackPerformance } from './utils/monitoring';
+import { trackPageView, trackEvent, trackInteraction } from './utils/analytics';
+
+// Lazy load components for code splitting
+const HostView = lazy(() => import('./components/HostView'));
+const ViewerView = lazy(() => import('./components/ViewerView'));
+const Chat = lazy(() => import('./components/Chat'));
+const Diagnostics = lazy(() => import('./components/Diagnostics'));
 
 function App() {
   const [currentView, setCurrentView] = useState('home');
@@ -50,12 +54,22 @@ function App() {
 
   // Handle room creation
   const handleCreateRoom = async () => {
+    const startTime = performance.now();
     try {
+      trackMetric('room.creation.attempt', 1);
       const data = await createRoom();
       setRoomId(data.roomId);
       setCurrentView('host');
+      
+      const endTime = performance.now();
+      trackPerformance('room.creation.time', endTime - startTime);
+      trackMetric('room.creation.success', 1);
+      trackEvent('room_created', { roomId: data.roomId });
+      trackPageView('host');
     } catch (error) {
       console.error('Error creating room:', error);
+      trackError(error, { action: 'createRoom' });
+      trackMetric('room.creation.error', 1);
       alert('Failed to create room. Please try again.');
     }
   };
@@ -63,19 +77,38 @@ function App() {
   // Handle joining room as viewer
   const handleJoinRoom = () => {
     if (!roomId.trim()) {
+      trackMetric('room.join.error', 1, { reason: 'no_room_id' });
       alert('Please enter a room ID');
       return;
     }
+    trackMetric('room.join.attempt', 1);
+    trackEvent('room_joined', { roomId: roomId.trim() });
+    trackPageView('viewer');
     setCurrentView('viewer');
   };
 
   // Handle going back to home
   const handleGoHome = () => {
+    trackEvent('navigation', { from: currentView, to: 'home' });
+    trackPageView('home');
     setCurrentView('home');
     setRoomId('');
     setViewerId('');
     setShowChat(false);
     setShowDiagnostics(false);
+  };
+
+  // Handle stop sharing
+  const handleStopSharing = () => {
+    // This will be implemented when we have the WebRTC connection
+    // For now, just go back to home
+    handleGoHome();
+  };
+
+  // Handle start recording
+  const handleStartRecording = () => {
+    // This will be implemented when we add recording functionality
+    alert('Recording functionality will be implemented soon!');
   };
 
   // Loading state
@@ -147,39 +180,39 @@ function App() {
           <div className='absolute bottom-0 right-0 w-56 h-52 bg-gradient-to-t from-pink-400 to-transparent transform skew-x-12 opacity-30' />
         </div>
 
-        {/* Animated electric grid plane */}
-        <div className='absolute bottom-0 left-0 right-0 h-32 opacity-40'>
-          <div className='relative w-full h-full'>
-            {backgroundElements.gridLines.map((line) => (
-              <div
-                key={line.id}
-                className='absolute w-full h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent animate-pulse'
-                style={{
-                  top: `${line.top}px`,
-                  animationDelay: `${line.delay}s`,
-                  animationDuration: '3s',
-                }}
-              />
-            ))}
-            {backgroundElements.gridColumns.map((column) => (
-              <div
-                key={column.id}
-                className='absolute h-full w-px bg-gradient-to-b from-transparent via-purple-400 to-transparent animate-pulse'
-                style={{
-                  left: `${column.left}%`,
-                  animationDelay: `${column.delay}s`,
-                  animationDuration: '4s',
-                }}
-              />
-            ))}
-          </div>
-        </div>
+            {/* Animated electric grid plane */}
+            <div className='absolute bottom-0 left-0 right-0 h-32 opacity-40'>
+              <div className='relative w-full h-full'>
+                {backgroundElements.gridLines.map((line) => (
+                  <div
+                    key={line.id}
+                    className='absolute w-full h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent'
+                    style={{
+                      top: `${line.top}px`,
+                      animation: `pulse 3s ease-in-out infinite, glow 4s ease-in-out infinite`,
+                      animationDelay: `${line.delay}s`,
+                    }}
+                  />
+                ))}
+                {backgroundElements.gridColumns.map((column) => (
+                  <div
+                    key={column.id}
+                    className='absolute h-full w-px bg-gradient-to-b from-transparent via-purple-400 to-transparent'
+                    style={{
+                      left: `${column.left}%`,
+                      animation: `pulse 4s ease-in-out infinite, glow 5s ease-in-out infinite`,
+                      animationDelay: `${column.delay}s`,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
       </div>
 
       {/* Main App Content */}
       <div className='relative z-10 min-h-screen flex items-center justify-center p-4'>
         {currentView === 'home' ? (
-          <div className='w-full max-w-md mx-auto'>
+          <div className='w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto'>
             {/* Application Title */}
             <div className='text-center mb-8'>
               <h1
@@ -209,27 +242,46 @@ function App() {
                 {/* Top Row - Sharing Controls */}
                 <div className='grid grid-cols-2 gap-3'>
                   <button
-                    onClick={handleCreateRoom}
-                    className='bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 transform hover:scale-105 shadow-lg'
+                    onClick={() => {
+                      trackInteraction('start_sharing_button', 'click');
+                      handleCreateRoom();
+                    }}
+                    className='bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-opacity-50'
                     style={{
                       boxShadow: '0 0 20px rgba(236, 72, 153, 0.4), 0 0 40px rgba(147, 51, 234, 0.3)',
+                    }}
+                    aria-label='Start sharing your screen to create a new room'
+                    onMouseEnter={(e) => {
+                      e.target.style.boxShadow = '0 0 30px rgba(236, 72, 153, 0.8), 0 0 60px rgba(147, 51, 234, 0.6), 0 0 90px rgba(236, 72, 153, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.boxShadow = '0 0 20px rgba(236, 72, 153, 0.4), 0 0 40px rgba(147, 51, 234, 0.3)';
                     }}
                   >
                     Start sharing my screen
                   </button>
-                  <button className='bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30'>
+                  <button
+                    onClick={handleStopSharing}
+                    className='bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50'
+                    aria-label='Stop screen sharing and return to home'
+                  >
                     Stop sharing
                   </button>
                 </div>
 
                 {/* Middle Row - Recording and Diagnostics */}
                 <div className='grid grid-cols-2 gap-3'>
-                  <button className='bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30'>
+                  <button
+                    onClick={handleStartRecording}
+                    className='bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50'
+                    aria-label='Start recording the screen sharing session'
+                  >
                     Start Recording
                   </button>
                   <button
                     onClick={() => setShowDiagnostics(!showDiagnostics)}
-                    className='bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30 flex items-center justify-center space-x-2'
+                    className='bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50'
+                    aria-label='Toggle diagnostics panel to view connection information'
                   >
                     <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                       <path
@@ -253,9 +305,16 @@ function App() {
                 <div className='grid grid-cols-2 gap-3'>
                   <button
                     onClick={handleJoinRoom}
-                    className='bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 transform hover:scale-105 shadow-lg'
+                    className='bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50'
                     style={{
                       boxShadow: '0 0 20px rgba(59, 130, 246, 0.4), 0 0 40px rgba(6, 182, 212, 0.3)',
+                    }}
+                    aria-label='Join a room as a viewer to watch screen sharing'
+                    onMouseEnter={(e) => {
+                      e.target.style.boxShadow = '0 0 30px rgba(59, 130, 246, 0.8), 0 0 60px rgba(6, 182, 212, 0.6), 0 0 90px rgba(59, 130, 246, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.4), 0 0 40px rgba(6, 182, 212, 0.3)';
                     }}
                   >
                     Open room link (viewer)
@@ -266,6 +325,7 @@ function App() {
                     value={roomId}
                     onChange={(e) => setRoomId(e.target.value)}
                     className='bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white placeholder-gray-300 font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50'
+                    aria-label='Enter room ID to join a screen sharing session'
                   />
                 </div>
               </div>
@@ -280,7 +340,7 @@ function App() {
                 {/* Local Preview */}
                 <div>
                   <h3 className='text-white text-sm font-bold mb-3 uppercase tracking-wide'>Local preview</h3>
-                  <div className='grid grid-cols-2 gap-3'>
+                  <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
                     {/* Video Player Placeholder 1 */}
                     <div className='bg-purple-800 bg-opacity-40 border border-purple-400 border-opacity-30 rounded-xl p-3 flex flex-col items-center justify-center min-h-[120px]'>
                       <div className='flex items-center space-x-2 mb-2'>
@@ -399,34 +459,40 @@ function App() {
               </div>
             </header>
 
-            {/* Main Content */}
-            <main className='px-4 sm:px-6 lg:px-8'>
-              {currentView === 'host' && <HostView roomId={roomId} config={config} onGoHome={handleGoHome} />}
+                {/* Main Content */}
+                <main className='px-4 sm:px-6 lg:px-8'>
+                  <Suspense fallback={<div className='text-center text-white'>Loading...</div>}>
+                    {currentView === 'host' && <HostView roomId={roomId} config={config} onGoHome={handleGoHome} />}
 
-              {currentView === 'viewer' && (
-                <ViewerView
-                  roomId={roomId}
-                  viewerId={viewerId}
-                  setViewerId={setViewerId}
-                  config={config}
-                  onGoHome={handleGoHome}
-                />
-              )}
-            </main>
+                    {currentView === 'viewer' && (
+                      <ViewerView
+                        roomId={roomId}
+                        viewerId={viewerId}
+                        setViewerId={setViewerId}
+                        config={config}
+                        onGoHome={handleGoHome}
+                      />
+                    )}
+                  </Suspense>
+                </main>
 
-            {/* Chat Panel */}
-            {showChat && currentView !== 'home' && (
-              <div className='fixed right-0 top-16 bottom-0 w-80 bg-black bg-opacity-80 backdrop-blur-sm shadow-lg border-l border-purple-500 border-opacity-30 z-50'>
-                <Chat roomId={roomId} role={currentView === 'host' ? 'host' : 'viewer'} viewerId={viewerId} />
-              </div>
-            )}
+                {/* Chat Panel */}
+                {showChat && currentView !== 'home' && (
+                  <div className='fixed right-0 top-16 bottom-0 w-80 bg-black bg-opacity-80 backdrop-blur-sm shadow-lg border-l border-purple-500 border-opacity-30 z-50'>
+                    <Suspense fallback={<div className='text-center text-white p-4'>Loading chat...</div>}>
+                      <Chat roomId={roomId} role={currentView === 'host' ? 'host' : 'viewer'} viewerId={viewerId} />
+                    </Suspense>
+                  </div>
+                )}
 
-            {/* Diagnostics Panel */}
-            {showDiagnostics && currentView !== 'home' && (
-              <div className='fixed left-0 top-16 bottom-0 w-80 bg-black bg-opacity-80 backdrop-blur-sm shadow-lg border-r border-purple-500 border-opacity-30 z-50'>
-                <Diagnostics roomId={roomId} role={currentView === 'host' ? 'host' : 'viewer'} />
-              </div>
-            )}
+                {/* Diagnostics Panel */}
+                {showDiagnostics && currentView !== 'home' && (
+                  <div className='fixed left-0 top-16 bottom-0 w-80 bg-black bg-opacity-80 backdrop-blur-sm shadow-lg border-r border-purple-500 border-opacity-30 z-50'>
+                    <Suspense fallback={<div className='text-center text-white p-4'>Loading diagnostics...</div>}>
+                      <Diagnostics roomId={roomId} role={currentView === 'host' ? 'host' : 'viewer'} />
+                    </Suspense>
+                  </div>
+                )}
           </div>
         )}
       </div>

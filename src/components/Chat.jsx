@@ -4,7 +4,10 @@ import { useChat } from '../hooks/useChat';
 function Chat({ roomId, role, viewerId }) {
   const [message, setMessage] = useState('');
   const [sender, setSender] = useState(viewerId || role);
+  const [isTyping, setIsTyping] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   const { messages, sendMessage, loading, error, isConnected } = useChat(roomId, role, sender);
 
@@ -19,6 +22,25 @@ function Chat({ roomId, role, viewerId }) {
       setSender(viewerId);
     }
   }, [viewerId]);
+
+  // Handle typing indicator
+  const handleTyping = () => {
+    setIsTyping(true);
+    
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false);
+    }, 1000);
+  };
+
+  // Handle emoji selection
+  const handleEmojiSelect = (emoji) => {
+    setMessage(prev => prev + emoji);
+    setShowEmojiPicker(false);
+  };
 
   // Handle sending message
   const handleSendMessage = async (e) => {
@@ -137,15 +159,27 @@ function Chat({ roomId, role, viewerId }) {
 
           {/* Message Input */}
           <div className='flex space-x-2'>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder='Type your message... (Enter to send, Shift+Enter for new line)'
-              className='flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none'
-              rows={2}
-              maxLength={500}
-            />
+            <div className='flex-1 relative'>
+              <textarea
+                value={message}
+                onChange={(e) => {
+                  setMessage(e.target.value);
+                  handleTyping();
+                }}
+                onKeyPress={handleKeyPress}
+                placeholder='Type your message... (Enter to send, Shift+Enter for new line)'
+                className='w-full px-3 py-2 pr-10 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none'
+                rows={2}
+                maxLength={500}
+              />
+              <button
+                type='button'
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className='absolute right-2 top-2 text-gray-400 hover:text-gray-600'
+              >
+                😊
+              </button>
+            </div>
             <button
               type='submit'
               disabled={!message.trim() || !sender.trim() || loading}
@@ -158,6 +192,31 @@ function Chat({ roomId, role, viewerId }) {
               {loading ? <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div> : 'Send'}
             </button>
           </div>
+
+          {/* Emoji Picker */}
+          {showEmojiPicker && (
+            <div className='absolute bottom-16 left-4 bg-white border border-gray-300 rounded-lg shadow-lg p-2 max-h-32 overflow-y-auto'>
+              <div className='grid grid-cols-8 gap-1'>
+                {['😀', '😂', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💯', '🎉', '🚀', '⭐', '💡', '🎯', '🔥', '💪'].map((emoji) => (
+                  <button
+                    key={emoji}
+                    type='button'
+                    onClick={() => handleEmojiSelect(emoji)}
+                    className='p-1 hover:bg-gray-100 rounded text-lg'
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Typing Indicator */}
+          {isTyping && (
+            <div className='text-xs text-gray-500 italic'>
+              {sender} is typing...
+            </div>
+          )}
 
           {/* Character Count */}
           <div className='flex justify-between text-xs text-gray-500'>

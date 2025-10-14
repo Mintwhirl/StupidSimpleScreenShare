@@ -5,7 +5,7 @@ module.exports = {
     node: true,
   },
   ignorePatterns: ['dist/', 'coverage/', 'node_modules/', '*.min.js', 'build/'],
-  extends: ['airbnb-base', 'plugin:react/recommended', 'plugin:react-hooks/recommended', 'prettier'],
+  extends: ['airbnb-base', 'plugin:react/recommended', 'plugin:react-hooks/recommended', 'prettier', 'plugin:storybook/recommended'],
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',

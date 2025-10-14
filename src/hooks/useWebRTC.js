@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { getIceServers } from '../config/turn.js';
 
 export function useWebRTC(roomId, role, config, _viewerId = null) {
   // State
@@ -17,21 +18,8 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
 
   // Initialize ICE servers
   useEffect(() => {
-    const servers = [];
-
-    // Add STUN servers
-    servers.push({ urls: 'stun:stun.l.google.com:19302' });
-    servers.push({ urls: 'stun:stun1.l.google.com:19302' });
-
-    // Add TURN servers if configured
-    if (config?.turn) {
-      servers.push({
-        urls: config.turn.urls,
-        username: config.turn.username,
-        credential: config.turn.credential,
-      });
-    }
-
+    // Use TURN server configuration
+    const servers = getIceServers(config?.useTurn || false);
     setIceServers(servers);
   }, [config]);
 

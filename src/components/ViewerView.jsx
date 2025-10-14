@@ -39,13 +39,6 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
     }
   }, [webrtcError]);
 
-  // Auto-connect when component mounts
-  useEffect(() => {
-    if (roomId && !isConnecting && !isConnected) {
-      handleConnect();
-    }
-  }, [roomId, handleConnect, isConnected, isConnecting]);
-
   // Handle connection to host
   const handleConnect = useCallback(async () => {
     if (!roomId.trim()) {
@@ -68,6 +61,13 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
       setIsConnecting(false);
     }
   }, [roomId, connectToHost]);
+
+  // Auto-connect when component mounts
+  useEffect(() => {
+    if (roomId && !isConnecting && !isConnected) {
+      handleConnect();
+    }
+  }, [roomId, handleConnect, isConnected, isConnecting]);
 
   // Handle disconnection
   const handleDisconnect = async () => {
