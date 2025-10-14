@@ -96,7 +96,7 @@ class MonitoringService {
   trackMessageLatency(startTime, endTime) {
     const latency = endTime - startTime;
     this.performance.messageLatency.push(latency);
-    
+
     // Keep only last 100 measurements
     if (this.performance.messageLatency.length > 100) {
       this.performance.messageLatency.shift();
@@ -111,9 +111,8 @@ class MonitoringService {
    */
   getPerformanceSummary() {
     const messageLatency = this.performance.messageLatency;
-    const avgLatency = messageLatency.length > 0 
-      ? messageLatency.reduce((a, b) => a + b, 0) / messageLatency.length 
-      : 0;
+    const avgLatency =
+      messageLatency.length > 0 ? messageLatency.reduce((a, b) => a + b, 0) / messageLatency.length : 0;
 
     return {
       pageLoad: this.performance.pageLoad,
@@ -163,7 +162,7 @@ class MonitoringService {
     // - LogRocket
     // - Bugsnag
     // - Custom analytics service
-    
+
     console.log('Would send error to service:', errorData);
   }
 
@@ -176,7 +175,7 @@ class MonitoringService {
     // - Google Analytics
     // - Mixpanel
     // - Custom analytics service
-    
+
     console.log('Would send metrics to service:', metrics);
   }
 }
@@ -195,7 +194,7 @@ if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', () => {
     const metrics = monitoring.getAllMetrics();
     const errors = monitoring.getAllErrors();
-    
+
     // Send data before page unload
     MonitoringService.sendMetricsToService(metrics);
     if (errors.length > 0) {

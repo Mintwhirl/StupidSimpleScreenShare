@@ -60,17 +60,21 @@ describe('App Component', () => {
 
   it('renders all main buttons', () => {
     render(<App />);
-    
+
     expect(screen.getByRole('button', { name: /start sharing your screen to create a new room/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /stop screen sharing and return to home/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /start recording the screen sharing session/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /toggle diagnostics panel to view connection information/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /join a room as a viewer to watch screen sharing/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /toggle diagnostics panel to view connection information/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /join a room as a viewer to watch screen sharing/i })
+    ).toBeInTheDocument();
   });
 
   it('renders the room ID input field', () => {
     render(<App />);
-    
+
     const input = screen.getByLabelText(/enter room id to join/i);
     expect(input).toBeInTheDocument();
     expect(input).toHaveAttribute('placeholder', 'Paste room id here');
@@ -78,7 +82,7 @@ describe('App Component', () => {
 
   it('renders preview sections', () => {
     render(<App />);
-    
+
     expect(screen.getByText('Local preview')).toBeInTheDocument();
     expect(screen.getByText('Remote preview')).toBeInTheDocument();
     expect(screen.getByText('No remote connection')).toBeInTheDocument();
@@ -86,27 +90,27 @@ describe('App Component', () => {
 
   it('shows status as idle', () => {
     render(<App />);
-    
+
     expect(screen.getByText('Status: idle')).toBeInTheDocument();
   });
 
   it('handles room ID input changes', async () => {
     const user = userEvent.setup();
     render(<App />);
-    
+
     const input = screen.getByLabelText(/enter room id to join/i);
     await user.type(input, 'test-room-123');
-    
+
     expect(input).toHaveValue('test-room-123');
   });
 
   it('handles start sharing button click', async () => {
     const user = userEvent.setup();
     render(<App />);
-    
+
     const button = screen.getByRole('button', { name: /start sharing your screen to create a new room/i });
     await user.click(button);
-    
+
     // Should navigate to host view (the mock createRoom returns a roomId which triggers navigation)
     await waitFor(() => {
       expect(screen.getByText('Host View')).toBeInTheDocument();
@@ -116,13 +120,13 @@ describe('App Component', () => {
   it('handles join room button click with valid room ID', async () => {
     const user = userEvent.setup();
     render(<App />);
-    
+
     const input = screen.getByLabelText(/enter room id to join/i);
     const button = screen.getByRole('button', { name: /join a room as a viewer to watch screen sharing/i });
-    
+
     await user.type(input, 'test-room-123');
     await user.click(button);
-    
+
     // Should navigate to viewer view
     await waitFor(() => {
       expect(screen.getByText('Viewer View')).toBeInTheDocument();
@@ -133,24 +137,24 @@ describe('App Component', () => {
     const user = userEvent.setup();
     // Mock window.alert
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
-    
+
     render(<App />);
-    
+
     const button = screen.getByRole('button', { name: /join a room as a viewer to watch screen sharing/i });
     await user.click(button);
-    
+
     expect(alertSpy).toHaveBeenCalledWith('Please enter a room ID');
-    
+
     alertSpy.mockRestore();
   });
 
   it('handles stop sharing button click', async () => {
     const user = userEvent.setup();
     render(<App />);
-    
+
     const button = screen.getByRole('button', { name: /stop screen sharing and return to home/i });
     await user.click(button);
-    
+
     // Should stay on home view
     expect(screen.getByText('STUPID-SIMPLE SCREEN SHARE')).toBeInTheDocument();
   });
@@ -159,24 +163,24 @@ describe('App Component', () => {
     const user = userEvent.setup();
     // Mock window.alert
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
-    
+
     render(<App />);
-    
+
     const button = screen.getByRole('button', { name: /start recording the screen sharing session/i });
     await user.click(button);
-    
+
     expect(alertSpy).toHaveBeenCalledWith('Recording functionality will be implemented soon!');
-    
+
     alertSpy.mockRestore();
   });
 
   it('handles diagnostics button click', async () => {
     const user = userEvent.setup();
     render(<App />);
-    
+
     const button = screen.getByRole('button', { name: /toggle diagnostics panel to view connection information/i });
     await user.click(button);
-    
+
     // Should show diagnostics panel
     await waitFor(() => {
       expect(screen.getByText('Diagnostics')).toBeInTheDocument();
@@ -185,7 +189,7 @@ describe('App Component', () => {
 
   it('has proper ARIA labels for accessibility', () => {
     render(<App />);
-    
+
     expect(screen.getByLabelText(/start sharing your screen to create a new room/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/stop screen sharing and return to home/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/start recording the screen sharing session/i)).toBeInTheDocument();
@@ -196,11 +200,11 @@ describe('App Component', () => {
 
   it('has proper focus states for buttons', () => {
     render(<App />);
-    
+
     const startSharingButton = screen.getByRole('button', { name: /start sharing your screen to create a new room/i });
     const stopSharingButton = screen.getByRole('button', { name: /stop screen sharing and return to home/i });
     const joinRoomButton = screen.getByRole('button', { name: /join a room as a viewer to watch screen sharing/i });
-    
+
     // Check that buttons have focus classes
     expect(startSharingButton).toHaveClass('focus:outline-none', 'focus:ring-2', 'focus:ring-pink-400');
     expect(stopSharingButton).toHaveClass('focus:outline-none', 'focus:ring-2', 'focus:ring-purple-400');

@@ -32,6 +32,7 @@ x-auth-secret: your-auth-secret-here
 Retrieves client configuration including authentication secrets and feature flags.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -59,12 +60,14 @@ Retrieves client configuration including authentication secrets and feature flag
 Creates a new screen sharing room.
 
 **Headers:**
+
 ```http
 Content-Type: application/json
 x-auth-secret: your-auth-secret
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -75,6 +78,7 @@ x-auth-secret: your-auth-secret
 ```
 
 **Error Responses:**
+
 - `401 Unauthorized`: Invalid or missing auth secret
 - `429 Too Many Requests`: Rate limit exceeded
 - `500 Internal Server Error`: Server error
@@ -86,12 +90,14 @@ x-auth-secret: your-auth-secret
 Stores a WebRTC SDP offer for a room.
 
 **Headers:**
+
 ```http
 Content-Type: application/json
 x-auth-secret: your-auth-secret
 ```
 
 **Body:**
+
 ```json
 {
   "roomId": "abc123def456789012345678",
@@ -103,6 +109,7 @@ x-auth-secret: your-auth-secret
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -115,9 +122,11 @@ x-auth-secret: your-auth-secret
 Retrieves the latest WebRTC SDP offer for a room.
 
 **Query Parameters:**
+
 - `roomId` (required): The room ID
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -133,12 +142,14 @@ Retrieves the latest WebRTC SDP offer for a room.
 Stores a WebRTC SDP answer for a room.
 
 **Headers:**
+
 ```http
 Content-Type: application/json
 x-auth-secret: your-auth-secret
 ```
 
 **Body:**
+
 ```json
 {
   "roomId": "abc123def456789012345678",
@@ -150,6 +161,7 @@ x-auth-secret: your-auth-secret
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -162,9 +174,11 @@ x-auth-secret: your-auth-secret
 Retrieves the latest WebRTC SDP answer for a room.
 
 **Query Parameters:**
+
 - `roomId` (required): The room ID
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -180,12 +194,14 @@ Retrieves the latest WebRTC SDP answer for a room.
 Stores a WebRTC ICE candidate for a room.
 
 **Headers:**
+
 ```http
 Content-Type: application/json
 x-auth-secret: your-auth-secret
 ```
 
 **Body:**
+
 ```json
 {
   "roomId": "abc123def456789012345678",
@@ -199,6 +215,7 @@ x-auth-secret: your-auth-secret
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -211,10 +228,12 @@ x-auth-secret: your-auth-secret
 Retrieves WebRTC ICE candidates for a room.
 
 **Query Parameters:**
+
 - `roomId` (required): The room ID
 - `role` (required): Either "host" or "viewer"
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -235,12 +254,14 @@ Retrieves WebRTC ICE candidates for a room.
 Sends a chat message to a room.
 
 **Headers:**
+
 ```http
 Content-Type: application/json
 x-auth-secret: your-auth-secret
 ```
 
 **Body:**
+
 ```json
 {
   "roomId": "abc123def456789012345678",
@@ -250,6 +271,7 @@ x-auth-secret: your-auth-secret
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -262,10 +284,12 @@ x-auth-secret: your-auth-secret
 Retrieves chat messages for a room.
 
 **Query Parameters:**
+
 - `roomId` (required): The room ID
 - `since` (optional): Timestamp to get messages after (default: 0)
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -287,9 +311,11 @@ Retrieves chat messages for a room.
 Retrieves diagnostic information for a room.
 
 **Query Parameters:**
+
 - `roomId` (required): The room ID
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -323,9 +349,11 @@ Retrieves diagnostic information for a room.
 Retrieves the list of viewers for a room.
 
 **Query Parameters:**
+
 - `roomId` (required): The room ID
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -386,40 +414,44 @@ All endpoints return consistent error responses:
 ## Data Models
 
 ### Room
+
 ```typescript
 interface Room {
-  id: string;           // 24-character hex string
-  createdAt: Date;      // ISO timestamp
-  expiresAt: Date;      // ISO timestamp (1 hour TTL)
+  id: string; // 24-character hex string
+  createdAt: Date; // ISO timestamp
+  expiresAt: Date; // ISO timestamp (1 hour TTL)
   hostConnected: boolean;
   viewerCount: number;
 }
 ```
 
 ### Message
+
 ```typescript
 interface Message {
-  id: number;           // Auto-incrementing
-  roomId: string;       // 24-character hex string
-  message: string;      // 1-500 characters
-  sender: string;       // 5-50 characters
-  timestamp: number;    // Unix timestamp
+  id: number; // Auto-incrementing
+  roomId: string; // 24-character hex string
+  message: string; // 1-500 characters
+  sender: string; // 5-50 characters
+  timestamp: number; // Unix timestamp
 }
 ```
 
 ### WebRTC Descriptor
+
 ```typescript
 interface RTCDescriptor {
   type: 'offer' | 'answer';
-  sdp: string;          // Session Description Protocol
+  sdp: string; // Session Description Protocol
 }
 ```
 
 ### ICE Candidate
+
 ```typescript
 interface ICECandidate {
-  candidate: string;    // ICE candidate string
-  sdpMid?: string;      // SDP media stream ID
+  candidate: string; // ICE candidate string
+  sdpMid?: string; // SDP media stream ID
   sdpMLineIndex?: number; // SDP media line index
 }
 ```
@@ -427,17 +459,21 @@ interface ICECandidate {
 ## Rate Limiting Details
 
 ### Implementation
+
 - Uses Upstash Redis for distributed rate limiting
 - Sliding window algorithm
 - Per-IP and per-user limits
 
 ### Limits
+
 - **API**: 100 requests/hour per IP
 - **Chat**: 10 messages/minute per user
 - **Room Creation**: 50 rooms/hour per IP
 
 ### Headers
+
 Rate limit information is included in response headers:
+
 ```http
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 95
@@ -447,17 +483,20 @@ X-RateLimit-Reset: 1704070800
 ## Security Considerations
 
 ### Authentication
+
 - All sensitive endpoints require `AUTH_SECRET`
 - Secrets are never exposed to client-side code
 - Environment variables are used for configuration
 
 ### Input Validation
+
 - All inputs are validated and sanitized
 - Room IDs must be exactly 24 hex characters
 - Messages are limited to 500 characters
 - Sender names are limited to 50 characters
 
 ### Data Privacy
+
 - No persistent storage of screen content
 - Ephemeral data with automatic expiration
 - Redis TTL ensures data cleanup
@@ -465,6 +504,7 @@ X-RateLimit-Reset: 1704070800
 ## Development
 
 ### Local Development
+
 ```bash
 # Install dependencies
 npm install
@@ -480,6 +520,7 @@ npm run test:e2e
 ```
 
 ### Environment Variables
+
 ```bash
 # Required
 AUTH_SECRET=your-secret-key-here
@@ -493,6 +534,7 @@ TURN_PASSWORD=your-turn-password
 ## Deployment
 
 ### Vercel
+
 The application is deployed on Vercel with serverless functions:
 
 ```bash
@@ -504,6 +546,7 @@ vercel
 ```
 
 ### Environment Setup
+
 1. Set `AUTH_SECRET` in Vercel environment variables
 2. Configure Redis (Upstash recommended)
 3. Set up TURN servers (optional)
@@ -511,11 +554,13 @@ vercel
 ## Monitoring
 
 ### Health Check
+
 ```http
 GET /api/health
 ```
 
 **Response:**
+
 ```json
 {
   "status": "healthy",
@@ -525,6 +570,7 @@ GET /api/health
 ```
 
 ### Metrics
+
 - Request count and latency
 - Error rates
 - Room creation and usage
@@ -533,6 +579,7 @@ GET /api/health
 ## Support
 
 For issues or questions:
+
 1. Check the [GitHub repository](https://github.com/your-repo)
 2. Review the [troubleshooting guide](TROUBLESHOOTING.md)
 3. Open an issue with detailed information
@@ -540,6 +587,7 @@ For issues or questions:
 ## Changelog
 
 ### v1.0.0
+
 - Initial release
 - WebRTC screen sharing
 - Chat functionality

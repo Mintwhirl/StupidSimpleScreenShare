@@ -26,11 +26,11 @@ function Chat({ roomId, role, viewerId }) {
   // Handle typing indicator
   const handleTyping = () => {
     setIsTyping(true);
-    
+
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
-    
+
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false);
     }, 1000);
@@ -38,7 +38,7 @@ function Chat({ roomId, role, viewerId }) {
 
   // Handle emoji selection
   const handleEmojiSelect = (emoji) => {
-    setMessage(prev => prev + emoji);
+    setMessage((prev) => prev + emoji);
     setShowEmojiPicker(false);
   };
 
@@ -197,26 +197,24 @@ function Chat({ roomId, role, viewerId }) {
           {showEmojiPicker && (
             <div className='absolute bottom-16 left-4 bg-white border border-gray-300 rounded-lg shadow-lg p-2 max-h-32 overflow-y-auto'>
               <div className='grid grid-cols-8 gap-1'>
-                {['😀', '😂', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💯', '🎉', '🚀', '⭐', '💡', '🎯', '🔥', '💪'].map((emoji) => (
-                  <button
-                    key={emoji}
-                    type='button'
-                    onClick={() => handleEmojiSelect(emoji)}
-                    className='p-1 hover:bg-gray-100 rounded text-lg'
-                  >
-                    {emoji}
-                  </button>
-                ))}
+                {['😀', '😂', '😍', '🤔', '👍', '👎', '❤️', '🔥', '💯', '🎉', '🚀', '⭐', '💡', '🎯', '🔥', '💪'].map(
+                  (emoji) => (
+                    <button
+                      key={emoji}
+                      type='button'
+                      onClick={() => handleEmojiSelect(emoji)}
+                      className='p-1 hover:bg-gray-100 rounded text-lg'
+                    >
+                      {emoji}
+                    </button>
+                  )
+                )}
               </div>
             </div>
           )}
 
           {/* Typing Indicator */}
-          {isTyping && (
-            <div className='text-xs text-gray-500 italic'>
-              {sender} is typing...
-            </div>
-          )}
+          {isTyping && <div className='text-xs text-gray-500 italic'>{sender} is typing...</div>}
 
           {/* Character Count */}
           <div className='flex justify-between text-xs text-gray-500'>
