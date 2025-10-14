@@ -11,17 +11,30 @@ describe('useApi Hook', () => {
     // Reset environment variables
     delete import.meta.env.DEV;
     delete import.meta.env.MODE;
+    // Mock window.location.hostname to avoid localhost detection
+    Object.defineProperty(window, 'location', {
+      value: { hostname: 'example.com' },
+      writable: true,
+    });
   });
 
   describe('fetchConfig', () => {
     it('should fetch config successfully in production', async () => {
+      // Force production mode
+      import.meta.env.DEV = false;
+      import.meta.env.MODE = 'production';
+      Object.defineProperty(window, 'location', {
+        value: { hostname: 'example.com' },
+        writable: true,
+      });
+
       const mockConfig = {
         success: true,
         config: {
           authSecret: 'test-secret',
           apiBase: '/api',
-          features: { chat: true, diagnostics: true },
-          rateLimits: { chat: 10, api: 100 },
+          features: { chat: true, diagnostics: true, recording: false },
+          rateLimits: { roomCreation: 50, chatMessages: 60, apiCalls: 2000 },
         },
       };
 
@@ -53,12 +66,31 @@ describe('useApi Hook', () => {
       expect(result.current.config).toEqual({
         authSecret: 'dev-mock-secret-key-123',
         environment: 'development',
+        apiBase: '/api',
+        features: {
+          chat: true,
+          diagnostics: true,
+          recording: false,
+        },
+        rateLimits: {
+          roomCreation: 50,
+          chatMessages: 60,
+          apiCalls: 2000,
+        },
       });
       expect(result.current.error).toBe(null);
       expect(fetch).not.toHaveBeenCalled();
     });
 
     it('should handle config fetch error', async () => {
+      // Force production mode
+      import.meta.env.DEV = false;
+      import.meta.env.MODE = 'production';
+      Object.defineProperty(window, 'location', {
+        value: { hostname: 'example.com' },
+        writable: true,
+      });
+
       fetch.mockRejectedValueOnce(new Error('Network error'));
 
       const { result } = renderHook(() => useApi());
@@ -72,6 +104,14 @@ describe('useApi Hook', () => {
     });
 
     it('should handle non-ok response', async () => {
+      // Force production mode
+      import.meta.env.DEV = false;
+      import.meta.env.MODE = 'production';
+      Object.defineProperty(window, 'location', {
+        value: { hostname: 'example.com' },
+        writable: true,
+      });
+
       fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
@@ -90,16 +130,39 @@ describe('useApi Hook', () => {
 
   describe('createRoom', () => {
     it('should create room successfully in production', async () => {
+      // Force production mode
+      import.meta.env.DEV = false;
+      import.meta.env.MODE = 'production';
+      Object.defineProperty(window, 'location', {
+        value: { hostname: 'example.com' },
+        writable: true,
+      });
+
+      const mockConfig = {
+        success: true,
+        config: {
+          authSecret: 'test-secret',
+          apiBase: '/api',
+          features: { chat: true, diagnostics: true, recording: false },
+          rateLimits: { roomCreation: 50, chatMessages: 60, apiCalls: 2000 },
+        },
+      };
+
       const mockResponse = {
         success: true,
         roomId: 'test-room-123',
         message: 'Room created successfully',
       };
 
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockResponse),
-      });
+      fetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockConfig),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockResponse),
+        });
 
       const { result } = renderHook(() => useApi());
 
@@ -139,10 +202,33 @@ describe('useApi Hook', () => {
     });
 
     it('should handle create room error', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: false,
-        status: 401,
+      // Force production mode
+      import.meta.env.DEV = false;
+      import.meta.env.MODE = 'production';
+      Object.defineProperty(window, 'location', {
+        value: { hostname: 'example.com' },
+        writable: true,
       });
+
+      const mockConfig = {
+        success: true,
+        config: {
+          authSecret: 'test-secret',
+          apiBase: '/api',
+          features: { chat: true, diagnostics: true, recording: false },
+          rateLimits: { roomCreation: 50, chatMessages: 60, apiCalls: 2000 },
+        },
+      };
+
+      fetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockConfig),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+        });
 
       const { result } = renderHook(() => useApi());
 
@@ -156,16 +242,39 @@ describe('useApi Hook', () => {
   });
 
   describe('sendChatMessage', () => {
-    it('should send chat message successfully', async () => {
+    it('should send chat message successfully in production', async () => {
+      // Force production mode
+      import.meta.env.DEV = false;
+      import.meta.env.MODE = 'production';
+      Object.defineProperty(window, 'location', {
+        value: { hostname: 'example.com' },
+        writable: true,
+      });
+
+      const mockConfig = {
+        success: true,
+        config: {
+          authSecret: 'test-secret',
+          apiBase: '/api',
+          features: { chat: true, diagnostics: true, recording: false },
+          rateLimits: { roomCreation: 50, chatMessages: 60, apiCalls: 2000 },
+        },
+      };
+
       const mockResponse = {
         success: true,
         message: 'Message sent successfully',
       };
 
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockResponse),
-      });
+      fetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockConfig),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockResponse),
+        });
 
       const { result } = renderHook(() => useApi());
 
@@ -190,38 +299,124 @@ describe('useApi Hook', () => {
         }),
       });
     });
+
+    it('should use mock response in development mode', async () => {
+      import.meta.env.DEV = true;
+
+      const { result } = renderHook(() => useApi());
+
+      // Wait for config to load
+      await waitFor(() => {
+        expect(result.current.config).toBeTruthy();
+      });
+
+      const response = await result.current.sendChatMessage('room-123', 'Hello world', 'user1');
+
+      expect(response.ok).toBe(true);
+      expect(response.message.id).toBeDefined();
+      expect(response.message.roomId).toBe('room-123');
+      expect(response.message.sender).toBe('user1');
+      expect(response.message.message).toBe('Hello world');
+      expect(response.message.timestamp).toBeDefined();
+      expect(fetch).not.toHaveBeenCalled();
+    });
   });
 
   describe('getChatMessages', () => {
-    it('should get chat messages successfully', async () => {
+    it('should get chat messages successfully in production', async () => {
+      // Force production mode
+      import.meta.env.DEV = false;
+      import.meta.env.MODE = 'production';
+      Object.defineProperty(window, 'location', {
+        value: { hostname: 'example.com' },
+        writable: true,
+      });
+
       const mockMessages = [
         { id: 1, message: 'Hello', sender: 'user1', timestamp: Date.now() },
         { id: 2, message: 'Hi there', sender: 'user2', timestamp: Date.now() },
       ];
 
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ success: true, messages: mockMessages }),
-      });
+      // Mock the config fetch first, then the chat messages fetch
+      fetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              success: true,
+              config: {
+                authSecret: 'test-secret',
+                apiBase: '/api',
+                features: { chat: true, diagnostics: true, recording: false },
+                rateLimits: { roomCreation: 50, chatMessages: 60, apiCalls: 2000 },
+              },
+            }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ success: true, messages: mockMessages }),
+        });
 
       const { result } = renderHook(() => useApi());
+
+      // Wait for config to load
+      await waitFor(() => {
+        expect(result.current.config).toBeTruthy();
+      });
 
       const response = await result.current.getChatMessages('room-123', 0);
 
       expect(response).toEqual({ success: true, messages: mockMessages });
       expect(fetch).toHaveBeenCalledWith('/api/chat?roomId=room-123&since=0');
     });
+
+    it('should use mock response in development mode', async () => {
+      import.meta.env.DEV = true;
+
+      const { result } = renderHook(() => useApi());
+
+      const response = await result.current.getChatMessages('room-123', 0);
+
+      expect(response).toEqual({
+        messages: [],
+        success: true,
+      });
+      expect(fetch).not.toHaveBeenCalled();
+    });
   });
 
   describe('WebRTC methods', () => {
     it('should send offer successfully', async () => {
+      // Force production mode
+      import.meta.env.DEV = false;
+      import.meta.env.MODE = 'production';
+      Object.defineProperty(window, 'location', {
+        value: { hostname: 'example.com' },
+        writable: true,
+      });
+
+      const mockConfig = {
+        success: true,
+        config: {
+          authSecret: 'test-secret',
+          apiBase: '/api',
+          features: { chat: true, diagnostics: true, recording: false },
+          rateLimits: { roomCreation: 50, chatMessages: 60, apiCalls: 2000 },
+        },
+      };
+
       const mockOffer = { type: 'offer', sdp: 'test-sdp' };
       const mockResponse = { success: true };
 
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockResponse),
-      });
+      fetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockConfig),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve(mockResponse),
+        });
 
       const { result } = renderHook(() => useApi());
 
@@ -247,14 +442,42 @@ describe('useApi Hook', () => {
     });
 
     it('should get offer successfully', async () => {
-      const mockOffer = { type: 'offer', sdp: 'test-sdp' };
-
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ success: true, desc: mockOffer }),
+      // Force production mode
+      import.meta.env.DEV = false;
+      import.meta.env.MODE = 'production';
+      Object.defineProperty(window, 'location', {
+        value: { hostname: 'example.com' },
+        writable: true,
       });
 
+      const mockOffer = { type: 'offer', sdp: 'test-sdp' };
+
+      // Mock the config fetch first, then the offer fetch
+      fetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              success: true,
+              config: {
+                authSecret: 'test-secret',
+                apiBase: '/api',
+                features: { chat: true, diagnostics: true, recording: false },
+                rateLimits: { roomCreation: 50, chatMessages: 60, apiCalls: 2000 },
+              },
+            }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.resolve({ success: true, desc: mockOffer }),
+        });
+
       const { result } = renderHook(() => useApi());
+
+      // Wait for config to load
+      await waitFor(() => {
+        expect(result.current.config).toBeTruthy();
+      });
 
       const response = await result.current.getOffer('room-123');
 
@@ -263,12 +486,40 @@ describe('useApi Hook', () => {
     });
 
     it('should handle 404 when getting offer', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: false,
-        status: 404,
+      // Force production mode
+      import.meta.env.DEV = false;
+      import.meta.env.MODE = 'production';
+      Object.defineProperty(window, 'location', {
+        value: { hostname: 'example.com' },
+        writable: true,
       });
 
+      // Mock the config fetch first, then the 404 offer fetch
+      fetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              success: true,
+              config: {
+                authSecret: 'test-secret',
+                apiBase: '/api',
+                features: { chat: true, diagnostics: true, recording: false },
+                rateLimits: { roomCreation: 50, chatMessages: 60, apiCalls: 2000 },
+              },
+            }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+        });
+
       const { result } = renderHook(() => useApi());
+
+      // Wait for config to load
+      await waitFor(() => {
+        expect(result.current.config).toBeTruthy();
+      });
 
       const response = await result.current.getOffer('room-123');
 
