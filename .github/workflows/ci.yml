@@ -38,12 +38,12 @@ jobs:
           AUTH_SECRET: test-secret-key-for-ci-123
 
       - name: Run unit tests
-        run: npx vitest run --project=unit-integration
+        run: npm run test
         env:
           AUTH_SECRET: test-secret-key-for-ci-123
 
       - name: Run tests with coverage
-        run: npx vitest run --project=unit-integration --coverage
+        run: npm run test:coverage
         env:
           AUTH_SECRET: test-secret-key-for-ci-123
 
