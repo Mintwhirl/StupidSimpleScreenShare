@@ -1,27 +1,12 @@
-import {
-  createRedisClient,
-  setCorsHeaders,
-  asyncHandler,
-  sendError,
-  validateRoomId,
-  validateViewerId,
-  TTL_ROOM,
-  TTL_HEARTBEAT,
-} from './_utils.js';
+import { createCompleteHandler } from './_middleware.js';
+import { sendError, validateRoomId, validateViewerId, TTL_ROOM, TTL_HEARTBEAT } from './_utils.js';
 
 /**
  * API endpoint to track active viewers in a room (viewer presence)
  * POST /viewers - Register viewer heartbeat
  * GET /viewers?roomId=X - Get active viewer count
  */
-async function handleViewers(req, res) {
-  const redis = createRedisClient();
-  setCorsHeaders(res);
-
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-
+async function handleViewers(req, res, { redis }) {
   const { roomId } = req.method === 'POST' ? req.body || {} : req.query || {};
 
   const roomValidation = validateRoomId(roomId);
@@ -74,4 +59,11 @@ async function handleViewers(req, res) {
   return sendError(res, 405, 'Method not allowed');
 }
 
-export default asyncHandler(handleViewers);
+export default createCompleteHandler(handleViewers, {
+  requireRoom: true,
+  allowedMethods: ['GET', 'POST', 'OPTIONS'],
+  validators: {
+    roomId: validateRoomId,
+    viewerId: validateViewerId,
+  },
+});

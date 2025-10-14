@@ -1,26 +1,11 @@
-import {
-  createRedisClient,
-  setCorsHeaders,
-  asyncHandler,
-  sendError,
-  validateRoomId,
-  validateSender,
-  getClientIdentifier,
-  TTL_ROOM,
-} from './_utils.js';
+import { createCompleteHandler } from './_middleware.js';
+import { sendError, validateRoomId, validateSender, getClientIdentifier, TTL_ROOM } from './_utils.js';
 
 /**
  * API endpoint for registering a sender ID for chat
  * POST /register-sender - Register a sender ID for a room
  */
-async function handleRegisterSender(req, res) {
-  const redis = createRedisClient();
-  setCorsHeaders(res);
-
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-
+async function handleRegisterSender(req, res, { redis }) {
   if (req.method !== 'POST') {
     return sendError(res, 405, 'Method not allowed');
   }
@@ -72,4 +57,11 @@ async function handleRegisterSender(req, res) {
   }
 }
 
-export default asyncHandler(handleRegisterSender);
+export default createCompleteHandler(handleRegisterSender, {
+  requireRoom: true,
+  allowedMethods: ['POST', 'OPTIONS'],
+  validators: {
+    roomId: validateRoomId,
+    senderId: validateSender,
+  },
+});

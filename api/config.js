@@ -1,19 +1,12 @@
-import { asyncHandler, sendError, setCorsHeaders } from './_utils.js';
+import { createCompleteHandler } from './_middleware.js';
+import { sendError } from './_utils.js';
 
 /**
  * GET /api/config
  * Returns client configuration including AUTH_SECRET
  * This endpoint is secure and only returns the AUTH_SECRET to authorized requests
  */
-export default asyncHandler(async (req, res) => {
-  // Only allow GET requests
-  if (req.method !== 'GET') {
-    return sendError(res, 405, 'Method not allowed');
-  }
-
-  // Set CORS headers
-  setCorsHeaders(res);
-
+async function handleConfig(req, res, { redis: _redis }) {
   try {
     // Get AUTH_SECRET from environment variables
     const authSecret = process.env.AUTH_SECRET;
@@ -50,4 +43,9 @@ export default asyncHandler(async (req, res) => {
     console.error('Error in /api/config:', error);
     return sendError(res, 500, 'Internal server error', error);
   }
+}
+
+export default createCompleteHandler(handleConfig, {
+  requireRoom: false, // Config doesn't require room
+  allowedMethods: ['GET', 'OPTIONS'],
 });

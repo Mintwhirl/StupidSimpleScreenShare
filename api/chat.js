@@ -1,7 +1,5 @@
+import { createCompleteHandler } from './_middleware.js';
 import {
-  createRedisClient,
-  setCorsHeaders,
-  asyncHandler,
   sendError,
   validateRoomId,
   validateMessage,
@@ -18,14 +16,7 @@ import {
  * POST /chat - Send a chat message
  * GET /chat?roomId=X&since=timestamp - Get messages since timestamp
  */
-async function handleChat(req, res) {
-  const redis = createRedisClient();
-  setCorsHeaders(res);
-
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-
+async function handleChat(req, res, { redis }) {
   const { roomId } = req.method === 'POST' ? req.body || {} : req.query || {};
 
   const roomValidation = validateRoomId(roomId);
@@ -132,4 +123,12 @@ async function handleChat(req, res) {
   return sendError(res, 405, 'Method not allowed');
 }
 
-export default asyncHandler(handleChat);
+export default createCompleteHandler(handleChat, {
+  requireRoom: true,
+  allowedMethods: ['GET', 'POST', 'OPTIONS'],
+  validators: {
+    roomId: validateRoomId,
+    message: validateMessage,
+    sender: validateSender,
+  },
+});

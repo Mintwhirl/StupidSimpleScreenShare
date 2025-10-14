@@ -1,28 +1,9 @@
 import { randomBytes } from 'crypto';
 
-import {
-  createRedisClient,
-  setCorsHeaders,
-  asyncHandler,
-  sendError,
-  checkRateLimit,
-  getClientIdentifier,
-  getRoomCreationRateLimit,
-  TTL_ROOM,
-} from './_utils.js';
+import { createCompleteHandler } from './_middleware.js';
+import { sendError, checkRateLimit, getClientIdentifier, getRoomCreationRateLimit, TTL_ROOM } from './_utils.js';
 
-async function handleCreateRoom(req, res) {
-  const redis = createRedisClient();
-  setCorsHeaders(res);
-
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-
-  if (req.method !== 'POST') {
-    return sendError(res, 405, 'Method not allowed');
-  }
-
+async function handleCreateRoom(req, res, { redis }) {
   // Log request details for debugging (only in development, sanitized)
   if (process.env.NODE_ENV !== 'production') {
     console.log('Create room request:', {
@@ -72,4 +53,7 @@ async function handleCreateRoom(req, res) {
   }
 }
 
-export default asyncHandler(handleCreateRoom);
+export default createCompleteHandler(handleCreateRoom, {
+  requireRoom: false, // Room creation doesn't require existing room
+  allowedMethods: ['POST', 'OPTIONS'],
+});

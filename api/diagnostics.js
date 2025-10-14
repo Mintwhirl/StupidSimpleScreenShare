@@ -1,29 +1,11 @@
-import { Redis } from '@upstash/redis';
+import { createCompleteHandler } from './_middleware.js';
 
 /**
  * API endpoint for network and system diagnostics
  * GET /diagnostics - Get server health status
  * GET /diagnostics?roomId=X - Get room-specific diagnostics
  */
-export default async function handler(req, res) {
-  const redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL?.trim(),
-    token: process.env.UPSTASH_REDIS_REST_TOKEN?.trim(),
-  });
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return;
-  }
-
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
+async function handleDiagnostics(req, res, { redis }) {
   const { roomId } = req.query;
 
   try {
@@ -112,3 +94,8 @@ async function getRoomDiagnostics(roomId, redis) {
     };
   }
 }
+
+export default createCompleteHandler(handleDiagnostics, {
+  requireRoom: false, // Diagnostics can work without room
+  allowedMethods: ['GET', 'OPTIONS'],
+});
