@@ -18,8 +18,8 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
 
   // Initialize ICE servers
   useEffect(() => {
-    // Use TURN server configuration
-    const servers = getIceServers(config?.useTurn || false);
+    // Use TURN server configuration by default for better connectivity
+    const servers = getIceServers(config?.useTurn !== false); // Default to true unless explicitly disabled
     setIceServers(servers);
   }, [config]);
 

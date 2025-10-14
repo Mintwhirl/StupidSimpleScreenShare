@@ -14,12 +14,21 @@ const DEFAULT_STUN_SERVERS = [
 
 // TURN servers (require authentication and may have costs)
 const TURN_SERVERS = [
-  // Example TURN server configuration
-  // Replace with your actual TURN server credentials
+  // Free TURN server for testing (may have limitations)
   {
-    urls: 'turn:your-turn-server.com:3478',
-    username: process.env.TURN_USERNAME || 'your-username',
-    credential: process.env.TURN_PASSWORD || 'your-password',
+    urls: 'turn:openrelay.metered.ca:80',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
   },
   // Add more TURN servers as needed
 ];
