@@ -44,6 +44,8 @@ npm install
 - Missing environment variables
 - Different Node.js versions
 - Timeout issues
+- Missing Redis service in CI
+- Mock object compatibility issues
 
 **Solution**:
 
@@ -58,6 +60,14 @@ npm run test:coverage
 npm run test tests/unit/validateRoomId.test.js
 ```
 
+**CI Environment Fixes Applied**:
+
+- Added Redis service to CI with health checks
+- Extended test timeout from 5 to 10 minutes
+- Added proper environment variables (NODE_ENV, REDIS_URL, etc.)
+- Improved error handling for mock objects
+- Added Node.js engine requirements (>=18.0.0)
+
 #### Issue: Redis connection errors in tests
 
 **Symptoms**: Tests fail with "Redis connection failed"
@@ -66,6 +76,8 @@ npm run test tests/unit/validateRoomId.test.js
 - These are expected in test environment
 - Tests mock Redis connections
 - Check test setup and mocking
+- **Fixed**: Added Redis service to CI environment with proper health checks
+- **Fixed**: Added test environment fallbacks for Redis client creation
 
 ### 3. Runtime Issues
 
@@ -265,6 +277,14 @@ curl -X POST http://localhost:3000/api/create-room \
 - Check room ID format
 - Verify room exists in Redis
 - Check room expiration settings
+
+#### "Bad Request" (400 errors)
+
+- **Fixed**: Enhanced error handling in useApi.js with robust response parsing
+- **Fixed**: Added detailed error logging for debugging
+- **Fixed**: Improved mock object compatibility in tests
+- Check browser console for detailed error information
+- Verify API request format and headers
 
 ### Support Resources
 
