@@ -33,13 +33,18 @@ async function handleAnswer(req, res) {
       return sendError(res, 400, 'Descriptor must be of type "answer"');
     }
 
-    const roomExists = await redis.get(`room:${roomId}:meta`);
+    // Use atomic transaction to check room exists and store answer
+    const multi = redis.multi();
+    multi.get(`room:${roomId}:meta`);
+    multi.set(`room:${roomId}:answer`, JSON.stringify(desc));
+    multi.expire(`room:${roomId}:answer`, TTL_ROOM);
+
+    const results = await multi.exec();
+    const roomExists = results[0];
+
     if (!roomExists) {
       return sendError(res, 410, 'Room expired or not found');
     }
-
-    await redis.set(`room:${roomId}:answer`, JSON.stringify(desc));
-    await redis.expire(`room:${roomId}:answer`, TTL_ROOM);
 
     return res.json({ ok: true });
   }

@@ -7,13 +7,23 @@ async function handleCandidate(req, res, { redis }) {
 
     // Validation is now handled by middleware
 
-    // Use viewerId for viewers to distinguish between multiple viewers
+    // Use atomic transaction to check room exists and store candidate
     const key =
       role === 'viewer' && viewerId
         ? `room:${roomId}:${role}:${viewerId}:candidates`
         : `room:${roomId}:${role}:candidates`;
-    await redis.rpush(key, JSON.stringify(candidate));
-    await redis.expire(key, TTL_ROOM);
+
+    const multi = redis.multi();
+    multi.get(`room:${roomId}:meta`);
+    multi.rpush(key, JSON.stringify(candidate)); // Store RTCIceCandidate directly
+    multi.expire(key, TTL_ROOM);
+
+    const results = await multi.exec();
+    const roomExists = results[0];
+
+    if (!roomExists) {
+      return sendError(res, 410, 'Room expired or not found');
+    }
 
     return res.json({ ok: true });
   }

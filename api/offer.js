@@ -34,15 +34,18 @@ async function handleOffer(req, res) {
       return sendError(res, 400, 'Descriptor must be of type "offer"');
     }
 
-    // Check room exists
-    const roomExists = await redis.get(`room:${roomId}:meta`);
+    // Use atomic transaction to check room exists and store offer
+    const multi = redis.multi();
+    multi.get(`room:${roomId}:meta`);
+    multi.set(`room:${roomId}:offer`, JSON.stringify(desc));
+    multi.expire(`room:${roomId}:offer`, TTL_ROOM);
+
+    const results = await multi.exec();
+    const roomExists = results[0];
+
     if (!roomExists) {
       return sendError(res, 410, 'Room expired or not found');
     }
-
-    // Store offer
-    await redis.set(`room:${roomId}:offer`, JSON.stringify(desc));
-    await redis.expire(`room:${roomId}:offer`, TTL_ROOM);
 
     return res.json({ ok: true });
   }

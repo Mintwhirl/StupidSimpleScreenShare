@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getIceServers } from '../config/turn.js';
 import logger from '../utils/logger';
+import { createExponentialBackoffPolling } from '../utils/polling';
 
 export function useWebRTC(roomId, role, config, _viewerId = null) {
   // State
@@ -42,11 +43,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
             roomId,
             role,
             viewerId: _viewerId, // Include viewer ID for proper identification
-            candidate: {
-              candidate: candidate.candidate,
-              sdpMid: candidate.sdpMid,
-              sdpMLineIndex: candidate.sdpMLineIndex,
-            },
+            candidate: candidate, // Send RTCIceCandidate directly
           }),
         });
 
@@ -335,53 +332,54 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     answerIntervalRef.current = setInterval(pollForAnswer, pollInterval);
   }, [roomId]);
 
-  // Start polling for ICE candidates
+  // Start polling for ICE candidates with exponential backoff
   const startCandidatePolling = useCallback(async () => {
     if (candidateIntervalRef.current) {
       clearInterval(candidateIntervalRef.current);
     }
 
-    let pollCount = 0;
-    const maxPolls = 120; // 2 minutes timeout for ICE candidates
+    const pollFn = async () => {
+      const response = await fetch(
+        `/api/candidate?roomId=${roomId}&role=${role}${_viewerId ? `&viewerId=${_viewerId}` : ''}`
+      );
 
-    candidateIntervalRef.current = setInterval(async () => {
-      try {
-        pollCount++;
-
-        // Timeout after maxPolls attempts
-        if (pollCount > maxPolls) {
-          clearInterval(candidateIntervalRef.current);
-          candidateIntervalRef.current = null;
-          logger.warn('ICE candidate polling timeout - connection may be stuck');
-          return;
-        }
-
-        const response = await fetch(
-          `/api/candidate?roomId=${roomId}&role=${role}${_viewerId ? `&viewerId=${_viewerId}` : ''}`
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.candidates && data.candidates.length > 0) {
-            const pc = peerConnectionRef.current;
-            if (pc) {
-              for (const candidate of data.candidates) {
-                try {
-                  await pc.addIceCandidate(candidate);
-                } catch (candidateErr) {
-                  logger.warn('Failed to add ICE candidate:', candidateErr);
-                }
+      if (response.ok) {
+        const data = await response.json();
+        if (data.candidates && data.candidates.length > 0) {
+          const pc = peerConnectionRef.current;
+          if (pc) {
+            for (const candidate of data.candidates) {
+              try {
+                await pc.addIceCandidate(candidate);
+              } catch (candidateErr) {
+                logger.warn('Failed to add ICE candidate:', candidateErr);
               }
             }
           }
-        } else if (response.status !== 404) {
-          // 404 is expected when no candidates, but other errors are concerning
-          logger.error('Error polling for ICE candidates:', response.status);
+          return true; // Found candidates
         }
-      } catch (err) {
-        logger.error('Error polling for ICE candidates:', err);
+      } else if (response.status !== 404) {
+        // 404 is expected when no candidates, but other errors are concerning
+        logger.error('Error polling for ICE candidates:', response.status);
+        throw new Error(`HTTP ${response.status}`);
       }
-    }, 1000);
+
+      return false; // No candidates found
+    };
+
+    const pollingFunction = createExponentialBackoffPolling(pollFn, {
+      initialInterval: 1000,
+      maxInterval: 10000, // 10 seconds max
+      backoffFactor: 1.5,
+      maxPolls: 120, // 2 minutes timeout
+      backoffAfter: 10, // Start backoff after 10 polls
+    });
+
+    try {
+      await pollingFunction();
+    } catch (error) {
+      logger.warn('ICE candidate polling timeout - connection may be stuck');
+    }
   }, [roomId, role, _viewerId]); // Fixed: Added _viewerId to dependency array
 
   // Start screen sharing (host)
