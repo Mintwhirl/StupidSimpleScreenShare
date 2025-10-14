@@ -8,6 +8,7 @@ import {
   validateSender,
   checkRateLimit,
   getChatRateLimit,
+  getClientIdentifier,
   TTL_ROOM,
   MAX_MESSAGES,
 } from './_utils.js';
@@ -49,6 +50,15 @@ async function handleChat(req, res) {
     const senderValidation = validateSender(sender);
     if (!senderValidation.valid) {
       return sendError(res, 400, senderValidation.error);
+    }
+
+    // Validate sender is authorized for this room
+    const clientId = getClientIdentifier(req);
+    const senderKey = `room:${roomId}:sender:${sender.trim()}`;
+    const authorizedSender = await redis.get(senderKey);
+
+    if (!authorizedSender || authorizedSender !== clientId) {
+      return sendError(res, 403, 'Unauthorized: Invalid sender ID for this room');
     }
 
     // Rate limiting: 60 messages per minute per room+sender combo

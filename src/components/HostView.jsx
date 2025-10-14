@@ -83,11 +83,31 @@ function HostView({ roomId, config, onGoHome }) {
     navigator.clipboard
       .writeText(roomId)
       .then(() => {
-        // You could add a toast notification here
-        console.log('Room ID copied to clipboard');
+        // Show temporary success feedback
+        const button = document.querySelector('[data-copy-button]');
+        if (button) {
+          const originalText = button.textContent;
+          button.textContent = 'Copied!';
+          button.style.backgroundColor = '#10b981';
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.style.backgroundColor = '';
+          }, 2000);
+        }
       })
       .catch((err) => {
         console.error('Failed to copy room ID:', err);
+        // Show error feedback
+        const button = document.querySelector('[data-copy-button]');
+        if (button) {
+          const originalText = button.textContent;
+          button.textContent = 'Failed!';
+          button.style.backgroundColor = '#ef4444';
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.style.backgroundColor = '';
+          }, 2000);
+        }
       });
   };
 
@@ -150,6 +170,7 @@ function HostView({ roomId, config, onGoHome }) {
               />
               <button
                 onClick={copyRoomId}
+                data-copy-button
                 className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
               >
                 Copy

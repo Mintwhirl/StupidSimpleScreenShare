@@ -30,7 +30,8 @@ const TURN_SERVERS = [
     username: 'openrelayproject',
     credential: 'openrelayproject',
   },
-  // Add more TURN servers as needed
+  // Production TURN servers (if configured)
+  ...(process.env.TURN_SERVERS ? JSON.parse(process.env.TURN_SERVERS) : []),
 ];
 
 /**

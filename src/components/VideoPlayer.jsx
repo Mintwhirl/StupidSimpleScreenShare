@@ -77,7 +77,7 @@ const VideoPlayer = forwardRef(({ className, ...props }, ref) => {
     };
   }, [internalRef]);
 
-  return <video ref={internalRef} className={className} {...props} />;
+  return <video ref={internalRef} className={className} aria-label='Screen sharing video stream' {...props} />;
 });
 
 VideoPlayer.displayName = 'VideoPlayer';

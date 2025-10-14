@@ -81,6 +81,20 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
       }
 
       await connectToHost();
+
+      // Register sender ID for chat if viewerId is provided
+      if (viewerId && viewerId.trim()) {
+        try {
+          await fetch('/api/register-sender', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId, senderId: viewerId.trim() }),
+          });
+        } catch (err) {
+          console.warn('Failed to register sender ID:', err);
+        }
+      }
+
       // Don't set hostStatus to 'connected' here - let the WebRTC connection state handle it
     } catch (err) {
       console.error('Error connecting to host:', err);
@@ -89,7 +103,7 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
     } finally {
       setIsConnecting(false);
     }
-  }, [roomId, connectToHost, validateRoom]);
+  }, [roomId, connectToHost, validateRoom, viewerId]);
 
   // Removed auto-connect logic - user must manually click "Connect to Host"
 
