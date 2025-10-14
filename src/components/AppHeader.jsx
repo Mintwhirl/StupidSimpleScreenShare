@@ -1,10 +1,13 @@
+import { useRoomContext } from '../contexts/RoomContext';
+
 /**
  * AppHeader Component
  *
  * Renders the application header for non-home views.
  * Extracted from App.jsx to improve component organization.
  */
-function AppHeader({ currentView, roomId, showChat, showDiagnostics, onToggleChat, onToggleDiagnostics, onGoHome }) {
+function AppHeader({ currentView, showChat, showDiagnostics, onToggleChat, onToggleDiagnostics, onGoHome }) {
+  const { roomId } = useRoomContext();
   return (
     <header className='bg-black bg-opacity-30 backdrop-blur-sm border-b border-purple-500 border-opacity-30 mb-8'>
       <div className='px-4 sm:px-6 lg:px-8'>

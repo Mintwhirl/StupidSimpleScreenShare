@@ -1,4 +1,5 @@
 import { Suspense, lazy } from 'react';
+import { useRoomContext } from '../contexts/RoomContext';
 
 // Lazy load components for code splitting
 const Chat = lazy(() => import('./Chat'));
@@ -10,7 +11,8 @@ const Diagnostics = lazy(() => import('./Diagnostics'));
  * Renders the chat and diagnostics sidebar panels.
  * Extracted from App.jsx to improve component organization.
  */
-function SidebarPanels({ currentView, roomId, viewerId, showChat, showDiagnostics }) {
+function SidebarPanels({ currentView, showChat, showDiagnostics }) {
+  const { roomId, viewerId } = useRoomContext();
   return (
     <>
       {/* Chat Panel */}

@@ -1,13 +1,32 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import VideoPlayer from './VideoPlayer';
 import { useWebRTC } from '../hooks/useWebRTC';
+import { useRoomContext } from '../contexts/RoomContext';
+import { validateRoomId, validateViewerId } from '../utils/validation';
 
-function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
+function ViewerView({ config, onGoHome }) {
+  const { roomId, viewerId, updateViewerId } = useRoomContext();
   const [error, setError] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [hostStatus, setHostStatus] = useState('unknown');
+  const [_roomIdError, setRoomIdError] = useState(null);
+  const [viewerIdError, setViewerIdError] = useState(null);
 
   const remoteVideoRef = useRef(null);
+
+  // Validation functions
+  const validateRoomIdInput = useCallback((value) => {
+    const validation = validateRoomId(value);
+    setRoomIdError(validation.valid ? null : validation.error);
+    return validation.valid;
+  }, []);
+
+  const validateViewerIdInput = useCallback((value) => {
+    const validation = validateViewerId(value);
+    setViewerIdError(validation.valid ? null : validation.error);
+    return validation.valid;
+  }, []);
+
   const {
     connectToHost,
     disconnect,
@@ -62,9 +81,17 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
 
   // Handle connection to host
   const handleConnect = useCallback(async () => {
-    if (!roomId.trim()) {
-      setError('Please enter a room ID');
-      return;
+    // Clear previous errors
+    setError(null);
+    setRoomIdError(null);
+    setViewerIdError(null);
+
+    // Validate inputs
+    const isRoomIdValid = validateRoomIdInput(roomId);
+    const isViewerIdValid = validateViewerIdInput(viewerId);
+
+    if (!isRoomIdValid || !isViewerIdValid) {
+      return; // Validation errors are already set by validation functions
     }
 
     try {
@@ -103,7 +130,7 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
     } finally {
       setIsConnecting(false);
     }
-  }, [roomId, connectToHost, validateRoom, viewerId]);
+  }, [roomId, connectToHost, validateRoom, viewerId, validateRoomIdInput, validateViewerIdInput]);
 
   // Removed auto-connect logic - user must manually click "Connect to Host"
 
@@ -130,7 +157,7 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
   // Generate viewer ID if not provided
   const generateViewerId = () => {
     const id = `viewer_${Math.random().toString(36).substring(2, 8)}`;
-    setViewerId(id);
+    updateViewerId(id);
     return id;
   };
 
@@ -216,10 +243,21 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
             <input
               type='text'
               value={viewerId || ''}
-              onChange={(e) => setViewerId(e.target.value)}
+              onChange={(e) => {
+                updateViewerId(e.target.value);
+                // Real-time validation
+                if (e.target.value.trim()) {
+                  validateViewerIdInput(e.target.value);
+                } else {
+                  setViewerIdError(null);
+                }
+              }}
               placeholder='Enter your name or leave blank for auto-generated ID'
-              className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                viewerIdError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+              }`}
             />
+            {viewerIdError && <p className='text-red-500 text-sm mt-1'>{viewerIdError}</p>}
           </div>
           <button
             onClick={generateViewerId}

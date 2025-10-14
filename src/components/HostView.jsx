@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import VideoPlayer from './VideoPlayer';
 import { useWebRTC } from '../hooks/useWebRTC';
+import { useRoomContext } from '../contexts/RoomContext';
 
-function HostView({ roomId, config, onGoHome }) {
+function HostView({ config, onGoHome }) {
+  const { roomId } = useRoomContext();
   const [isSharing, setIsSharing] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const [viewerCount, setViewerCount] = useState(0);
