@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { trackEvent, trackPageView } from '../utils/analytics';
 
 const RoomContext = createContext();
 
@@ -24,6 +25,16 @@ export const RoomProvider = ({ children }) => {
   const updateRoomId = useCallback((newRoomId) => {
     setRoomId(newRoomId);
   }, []);
+
+  // Check for room parameter in URL on mount (from useAppState)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('room')) {
+      const id = params.get('room');
+      updateRoomId(id);
+      setCurrentView('viewer');
+    }
+  }, [updateRoomId]);
 
   const updateViewerId = useCallback((newViewerId) => {
     setViewerId(newViewerId);
@@ -54,20 +65,38 @@ export const RoomProvider = ({ children }) => {
   }, []);
 
   const handleGoHome = useCallback(() => {
+    trackEvent('navigation', { from: currentView, to: 'home' });
+    trackPageView('home');
     setCurrentView('home');
+    setRoomId('');
+    setViewerId('');
     setShowChat(false);
     setShowDiagnostics(false);
-  }, []);
+  }, [currentView]);
 
-  const handleNavigateToHost = useCallback(() => {
-    setCurrentView('host');
-    setRole('host');
-  }, []);
+  const handleNavigateToHost = useCallback(
+    (newRoomId) => {
+      if (newRoomId) {
+        updateRoomId(newRoomId);
+      }
+      setCurrentView('host');
+      setRole('host');
+      trackPageView('host');
+    },
+    [updateRoomId]
+  );
 
-  const handleNavigateToViewer = useCallback(() => {
-    setCurrentView('viewer');
-    setRole('viewer');
-  }, []);
+  const handleNavigateToViewer = useCallback(
+    (newRoomId) => {
+      if (newRoomId) {
+        updateRoomId(newRoomId);
+      }
+      setCurrentView('viewer');
+      setRole('viewer');
+      trackPageView('viewer');
+    },
+    [updateRoomId]
+  );
 
   const value = {
     // State

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import VideoPlayer from './VideoPlayer';
 import { useWebRTC } from '../hooks/useWebRTC';
 import { useRoomContext } from '../contexts/RoomContext';
-import { validateRoomId, validateViewerId } from '../utils/validation';
+import { validateViewerId } from '../utils/validation';
 import { CONNECTION_STATES, UI_TEXT, STATUS_COLORS, ERROR_MESSAGES, API_ENDPOINTS } from '../constants';
 
 function ViewerView({ config, onGoHome }) {
@@ -15,13 +15,7 @@ function ViewerView({ config, onGoHome }) {
 
   const remoteVideoRef = useRef(null);
 
-  // Validation functions
-  const validateRoomIdInput = useCallback((value) => {
-    const validation = validateRoomId(value);
-    setRoomIdError(validation.valid ? null : validation.error);
-    return validation.valid;
-  }, []);
-
+  // Validation functions (only for viewerId since roomId comes from context)
   const validateViewerIdInput = useCallback((value) => {
     const validation = validateViewerId(value);
     setViewerIdError(validation.valid ? null : validation.error);
@@ -82,10 +76,10 @@ function ViewerView({ config, onGoHome }) {
     setViewerIdError(null);
 
     // Validate inputs
-    const isRoomIdValid = validateRoomIdInput(roomId);
+    // RoomId comes from context, no need to validate here
     const isViewerIdValid = validateViewerIdInput(viewerId);
 
-    if (!isRoomIdValid || !isViewerIdValid) {
+    if (!isViewerIdValid) {
       return; // Validation errors are already set by validation functions
     }
 
@@ -125,7 +119,7 @@ function ViewerView({ config, onGoHome }) {
       console.error('Error connecting to host:', err);
       setError(ERROR_MESSAGES.CONNECTION_FAILED);
     }
-  }, [roomId, connectToHost, validateRoom, viewerId, validateRoomIdInput, validateViewerIdInput, updateSenderSecret]);
+  }, [roomId, connectToHost, validateRoom, viewerId, validateViewerIdInput, updateSenderSecret]);
 
   // Removed auto-connect logic - user must manually click "Connect to Host"
 

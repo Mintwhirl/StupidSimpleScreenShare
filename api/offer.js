@@ -1,21 +1,7 @@
-import {
-  createRedisClient,
-  setCorsHeaders,
-  asyncHandler,
-  sendError,
-  validateRoomId,
-  validateRTCDescriptor,
-  TTL_ROOM,
-} from './_utils.js';
+import { createCompleteHandler } from './_middleware.js';
+import { validateRoomId, validateRTCDescriptor, TTL_ROOM, sendError } from './_utils.js';
 
-async function handleOffer(req, res) {
-  const redis = createRedisClient();
-  setCorsHeaders(res);
-
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-
+async function handleOffer(req, res, { redis }) {
   if (req.method === 'POST') {
     const { roomId, desc } = req.body || {};
 
@@ -84,4 +70,11 @@ async function handleOffer(req, res) {
   return sendError(res, 405, 'Method not allowed');
 }
 
-export default asyncHandler(handleOffer);
+export default createCompleteHandler(handleOffer, {
+  requireRoom: true,
+  allowedMethods: ['GET', 'POST', 'OPTIONS'],
+  validators: {
+    roomId: validateRoomId,
+    desc: validateRTCDescriptor,
+  },
+});
