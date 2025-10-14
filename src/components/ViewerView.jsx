@@ -3,12 +3,12 @@ import VideoPlayer from './VideoPlayer';
 import { useWebRTC } from '../hooks/useWebRTC';
 import { useRoomContext } from '../contexts/RoomContext';
 import { validateRoomId, validateViewerId } from '../utils/validation';
+import { CONNECTION_STATES, UI_TEXT, STATUS_COLORS, ERROR_MESSAGES, API_ENDPOINTS } from '../constants';
 
 function ViewerView({ config, onGoHome }) {
   const { roomId, viewerId, updateViewerId } = useRoomContext();
   const [error, setError] = useState(null);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [hostStatus, setHostStatus] = useState('unknown');
+  // Remove redundant state - derive everything from connectionState
   const [_roomIdError, setRoomIdError] = useState(null);
   const [viewerIdError, setViewerIdError] = useState(null);
 
@@ -35,9 +35,11 @@ function ViewerView({ config, onGoHome }) {
     error: webrtcError,
   } = useWebRTC(roomId, 'viewer', config, viewerId);
 
-  // Derive connection status from WebRTC state
+  // Derive all status from WebRTC state - single source of truth
   const connectionStatus = connectionState;
-  const isConnected = connectionState === 'connected';
+  const isConnected = connectionState === CONNECTION_STATES.CONNECTED;
+  const isConnecting = connectionState === CONNECTION_STATES.CONNECTING;
+  const hostStatus = connectionState; // Use connectionState directly
 
   // Handle remote stream
   useEffect(() => {
@@ -50,24 +52,16 @@ function ViewerView({ config, onGoHome }) {
   useEffect(() => {
     if (webrtcError) {
       setError(webrtcError);
-      setIsConnecting(false);
-      setHostStatus('disconnected');
-    } else if (connectionState === 'connected') {
+    } else if (connectionState === CONNECTION_STATES.CONNECTED) {
       // Clear errors when connection succeeds
       setError(null);
-      setIsConnecting(false);
-      setHostStatus('connected');
-    } else if (connectionState === 'connecting') {
-      setHostStatus('connecting');
-    } else if (connectionState === 'disconnected' || connectionState === 'failed') {
-      setHostStatus('disconnected');
     }
   }, [webrtcError, connectionState]);
 
   // Validate room exists
   const validateRoom = useCallback(async (roomId) => {
     try {
-      const response = await fetch(`/api/diagnostics?roomId=${roomId}`);
+      const response = await fetch(`${API_ENDPOINTS.DIAGNOSTICS}?roomId=${roomId}`);
       if (response.ok) {
         const data = await response.json();
         return data.room?.exists === true;
@@ -96,14 +90,12 @@ function ViewerView({ config, onGoHome }) {
 
     try {
       setError(null);
-      setIsConnecting(true);
-      setHostStatus('connecting');
+      // State will be managed by WebRTC hook
 
       // Validate room exists first
       const roomExists = await validateRoom(roomId);
       if (!roomExists) {
-        setError('Room not found. Please check the room ID and make sure the host has started sharing.');
-        setHostStatus('disconnected');
+        setError(ERROR_MESSAGES.ROOM_NOT_FOUND);
         return;
       }
 
@@ -112,7 +104,7 @@ function ViewerView({ config, onGoHome }) {
       // Register sender ID for chat if viewerId is provided
       if (viewerId && viewerId.trim()) {
         try {
-          await fetch('/api/register-sender', {
+          await fetch(API_ENDPOINTS.REGISTER_SENDER, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ roomId, senderId: viewerId.trim() }),
@@ -125,10 +117,7 @@ function ViewerView({ config, onGoHome }) {
       // Don't set hostStatus to 'connected' here - let the WebRTC connection state handle it
     } catch (err) {
       console.error('Error connecting to host:', err);
-      setError('Failed to connect to host. Please check the room ID and try again.');
-      setHostStatus('disconnected');
-    } finally {
-      setIsConnecting(false);
+      setError(ERROR_MESSAGES.CONNECTION_FAILED);
     }
   }, [roomId, connectToHost, validateRoom, viewerId, validateRoomIdInput, validateViewerIdInput]);
 
@@ -138,7 +127,6 @@ function ViewerView({ config, onGoHome }) {
   const handleDisconnect = async () => {
     try {
       await disconnect();
-      setHostStatus('disconnected');
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = null;
       }
@@ -164,56 +152,56 @@ function ViewerView({ config, onGoHome }) {
   // Get connection status color
   const getStatusColor = () => {
     switch (connectionStatus) {
-      case 'connected':
-        return 'text-green-600';
-      case 'connecting':
-        return 'text-yellow-600';
-      case 'disconnected':
-        return 'text-red-600';
+      case CONNECTION_STATES.CONNECTED:
+        return STATUS_COLORS.SUCCESS;
+      case CONNECTION_STATES.CONNECTING:
+        return STATUS_COLORS.WARNING;
+      case CONNECTION_STATES.DISCONNECTED:
+        return STATUS_COLORS.ERROR;
       default:
-        return 'text-gray-600';
+        return STATUS_COLORS.DEFAULT;
     }
   };
 
   // Get connection status text
   const getStatusText = () => {
     switch (connectionStatus) {
-      case 'connected':
-        return 'Connected';
-      case 'connecting':
-        return 'Connecting...';
-      case 'disconnected':
-        return 'Disconnected';
+      case CONNECTION_STATES.CONNECTED:
+        return UI_TEXT.CONNECTED;
+      case CONNECTION_STATES.CONNECTING:
+        return UI_TEXT.CONNECTING;
+      case CONNECTION_STATES.DISCONNECTED:
+        return UI_TEXT.DISCONNECTED;
       default:
-        return 'Unknown';
+        return UI_TEXT.UNKNOWN;
     }
   };
 
   // Get host status color
   const getHostStatusColor = () => {
     switch (hostStatus) {
-      case 'connected':
-        return 'text-green-600';
-      case 'connecting':
-        return 'text-yellow-600';
-      case 'disconnected':
-        return 'text-red-600';
+      case CONNECTION_STATES.CONNECTED:
+        return STATUS_COLORS.SUCCESS;
+      case CONNECTION_STATES.CONNECTING:
+        return STATUS_COLORS.WARNING;
+      case CONNECTION_STATES.DISCONNECTED:
+        return STATUS_COLORS.ERROR;
       default:
-        return 'text-gray-600';
+        return STATUS_COLORS.DEFAULT;
     }
   };
 
   // Get host status text
   const getHostStatusText = () => {
     switch (hostStatus) {
-      case 'connected':
-        return 'Host Online';
-      case 'connecting':
-        return 'Connecting to Host...';
-      case 'disconnected':
-        return 'Host Offline';
+      case CONNECTION_STATES.CONNECTED:
+        return UI_TEXT.HOST_ONLINE;
+      case CONNECTION_STATES.CONNECTING:
+        return UI_TEXT.CONNECTING_TO_HOST;
+      case CONNECTION_STATES.DISCONNECTED:
+        return UI_TEXT.HOST_OFFLINE;
       default:
-        return 'Unknown';
+        return UI_TEXT.UNKNOWN;
     }
   };
 
@@ -283,7 +271,7 @@ function ViewerView({ config, onGoHome }) {
                   : 'bg-green-600 text-white hover:bg-green-700'
               }`}
             >
-              {isConnecting ? 'Connecting...' : 'Connect to Host'}
+              {isConnecting ? UI_TEXT.CONNECTING : UI_TEXT.CONNECT_TO_HOST}
             </button>
           ) : (
             <div className='flex items-center space-x-4'>
@@ -291,13 +279,13 @@ function ViewerView({ config, onGoHome }) {
                 onClick={handleReconnect}
                 className='px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors'
               >
-                Reconnect
+                {UI_TEXT.RECONNECT}
               </button>
               <button
                 onClick={handleDisconnect}
                 className='px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors'
               >
-                Disconnect
+                {UI_TEXT.DISCONNECT}
               </button>
             </div>
           )}
