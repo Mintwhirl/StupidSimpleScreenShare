@@ -91,13 +91,7 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
     }
   }, [roomId, connectToHost, validateRoom]);
 
-  // Auto-connect when component mounts (only for valid rooms)
-  useEffect(() => {
-    if (roomId && !isConnecting && !isConnected) {
-      // Don't auto-connect, let user manually click the button
-      // This prevents connecting to fake rooms automatically
-    }
-  }, [roomId, handleConnect, isConnected, isConnecting]);
+  // Removed auto-connect logic - user must manually click "Connect to Host"
 
   // Handle disconnection
   const handleDisconnect = async () => {

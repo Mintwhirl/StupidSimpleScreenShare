@@ -13,6 +13,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
   // Refs
   const peerConnectionRef = useRef(null);
   const dataChannelRef = useRef(null);
+  const offerIntervalRef = useRef(null);
   const answerIntervalRef = useRef(null);
   const candidateIntervalRef = useRef(null);
 
@@ -78,6 +79,10 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
 
       // Clear polling intervals when connected or failed
       if (pc.connectionState === 'connected' || pc.connectionState === 'failed') {
+        if (offerIntervalRef.current) {
+          clearInterval(offerIntervalRef.current);
+          offerIntervalRef.current = null;
+        }
         if (answerIntervalRef.current) {
           clearInterval(answerIntervalRef.current);
           answerIntervalRef.current = null;
@@ -177,8 +182,8 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
 
   // Start polling for offers (viewer)
   const startOfferPolling = useCallback(async () => {
-    if (answerIntervalRef.current) {
-      clearInterval(answerIntervalRef.current);
+    if (offerIntervalRef.current) {
+      clearInterval(offerIntervalRef.current);
     }
 
     let pollCount = 0;
@@ -191,8 +196,8 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
 
         // Timeout after maxPolls attempts
         if (pollCount > maxPolls) {
-          clearInterval(answerIntervalRef.current);
-          answerIntervalRef.current = null;
+          clearInterval(offerIntervalRef.current);
+          offerIntervalRef.current = null;
           setError('Connection timeout: No offer received from host. Make sure the host has started sharing.');
           setConnectionState('failed');
           return;
@@ -204,47 +209,51 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           const data = await response.json();
           if (data.desc) {
             // Clear interval once we get an offer
-            clearInterval(answerIntervalRef.current);
-            answerIntervalRef.current = null;
+            clearInterval(offerIntervalRef.current);
+            offerIntervalRef.current = null;
+
+            // Create peer connection when we receive an offer
+            const pc = createPeerConnection();
+            peerConnectionRef.current = pc;
 
             // Handle the offer
-            const pc = peerConnectionRef.current;
-            if (pc) {
-              await pc.setRemoteDescription(data.desc);
+            await pc.setRemoteDescription(data.desc);
 
-              // Create and send answer
-              const answer = await pc.createAnswer();
-              await pc.setLocalDescription(answer);
-              await sendAnswer(answer);
-            }
+            // Create and send answer
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            await sendAnswer(answer);
+
+            // Start ICE candidate polling now that we have a peer connection
+            startCandidatePolling();
           }
         } else if (response.status === 404) {
           // Expected 404 - no offer yet, but reduce polling frequency after initial attempts
           if (pollCount > 10) {
             // After 10 seconds, reduce to polling every 5 seconds
-            clearInterval(answerIntervalRef.current);
+            clearInterval(offerIntervalRef.current);
             pollInterval = 5000;
-            answerIntervalRef.current = setInterval(pollForOffer, pollInterval);
+            offerIntervalRef.current = setInterval(pollForOffer, pollInterval);
           }
         } else {
           // Unexpected error
           console.error('Unexpected error polling for offers:', response.status);
-          clearInterval(answerIntervalRef.current);
-          answerIntervalRef.current = null;
+          clearInterval(offerIntervalRef.current);
+          offerIntervalRef.current = null;
           setError(`Server error: ${response.status}`);
           setConnectionState('failed');
         }
       } catch (err) {
         console.error('Error polling for offers:', err);
-        clearInterval(answerIntervalRef.current);
-        answerIntervalRef.current = null;
+        clearInterval(offerIntervalRef.current);
+        offerIntervalRef.current = null;
         setError(`Network error: ${err.message}`);
         setConnectionState('failed');
       }
     };
 
-    answerIntervalRef.current = setInterval(pollForOffer, pollInterval);
-  }, [roomId, sendAnswer]);
+    offerIntervalRef.current = setInterval(pollForOffer, pollInterval);
+  }, [roomId, sendAnswer, createPeerConnection, startCandidatePolling]);
 
   // Start polling for answers (host)
   const startAnswerPolling = useCallback(async () => {
@@ -254,9 +263,21 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
 
     let pollCount = 0;
     let pollInterval = 1000; // Start with 1 second
+    const maxPolls = 60; // 60 seconds timeout
 
     const pollForAnswer = async () => {
       try {
+        pollCount++;
+
+        // Timeout after maxPolls attempts
+        if (pollCount > maxPolls) {
+          clearInterval(answerIntervalRef.current);
+          answerIntervalRef.current = null;
+          setError('Connection timeout: No answer received from viewer. Make sure the viewer has connected.');
+          setConnectionState('failed');
+          return;
+        }
+
         const response = await fetch(`/api/answer?roomId=${roomId}`);
 
         if (response.ok) {
@@ -274,7 +295,6 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           }
         } else if (response.status === 404) {
           // Expected 404 - no answer yet, but reduce polling frequency after initial attempts
-          pollCount++;
           if (pollCount > 10) {
             // After 10 seconds, reduce to polling every 5 seconds
             clearInterval(answerIntervalRef.current);
@@ -284,9 +304,17 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         } else {
           // Unexpected error
           console.error('Unexpected error polling for answers:', response.status);
+          clearInterval(answerIntervalRef.current);
+          answerIntervalRef.current = null;
+          setError(`Server error: ${response.status}`);
+          setConnectionState('failed');
         }
       } catch (err) {
         console.error('Error polling for answers:', err);
+        clearInterval(answerIntervalRef.current);
+        answerIntervalRef.current = null;
+        setError(`Network error: ${err.message}`);
+        setConnectionState('failed');
       }
     };
 
@@ -387,22 +415,16 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       setError(null);
       setConnectionState('connecting');
 
-      // Create peer connection
-      const pc = createPeerConnection();
-      peerConnectionRef.current = pc;
-
-      // Start polling for offers
+      // Don't create peer connection yet - wait for offer from host
+      // Start polling for offers (ICE candidate polling will start when peer connection is created)
       startOfferPolling();
-
-      // Start polling for ICE candidates
-      startCandidatePolling();
     } catch (err) {
       console.error('Error connecting to host:', err);
       setError(`Failed to connect to host: ${err.message}`);
       setConnectionState('disconnected');
       throw err;
     }
-  }, [role, createPeerConnection, startCandidatePolling, startOfferPolling]);
+  }, [role, startOfferPolling]);
 
   // Stop screen sharing
   const stopScreenShare = useCallback(async () => {
@@ -420,6 +442,11 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       }
 
       // Clear intervals
+      if (offerIntervalRef.current) {
+        clearInterval(offerIntervalRef.current);
+        offerIntervalRef.current = null;
+      }
+
       if (answerIntervalRef.current) {
         clearInterval(answerIntervalRef.current);
         answerIntervalRef.current = null;
@@ -448,6 +475,9 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      if (offerIntervalRef.current) {
+        clearInterval(offerIntervalRef.current);
+      }
       if (answerIntervalRef.current) {
         clearInterval(answerIntervalRef.current);
       }

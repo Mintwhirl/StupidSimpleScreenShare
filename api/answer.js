@@ -65,6 +65,10 @@ async function handleAnswer(req, res) {
     try {
       // Upstash Redis auto-parses JSON, so check if it's already an object
       const desc = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+      // Delete the answer after retrieving it to prevent multiple hosts from getting the same answer
+      await redis.del(`room:${roomId}:answer`);
+
       return res.json({ desc });
     } catch (error) {
       return sendError(res, 500, 'Failed to parse answer data', error);
