@@ -54,7 +54,9 @@ async function handleChat(req, res) {
 
     // Validate sender is authorized for this room
     const clientId = getClientIdentifier(req);
-    const senderKey = `room:${roomId}:sender:${sender.trim()}`;
+    // Sanitize sender name to prevent Redis key pollution
+    const sanitizedSender = sender.trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+    const senderKey = `room:${roomId}:sender:${sanitizedSender}`;
     const authorizedSenderData = await redis.get(senderKey);
 
     if (!authorizedSenderData) {

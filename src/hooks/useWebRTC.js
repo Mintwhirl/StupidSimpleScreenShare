@@ -9,7 +9,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
   const [remoteStream, setRemoteStream] = useState(null);
   const [localStream, setLocalStream] = useState(null);
   const [error, setError] = useState(null);
-  const [_peerConnections, _setPeerConnections] = useState({});
+  // Removed unused _peerConnections state (dead code)
   const [iceServers, setIceServers] = useState([]);
 
   // Refs
@@ -544,7 +544,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     remoteStream,
     localStream,
     error,
-    peerConnections: _peerConnections,
+    // Removed unused peerConnections (dead code)
 
     // Actions
     startScreenShare,

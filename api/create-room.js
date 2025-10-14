@@ -23,13 +23,13 @@ async function handleCreateRoom(req, res) {
     return sendError(res, 405, 'Method not allowed');
   }
 
-  // Log request details for debugging (only in development)
+  // Log request details for debugging (only in development, sanitized)
   if (process.env.NODE_ENV !== 'production') {
     console.log('Create room request:', {
       method: req.method,
-      headers: req.headers,
-      body: req.body,
-      query: req.query,
+      // Don't log headers to avoid leaking sensitive data
+      bodyKeys: req.body ? Object.keys(req.body) : [],
+      queryKeys: req.query ? Object.keys(req.query) : [],
     });
   }
 
@@ -38,12 +38,7 @@ async function handleCreateRoom(req, res) {
   if (authSecret) {
     const providedSecret = req.headers['x-auth-secret'] || req.body?.authSecret;
     if (providedSecret !== authSecret) {
-      console.log(
-        'Auth mismatch - Server secret:',
-        `${authSecret?.substring(0, 10) || 'undefined'}...`,
-        'Client secret:',
-        `${providedSecret?.substring(0, 10) || 'undefined'}...`
-      );
+      console.log('Auth mismatch - authentication failed');
       return sendError(res, 401, 'Unauthorized - Invalid or missing auth secret');
     }
   }

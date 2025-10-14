@@ -93,15 +93,19 @@ export function getConnectionQuality(peerConnection) {
  * Configure WebRTC with optimal settings
  * @param {RTCPeerConnection} peerConnection - The peer connection to configure
  * @param {boolean} useTurn - Whether to use TURN servers
+ * @param {string} transportPolicy - ICE transport policy ('all' or 'relay')
  */
-export function configureWebRTC(peerConnection, useTurn = false) {
+export function configureWebRTC(peerConnection, useTurn = false, transportPolicy = null) {
   if (!peerConnection) return;
+
+  // Get transport policy from environment or use default
+  const iceTransportPolicy = transportPolicy || process.env.ICE_TRANSPORT_POLICY || (useTurn ? 'all' : 'all');
 
   // Set ICE servers
   peerConnection.setConfiguration({
     iceServers: getIceServers(useTurn),
     iceCandidatePoolSize: 10,
-    iceTransportPolicy: useTurn ? 'all' : 'all',
+    iceTransportPolicy,
     bundlePolicy: 'max-bundle',
     rtcpMuxPolicy: 'require',
   });

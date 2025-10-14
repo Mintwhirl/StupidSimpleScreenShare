@@ -9,7 +9,7 @@ function ViewerView({ config, onGoHome }) {
   const { roomId, viewerId, updateViewerId, updateSenderSecret } = useRoomContext();
   const [error, setError] = useState(null);
   // Remove redundant state - derive everything from connectionState
-  const [_roomIdError, setRoomIdError] = useState(null);
+  // Removed unused _roomIdError state (dead code)
   const [viewerIdError, setViewerIdError] = useState(null);
   // Remove local senderSecret state - use context instead
 
