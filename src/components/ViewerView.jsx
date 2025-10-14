@@ -39,6 +39,21 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
     }
   }, [webrtcError]);
 
+  // Validate room exists
+  const validateRoom = useCallback(async (roomId) => {
+    try {
+      const response = await fetch(`/api/diagnostics?roomId=${roomId}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.room?.exists === true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Error validating room:', err);
+      return false;
+    }
+  }, []);
+
   // Handle connection to host
   const handleConnect = useCallback(async () => {
     if (!roomId.trim()) {
@@ -51,6 +66,14 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
       setIsConnecting(true);
       setHostStatus('connecting');
 
+      // Validate room exists first
+      const roomExists = await validateRoom(roomId);
+      if (!roomExists) {
+        setError('Room not found. Please check the room ID and make sure the host has started sharing.');
+        setHostStatus('disconnected');
+        return;
+      }
+
       await connectToHost();
       setHostStatus('connected');
     } catch (err) {
@@ -60,12 +83,13 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
     } finally {
       setIsConnecting(false);
     }
-  }, [roomId, connectToHost]);
+  }, [roomId, connectToHost, validateRoom]);
 
-  // Auto-connect when component mounts
+  // Auto-connect when component mounts (only for valid rooms)
   useEffect(() => {
     if (roomId && !isConnecting && !isConnected) {
-      handleConnect();
+      // Don't auto-connect, let user manually click the button
+      // This prevents connecting to fake rooms automatically
     }
   }, [roomId, handleConnect, isConnected, isConnecting]);
 
@@ -292,13 +316,9 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
           <div className='text-center py-12'>
             <div className='text-6xl mb-4'>📺</div>
             <h3 className='text-xl font-semibold text-gray-900 mb-2'>Ready to View</h3>
-            <p className='text-gray-600 mb-6'>Click "Connect to Host" to start viewing the shared screen.</p>
-            <button
-              onClick={handleConnect}
-              className='px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
-            >
-              Connect to Host
-            </button>
+            <p className='text-gray-600 mb-6'>
+              Use the "Connect to Host" button above to start viewing the shared screen.
+            </p>
           </div>
         </div>
       )}
