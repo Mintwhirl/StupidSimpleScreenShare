@@ -27,24 +27,30 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Set up environment variables
-        run: |
-          echo "AUTH_SECRET=test-secret-key-for-ci-123" >> $GITHUB_ENV
-
       - name: Run linting
         run: npm run lint
+        env:
+          AUTH_SECRET: test-secret-key-for-ci-123
 
       - name: Check code formatting
         run: npm run format:check
+        env:
+          AUTH_SECRET: test-secret-key-for-ci-123
 
       - name: Run unit tests
         run: npm run test
+        env:
+          AUTH_SECRET: test-secret-key-for-ci-123
 
       - name: Run tests with coverage
         run: npm run test:coverage
+        env:
+          AUTH_SECRET: test-secret-key-for-ci-123
 
       - name: Build application
         run: npm run build
+        env:
+          AUTH_SECRET: test-secret-key-for-ci-123
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
@@ -70,15 +76,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Set up environment variables
-        run: |
-          echo "AUTH_SECRET=test-secret-key-for-ci-123" >> $GITHUB_ENV
-
       - name: Run security audit
         run: npm audit --audit-level=moderate
+        env:
+          AUTH_SECRET: test-secret-key-for-ci-123
 
       - name: Check for vulnerabilities
         run: npm audit --audit-level=high
+        env:
+          AUTH_SECRET: test-secret-key-for-ci-123
 
   build:
     runs-on: ubuntu-latest
@@ -97,12 +103,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Set up environment variables
-        run: |
-          echo "AUTH_SECRET=test-secret-key-for-ci-123" >> $GITHUB_ENV
-
       - name: Build application
         run: npm run build
+        env:
+          AUTH_SECRET: test-secret-key-for-ci-123
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
