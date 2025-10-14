@@ -11,6 +11,20 @@ export function useApi() {
       setLoading(true);
       setError(null);
 
+      // Check if we're in development mode
+      const isDevelopment = import.meta.env.DEV;
+
+      if (isDevelopment) {
+        // Use mock configuration for development
+        console.log('Development mode: Using mock configuration');
+        setConfig({
+          authSecret: 'dev-mock-secret-key-123',
+          environment: 'development',
+        });
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch('/api/config');
 
       if (!response.ok) {
@@ -41,6 +55,19 @@ export function useApi() {
   // Create room
   const createRoom = useCallback(async () => {
     try {
+      // Check if we're in development mode
+      const isDevelopment = import.meta.env.DEV;
+
+      if (isDevelopment) {
+        // Mock room creation for development
+        console.log('Development mode: Mock room creation');
+        return {
+          success: true,
+          roomId: 'dev-mock-room-' + Math.random().toString(36).substr(2, 9),
+          message: 'Mock room created successfully',
+        };
+      }
+
       const response = await fetch('/api/create-room', {
         method: 'POST',
         headers: {

@@ -117,13 +117,13 @@ function Pm() {
     (p.prototype.forceUpdate = function (o) {
       this.updater.enqueueForceUpdate(this, o, 'forceUpdate');
     }));
-  function D() {}
-  D.prototype = p.prototype;
-  function U(o, T, H) {
+  function U() {}
+  U.prototype = p.prototype;
+  function _(o, T, H) {
     ((this.props = o), (this.context = T), (this.refs = k), (this.updater = H || et));
   }
-  var J = (U.prototype = new D());
-  ((J.constructor = U), I(J, p.prototype), (J.isPureReactComponent = !0));
+  var J = (_.prototype = new U());
+  ((J.constructor = _), I(J, p.prototype), (J.isPureReactComponent = !0));
   var ut = Array.isArray;
   function At() {}
   var $ = { H: null, A: null, T: null, S: null },
@@ -151,7 +151,7 @@ function Pm() {
   function nt(o, T) {
     return typeof o == 'object' && o !== null && o.key != null ? Ot('' + o.key) : T.toString(36);
   }
-  function _(o) {
+  function D(o) {
     switch (o.status) {
       case 'fulfilled':
         return o.value;
@@ -228,7 +228,7 @@ function Pm() {
       for (o = Rt.call(o), Rt = 0; !(G = o.next()).done; )
         ((G = G.value), (ct = Ft + nt(G, Rt++)), (vt += m(G, T, H, ct, P)));
     else if (ct === 'object') {
-      if (typeof o.then == 'function') return m(_(o), T, H, G, P);
+      if (typeof o.then == 'function') return m(D(o), T, H, G, P);
       throw (
         (T = String(o)),
         Error(
@@ -325,7 +325,7 @@ function Pm() {
     (W.Component = p),
     (W.Fragment = z),
     (W.Profiler = w),
-    (W.PureComponent = U),
+    (W.PureComponent = _),
     (W.StrictMode = d),
     (W.Suspense = C),
     (W.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE = $),
@@ -558,8 +558,8 @@ function eh() {
           I = !1,
           k = !1,
           p = typeof setTimeout == 'function' ? setTimeout : null,
-          D = typeof clearTimeout == 'function' ? clearTimeout : null,
-          U = typeof setImmediate < 'u' ? setImmediate : null;
+          U = typeof clearTimeout == 'function' ? clearTimeout : null,
+          _ = typeof setImmediate < 'u' ? setImmediate : null;
         function J(m) {
           for (var M = z(S); M !== null; ) {
             if (M.callback === null) d(S);
@@ -573,7 +573,7 @@ function eh() {
             if (z(C) !== null) ((et = !0), At || ((At = !0), Ot()));
             else {
               var M = z(S);
-              M !== null && _(ut, M.startTime - m);
+              M !== null && D(ut, M.startTime - m);
             }
         }
         var At = !1,
@@ -590,7 +590,7 @@ function eh() {
             var M = !0;
             try {
               t: {
-                ((et = !1), I && ((I = !1), D($), ($ = -1)), (at = !0));
+                ((et = !1), I && ((I = !1), U($), ($ = -1)), (at = !0));
                 var q = Q;
                 try {
                   e: {
@@ -610,7 +610,7 @@ function eh() {
                     if (R !== null) M = !0;
                     else {
                       var o = z(S);
-                      (o !== null && _(ut, o.startTime - m), (M = !1));
+                      (o !== null && D(ut, o.startTime - m), (M = !1));
                     }
                   }
                   break t;
@@ -625,9 +625,9 @@ function eh() {
           }
         }
         var Ot;
-        if (typeof U == 'function')
+        if (typeof _ == 'function')
           Ot = function () {
-            U($t);
+            _($t);
           };
         else if (typeof MessageChannel < 'u') {
           var Ut = new MessageChannel(),
@@ -640,7 +640,7 @@ function eh() {
           Ot = function () {
             p($t, 0);
           };
-        function _(m, M) {
+        function D(m, M) {
           $ = p(function () {
             m(b.unstable_now());
           }, M);
@@ -733,7 +733,7 @@ function eh() {
               q > dt
                 ? ((m.sortIndex = q),
                   L(S, m),
-                  z(C) === null && m === z(S) && (I ? (D($), ($ = -1)) : (I = !0), _(ut, q - dt)))
+                  z(C) === null && m === z(S) && (I ? (U($), ($ = -1)) : (I = !0), D(ut, q - dt)))
                 : ((m.sortIndex = yt), L(C, m), et || at || ((et = !0), At || ((At = !0), Ot()))),
               m
             );
@@ -1068,8 +1068,8 @@ function uh() {
     I = Symbol.for('react.fragment'),
     k = Symbol.for('react.strict_mode'),
     p = Symbol.for('react.profiler'),
-    D = Symbol.for('react.consumer'),
-    U = Symbol.for('react.context'),
+    U = Symbol.for('react.consumer'),
+    _ = Symbol.for('react.context'),
     J = Symbol.for('react.forward_ref'),
     ut = Symbol.for('react.suspense'),
     At = Symbol.for('react.suspense_list'),
@@ -1106,9 +1106,9 @@ function uh() {
       switch (t.$$typeof) {
         case et:
           return 'Portal';
-        case U:
+        case _:
           return t.displayName || 'Context';
-        case D:
+        case U:
           return (t._context.displayName || 'Context') + '.Consumer';
         case J:
           var e = t.render;
@@ -1127,7 +1127,7 @@ function uh() {
       }
     return null;
   }
-  var _ = Array.isArray,
+  var D = Array.isArray,
     m = L.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,
     M = z.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,
     q = { pending: !1, data: null, method: null, action: null },
@@ -1857,7 +1857,7 @@ Error generating stack: ` +
     if (e == null) {
       if (a != null) {
         if (l != null) throw Error(d(92));
-        if (_(a)) {
+        if (D(a)) {
           if (1 < a.length) throw Error(d(93));
           a = a[0];
         }
@@ -2833,10 +2833,10 @@ Error generating stack: ` +
         default:
           if (typeof t == 'object' && t !== null)
             switch (t.$$typeof) {
-              case U:
+              case _:
                 c = 10;
                 break t;
-              case D:
+              case U:
                 c = 9;
                 break t;
               case J:
@@ -3153,7 +3153,7 @@ Error generating stack: ` +
           },
     w0 = b.unstable_scheduleCallback,
     B0 = b.unstable_NormalPriority,
-    Bt = { $$typeof: U, Consumer: null, Provider: null, _currentValue: null, _currentValue2: null, _threadCount: 0 };
+    Bt = { $$typeof: _, Consumer: null, Provider: null, _currentValue: null, _currentValue2: null, _threadCount: 0 };
   function Oc() {
     return { controller: new H0(), data: new Map(), refCount: 0 };
   }
@@ -3377,9 +3377,9 @@ Error generating stack: ` +
           case Ct:
             return ((r = Hl(r)), N(h, r, y));
         }
-        if (_(r) || Ot(r)) return ((r = Ol(r, h.mode, y, null)), (r.return = h), r);
+        if (D(r) || Ot(r)) return ((r = Ol(r, h.mode, y, null)), (r.return = h), r);
         if (typeof r.then == 'function') return N(h, $n(r), y);
-        if (r.$$typeof === U) return N(h, Vn(h, r), y);
+        if (r.$$typeof === _) return N(h, Vn(h, r), y);
         Wn(h, r);
       }
       return null;
@@ -3397,9 +3397,9 @@ Error generating stack: ` +
           case Ct:
             return ((y = Hl(y)), v(h, r, y, j));
         }
-        if (_(y) || Ot(y)) return Z !== null ? null : E(h, r, y, j, null);
+        if (D(y) || Ot(y)) return Z !== null ? null : E(h, r, y, j, null);
         if (typeof y.then == 'function') return v(h, r, $n(y), j);
-        if (y.$$typeof === U) return v(h, r, Vn(h, y), j);
+        if (y.$$typeof === _) return v(h, r, Vn(h, y), j);
         Wn(h, y);
       }
       return null;
@@ -3416,9 +3416,9 @@ Error generating stack: ` +
           case Ct:
             return ((j = Hl(j)), x(h, r, y, j, Z));
         }
-        if (_(j) || Ot(j)) return ((h = h.get(y) || null), E(r, h, j, Z, null));
+        if (D(j) || Ot(j)) return ((h = h.get(y) || null), E(r, h, j, Z, null));
         if (typeof j.then == 'function') return x(h, r, y, $n(j), Z);
-        if (j.$$typeof === U) return x(h, r, y, Vn(r, j), Z);
+        if (j.$$typeof === _) return x(h, r, y, Vn(r, j), Z);
         Wn(r, j);
       }
       return null;
@@ -3557,13 +3557,13 @@ Error generating stack: ` +
           case Ct:
             return ((y = Hl(y)), Et(h, r, y, j));
         }
-        if (_(y)) return Y(h, r, y, j);
+        if (D(y)) return Y(h, r, y, j);
         if (Ot(y)) {
           if (((Z = Ot(y)), typeof Z != 'function')) throw Error(d(150));
           return ((y = Z.call(y)), V(h, r, y, j));
         }
         if (typeof y.then == 'function') return Et(h, r, $n(y), j);
-        if (y.$$typeof === U) return Et(h, r, Vn(h, y), j);
+        if (y.$$typeof === _) return Et(h, r, Vn(h, y), j);
         Wn(h, y);
       }
       return (typeof y == 'string' && y !== '') || typeof y == 'number' || typeof y == 'bigint'
@@ -3931,7 +3931,7 @@ Error generating stack: ` +
   function lu(t) {
     if (t !== null && typeof t == 'object') {
       if (typeof t.then == 'function') return Fa(t);
-      if (t.$$typeof === U) return Kt(t);
+      if (t.$$typeof === _) return Kt(t);
     }
     throw Error(d(438, String(t)));
   }
@@ -10223,7 +10223,7 @@ Error generating stack: ` +
         (e.state.loading |= 4));
     }
   }
-  var gn = { $$typeof: U, Provider: null, Consumer: null, _currentValue: q, _currentValue2: q, _threadCount: 0 };
+  var gn = { $$typeof: _, Provider: null, Consumer: null, _currentValue: q, _currentValue2: q, _threadCount: 0 };
   function Lm(t, e, l, a, n, u, c, s, f) {
     ((this.tag = 1),
       (this.containerInfo = t),
@@ -10880,17 +10880,17 @@ function zd(b, L, z, d = null) {
     [et, I] = A.useState([]),
     k = A.useRef(null),
     p = A.useRef(null),
-    D = A.useRef(null),
-    U = A.useRef(null);
+    U = A.useRef(null),
+    _ = A.useRef(null);
   A.useEffect(() => {
-    const _ = [];
-    (_.push({ urls: 'stun:stun.l.google.com:19302' }),
-      _.push({ urls: 'stun:stun1.l.google.com:19302' }),
-      z?.turn && _.push({ urls: z.turn.urls, username: z.turn.username, credential: z.turn.credential }),
-      I(_));
+    const D = [];
+    (D.push({ urls: 'stun:stun.l.google.com:19302' }),
+      D.push({ urls: 'stun:stun1.l.google.com:19302' }),
+      z?.turn && D.push({ urls: z.turn.urls, username: z.turn.username, credential: z.turn.credential }),
+      I(D));
   }, [z]);
   const J = A.useCallback(
-      async (_) => {
+      async (D) => {
         if (!(!b || !L))
           try {
             const m = await fetch('/api/candidate', {
@@ -10899,7 +10899,7 @@ function zd(b, L, z, d = null) {
               body: JSON.stringify({
                 roomId: b,
                 role: L,
-                candidate: { candidate: _.candidate, sdpMid: _.sdpMid, sdpMLineIndex: _.sdpMLineIndex },
+                candidate: { candidate: D.candidate, sdpMid: D.sdpMid, sdpMLineIndex: D.sdpMLineIndex },
               }),
             });
             if (!m.ok) throw new Error(`Failed to send ICE candidate: ${m.status}`);
@@ -10910,21 +10910,21 @@ function zd(b, L, z, d = null) {
       [b, L, z]
     ),
     ut = A.useCallback(() => {
-      const _ = new RTCPeerConnection({ iceServers: et });
+      const D = new RTCPeerConnection({ iceServers: et });
       return (
-        (_.onicecandidate = (m) => {
+        (D.onicecandidate = (m) => {
           m.candidate && J(m.candidate);
         }),
-        (_.onconnectionstatechange = () => {
-          (console.log('Connection state changed:', _.connectionState), O(_.connectionState));
+        (D.onconnectionstatechange = () => {
+          (console.log('Connection state changed:', D.connectionState), O(D.connectionState));
         }),
-        (_.oniceconnectionstatechange = () => {
-          console.log('ICE connection state changed:', _.iceConnectionState);
+        (D.oniceconnectionstatechange = () => {
+          console.log('ICE connection state changed:', D.iceConnectionState);
         }),
-        (_.ontrack = (m) => {
+        (D.ontrack = (m) => {
           (console.log('Received remote stream:', m.streams[0]), F(m.streams[0]));
         }),
-        (_.ondatachannel = (m) => {
+        (D.ondatachannel = (m) => {
           const M = m.channel;
           ((p.current = M),
             (M.onopen = () => {
@@ -10934,17 +10934,17 @@ function zd(b, L, z, d = null) {
               console.log('Received data channel message:', q.data);
             }));
         }),
-        _
+        D
       );
     }, [et, J]),
     At = A.useCallback(
-      async (_) => {
+      async (D) => {
         if (b)
           try {
             const m = await fetch('/api/offer', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', ...(z?.authSecret && { 'x-auth-secret': z.authSecret }) },
-              body: JSON.stringify({ roomId: b, desc: _ }),
+              body: JSON.stringify({ roomId: b, desc: D }),
             });
             if (!m.ok) throw new Error(`Failed to send offer: ${m.status}`);
           } catch (m) {
@@ -10954,13 +10954,13 @@ function zd(b, L, z, d = null) {
       [b, z]
     ),
     $ = A.useCallback(
-      async (_) => {
+      async (D) => {
         if (b)
           try {
             const m = await fetch('/api/answer', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', ...(z?.authSecret && { 'x-auth-secret': z.authSecret }) },
-              body: JSON.stringify({ roomId: b, desc: _ }),
+              body: JSON.stringify({ roomId: b, desc: D }),
             });
             if (!m.ok) throw new Error(`Failed to send answer: ${m.status}`);
           } catch (m) {
@@ -10973,21 +10973,21 @@ function zd(b, L, z, d = null) {
       if (L !== 'host') throw new Error('Only hosts can start screen sharing');
       try {
         (R(null), O('connecting'));
-        const _ = await navigator.mediaDevices.getDisplayMedia({ video: !0, audio: !0 });
-        S(_);
+        const D = await navigator.mediaDevices.getDisplayMedia({ video: !0, audio: !0 });
+        S(D);
         const m = ut();
         ((k.current = m),
-          _.getTracks().forEach((q) => {
-            m.addTrack(q, _);
+          D.getTracks().forEach((q) => {
+            m.addTrack(q, D);
           }));
         const M = await m.createOffer({ offerToReceiveAudio: !0, offerToReceiveVideo: !0 });
-        return (await m.setLocalDescription(M), await At(M), Ut(), _);
-      } catch (_) {
+        return (await m.setLocalDescription(M), await At(M), Ut(), D);
+      } catch (D) {
         throw (
-          console.error('Error starting screen share:', _),
-          R(`Failed to start screen sharing: ${_.message}`),
+          console.error('Error starting screen share:', D),
+          R(`Failed to start screen sharing: ${D.message}`),
           O('disconnected'),
-          _
+          D
         );
       }
     }, [L, ut, At, Ut]),
@@ -10995,41 +10995,41 @@ function zd(b, L, z, d = null) {
       if (L !== 'viewer') throw new Error('Only viewers can connect to host');
       try {
         (R(null), O('connecting'));
-        const _ = ut();
-        ((k.current = _), Ot(), nt());
-      } catch (_) {
+        const D = ut();
+        ((k.current = D), Ot(), nt());
+      } catch (D) {
         throw (
-          console.error('Error connecting to host:', _),
-          R(`Failed to connect to host: ${_.message}`),
+          console.error('Error connecting to host:', D),
+          R(`Failed to connect to host: ${D.message}`),
           O('disconnected'),
-          _
+          D
         );
       }
     }, [L, ut, nt, Ot]),
     Pt = A.useCallback(async () => {
       try {
-        (C && (C.getTracks().forEach((_) => _.stop()), S(null)),
+        (C && (C.getTracks().forEach((D) => D.stop()), S(null)),
           k.current && (k.current.close(), (k.current = null)),
-          D.current && (clearInterval(D.current), (D.current = null)),
           U.current && (clearInterval(U.current), (U.current = null)),
+          _.current && (clearInterval(_.current), (_.current = null)),
           O('disconnected'),
           F(null));
-      } catch (_) {
-        (console.error('Error stopping screen share:', _), R(`Failed to stop screen sharing: ${_.message}`));
+      } catch (D) {
+        (console.error('Error stopping screen share:', D), R(`Failed to stop screen sharing: ${D.message}`));
       }
     }, [C]),
     $t = A.useCallback(async () => {
       await Pt();
     }, [Pt]),
     Ot = A.useCallback(async () => {
-      (D.current && clearInterval(D.current),
-        (D.current = setInterval(async () => {
+      (U.current && clearInterval(U.current),
+        (U.current = setInterval(async () => {
           try {
-            const _ = await fetch(`/api/offer?roomId=${b}`);
-            if (_.ok) {
-              const m = await _.json();
+            const D = await fetch(`/api/offer?roomId=${b}`);
+            if (D.ok) {
+              const m = await D.json();
               if (m.desc) {
-                (clearInterval(D.current), (D.current = null));
+                (clearInterval(U.current), (U.current = null));
                 const M = k.current;
                 if (M) {
                   await M.setRemoteDescription(m.desc);
@@ -11038,53 +11038,53 @@ function zd(b, L, z, d = null) {
                 }
               }
             }
-          } catch (_) {
-            console.error('Error polling for offers:', _);
+          } catch (D) {
+            console.error('Error polling for offers:', D);
           }
         }, 1e3)));
     }, [b, $]),
     Ut = A.useCallback(async () => {
-      (D.current && clearInterval(D.current),
-        (D.current = setInterval(async () => {
+      (U.current && clearInterval(U.current),
+        (U.current = setInterval(async () => {
           try {
-            const _ = await fetch(`/api/answer?roomId=${b}`);
-            if (_.ok) {
-              const m = await _.json();
+            const D = await fetch(`/api/answer?roomId=${b}`);
+            if (D.ok) {
+              const m = await D.json();
               if (m.desc) {
-                (clearInterval(D.current), (D.current = null));
+                (clearInterval(U.current), (U.current = null));
                 const M = k.current;
                 M && (await M.setRemoteDescription(m.desc));
               }
             }
-          } catch (_) {
-            console.error('Error polling for answers:', _);
+          } catch (D) {
+            console.error('Error polling for answers:', D);
           }
         }, 1e3)));
     }, [b]),
     nt = A.useCallback(async () => {
-      (U.current && clearInterval(U.current),
-        (U.current = setInterval(async () => {
+      (_.current && clearInterval(_.current),
+        (_.current = setInterval(async () => {
           try {
-            const _ = await fetch(`/api/candidate?roomId=${b}&role=${L}`);
-            if (_.ok) {
-              const m = await _.json();
+            const D = await fetch(`/api/candidate?roomId=${b}&role=${L}`);
+            if (D.ok) {
+              const m = await D.json();
               if (m.candidates && m.candidates.length > 0) {
                 const M = k.current;
                 if (M) for (const q of m.candidates) await M.addIceCandidate(q);
               }
             }
-          } catch (_) {
-            console.error('Error polling for ICE candidates:', _);
+          } catch (D) {
+            console.error('Error polling for ICE candidates:', D);
           }
         }, 1e3)));
     }, [b, L]);
   return (
     A.useEffect(
       () => () => {
-        (D.current && clearInterval(D.current),
-          U.current && clearInterval(U.current),
+        (U.current && clearInterval(U.current),
+          _.current && clearInterval(_.current),
           k.current && k.current.close(),
-          C && C.getTracks().forEach((_) => _.stop()));
+          C && C.getTracks().forEach((D) => D.stop()));
       },
       [C]
     ),
@@ -11108,7 +11108,7 @@ function fh({ roomId: b, config: L, onGoHome: z }) {
     [S, B] = A.useState(null),
     [R, Q] = A.useState('Start Sharing'),
     at = A.useRef(null),
-    { startScreenShare: et, stopScreenShare: I, connectionState: k, peerConnections: p, error: D } = zd(b, 'host', L);
+    { startScreenShare: et, stopScreenShare: I, connectionState: k, peerConnections: p, error: U } = zd(b, 'host', L);
   (A.useEffect(() => {
     K(k);
   }, [k]),
@@ -11116,9 +11116,9 @@ function fh({ roomId: b, config: L, onGoHome: z }) {
       C(Object.keys(p).length);
     }, [p]),
     A.useEffect(() => {
-      D && B(D);
-    }, [D]));
-  const U = async () => {
+      U && B(U);
+    }, [U]));
+  const _ = async () => {
       try {
         (B(null), Q('Starting...'));
         const Nt = await et();
@@ -11137,7 +11137,7 @@ function fh({ roomId: b, config: L, onGoHome: z }) {
       }
     },
     ut = () => {
-      d ? J() : U();
+      d ? J() : _();
     },
     At = () => {
       navigator.clipboard
@@ -11342,13 +11342,13 @@ function rh({ roomId: b, viewerId: L, setViewerId: z, config: d, onGoHome: w }) 
     [R, Q] = A.useState(!1),
     [at, et] = A.useState('unknown'),
     I = A.useRef(null),
-    { connectToHost: k, disconnect: p, connectionState: D, remoteStream: U, error: J } = zd(b, 'viewer', d, L);
+    { connectToHost: k, disconnect: p, connectionState: U, remoteStream: _, error: J } = zd(b, 'viewer', d, L);
   (A.useEffect(() => {
-    (K(D), C(D === 'connected'));
-  }, [D]),
+    (K(U), C(U === 'connected'));
+  }, [U]),
     A.useEffect(() => {
-      U && I.current && (I.current.srcObject = U);
-    }, [U]),
+      _ && I.current && (I.current.srcObject = _);
+    }, [_]),
     A.useEffect(() => {
       J && (B(J), Q(!1));
     }, [J]),
@@ -11574,7 +11574,7 @@ function rh({ roomId: b, viewerId: L, setViewerId: z, config: d, onGoHome: w }) 
                   autoPlay: !0,
                   playsInline: !0,
                 }),
-                !U &&
+                !_ &&
                   i.jsx('div', {
                     className: 'absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg',
                     children: i.jsxs('div', {
@@ -11587,7 +11587,7 @@ function rh({ roomId: b, viewerId: L, setViewerId: z, config: d, onGoHome: w }) 
                       ],
                     }),
                   }),
-                U &&
+                _ &&
                   i.jsx('div', {
                     className: 'absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs',
                     children: 'Live',
@@ -11651,10 +11651,11 @@ function Ad() {
     K = A.useCallback(async () => {
       try {
         (d(!0), O(null));
-        const p = await fetch('/api/config');
-        if (!p.ok) throw new Error(`Failed to fetch config: ${p.status}`);
-        const D = await p.json();
-        if (D.success && D.config) L(D.config);
+        const p = !1,
+          U = await fetch('/api/config');
+        if (!U.ok) throw new Error(`Failed to fetch config: ${U.status}`);
+        const _ = await U.json();
+        if (_.success && _.config) L(_.config);
         else throw new Error('Invalid config response format');
       } catch (p) {
         (console.error('Failed to fetch client configuration:', p), O(p.message), L(null));
@@ -11667,23 +11668,23 @@ function Ad() {
   }, [K]);
   const F = A.useCallback(async () => {
       try {
-        const p = await fetch('/api/create-room', {
+        const U = await fetch('/api/create-room', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...(b?.authSecret && { 'x-auth-secret': b.authSecret }) },
         });
-        if (!p.ok) throw new Error(`Failed to create room: ${p.status}`);
-        return await p.json();
+        if (!U.ok) throw new Error(`Failed to create room: ${U.status}`);
+        return await U.json();
       } catch (p) {
         throw (console.error('Error creating room:', p), p);
       }
     }, [b]),
     C = A.useCallback(
-      async (p, D, U) => {
+      async (p, U, _) => {
         try {
           const J = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...(b?.authSecret && { 'x-auth-secret': b.authSecret }) },
-            body: JSON.stringify({ roomId: p, message: D, sender: U }),
+            body: JSON.stringify({ roomId: p, message: U, sender: _ }),
           });
           if (!J.ok) throw new Error(`Failed to send message: ${J.status}`);
           return await J.json();
@@ -11693,78 +11694,78 @@ function Ad() {
       },
       [b]
     ),
-    S = A.useCallback(async (p, D = 0) => {
+    S = A.useCallback(async (p, U = 0) => {
       try {
-        const U = await fetch(`/api/chat?roomId=${p}&since=${D}`);
-        if (!U.ok) throw new Error(`Failed to get messages: ${U.status}`);
-        return await U.json();
-      } catch (U) {
-        throw (console.error('Error getting chat messages:', U), U);
+        const _ = await fetch(`/api/chat?roomId=${p}&since=${U}`);
+        if (!_.ok) throw new Error(`Failed to get messages: ${_.status}`);
+        return await _.json();
+      } catch (_) {
+        throw (console.error('Error getting chat messages:', _), _);
       }
     }, []),
     B = A.useCallback(
-      async (p, D) => {
+      async (p, U) => {
         try {
-          const U = await fetch('/api/offer', {
+          const _ = await fetch('/api/offer', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...(b?.authSecret && { 'x-auth-secret': b.authSecret }) },
-            body: JSON.stringify({ roomId: p, desc: D }),
+            body: JSON.stringify({ roomId: p, desc: U }),
           });
-          if (!U.ok) throw new Error(`Failed to send offer: ${U.status}`);
-          return await U.json();
-        } catch (U) {
-          throw (console.error('Error sending offer:', U), U);
+          if (!_.ok) throw new Error(`Failed to send offer: ${_.status}`);
+          return await _.json();
+        } catch (_) {
+          throw (console.error('Error sending offer:', _), _);
         }
       },
       [b]
     ),
     R = A.useCallback(async (p) => {
       try {
-        const D = await fetch(`/api/offer?roomId=${p}`);
-        if (!D.ok) {
-          if (D.status === 404) return null;
-          throw new Error(`Failed to get offer: ${D.status}`);
+        const U = await fetch(`/api/offer?roomId=${p}`);
+        if (!U.ok) {
+          if (U.status === 404) return null;
+          throw new Error(`Failed to get offer: ${U.status}`);
         }
-        return await D.json();
-      } catch (D) {
-        throw (console.error('Error getting offer:', D), D);
+        return await U.json();
+      } catch (U) {
+        throw (console.error('Error getting offer:', U), U);
       }
     }, []),
     Q = A.useCallback(
-      async (p, D) => {
+      async (p, U) => {
         try {
-          const U = await fetch('/api/answer', {
+          const _ = await fetch('/api/answer', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...(b?.authSecret && { 'x-auth-secret': b.authSecret }) },
-            body: JSON.stringify({ roomId: p, desc: D }),
+            body: JSON.stringify({ roomId: p, desc: U }),
           });
-          if (!U.ok) throw new Error(`Failed to send answer: ${U.status}`);
-          return await U.json();
-        } catch (U) {
-          throw (console.error('Error sending answer:', U), U);
+          if (!_.ok) throw new Error(`Failed to send answer: ${_.status}`);
+          return await _.json();
+        } catch (_) {
+          throw (console.error('Error sending answer:', _), _);
         }
       },
       [b]
     ),
     at = A.useCallback(async (p) => {
       try {
-        const D = await fetch(`/api/answer?roomId=${p}`);
-        if (!D.ok) {
-          if (D.status === 404) return null;
-          throw new Error(`Failed to get answer: ${D.status}`);
+        const U = await fetch(`/api/answer?roomId=${p}`);
+        if (!U.ok) {
+          if (U.status === 404) return null;
+          throw new Error(`Failed to get answer: ${U.status}`);
         }
-        return await D.json();
-      } catch (D) {
-        throw (console.error('Error getting answer:', D), D);
+        return await U.json();
+      } catch (U) {
+        throw (console.error('Error getting answer:', U), U);
       }
     }, []),
     et = A.useCallback(
-      async (p, D, U) => {
+      async (p, U, _) => {
         try {
           const J = await fetch('/api/candidate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...(b?.authSecret && { 'x-auth-secret': b.authSecret }) },
-            body: JSON.stringify({ roomId: p, role: D, candidate: U }),
+            body: JSON.stringify({ roomId: p, role: U, candidate: _ }),
           });
           if (!J.ok) throw new Error(`Failed to send ICE candidate: ${J.status}`);
           return await J.json();
@@ -11774,22 +11775,22 @@ function Ad() {
       },
       [b]
     ),
-    I = A.useCallback(async (p, D) => {
+    I = A.useCallback(async (p, U) => {
       try {
-        const U = await fetch(`/api/candidate?roomId=${p}&role=${D}`);
-        if (!U.ok) throw new Error(`Failed to get ICE candidates: ${U.status}`);
-        return await U.json();
-      } catch (U) {
-        throw (console.error('Error getting ICE candidates:', U), U);
+        const _ = await fetch(`/api/candidate?roomId=${p}&role=${U}`);
+        if (!_.ok) throw new Error(`Failed to get ICE candidates: ${_.status}`);
+        return await _.json();
+      } catch (_) {
+        throw (console.error('Error getting ICE candidates:', _), _);
       }
     }, []),
-    k = A.useCallback(async (p, D) => {
+    k = A.useCallback(async (p, U) => {
       try {
-        const U = await fetch(`/api/diagnostics?roomId=${p}&role=${D}`);
-        if (!U.ok) throw new Error(`Failed to get diagnostics: ${U.status}`);
-        return await U.json();
-      } catch (U) {
-        throw (console.error('Error getting diagnostics:', U), U);
+        const _ = await fetch(`/api/diagnostics?roomId=${p}&role=${U}`);
+        if (!_.ok) throw new Error(`Failed to get diagnostics: ${_.status}`);
+        return await _.json();
+      } catch (_) {
+        throw (console.error('Error getting diagnostics:', _), _);
       }
     }, []);
   return {
@@ -11824,14 +11825,14 @@ function oh(b, L, z) {
           const nt = await et(b, R);
           nt.messages &&
             nt.messages.length > 0 &&
-            w((_) => {
-              const m = new Set(_.map((q) => q.id)),
+            w((D) => {
+              const m = new Set(D.map((q) => q.id)),
                 M = nt.messages.filter((q) => !m.has(q.id));
               if (M.length > 0) {
                 const q = Math.max(...M.map((dt) => dt.timestamp));
-                return (Q(q), [..._, ...M].sort((dt, yt) => dt.timestamp - yt.timestamp));
+                return (Q(q), [...D, ...M].sort((dt, yt) => dt.timestamp - yt.timestamp));
               }
-              return _;
+              return D;
             });
         } catch (nt) {
           (console.error('Error polling messages:', nt),
@@ -11843,29 +11844,29 @@ function oh(b, L, z) {
             }, 5e3)));
         }
     }, [b, R, S, et]),
-    D = A.useCallback(() => {
+    U = A.useCallback(() => {
       (I.current && clearInterval(I.current), (I.current = setInterval(p, 2e3)));
     }, [p]),
-    U = A.useCallback(() => {
+    _ = A.useCallback(() => {
       I.current && (clearInterval(I.current), (I.current = null));
     }, []);
   A.useEffect(
     () => (
-      b && z ? (B(!0), C(null), w([]), Q(0), D()) : (B(!1), U()),
+      b && z ? (B(!0), C(null), w([]), Q(0), U()) : (B(!1), _()),
       () => {
-        (U(), k.current && clearTimeout(k.current));
+        (_(), k.current && clearTimeout(k.current));
       }
     ),
-    [b, z, D, U]
+    [b, z, U, _]
   );
   const J = A.useCallback(
-      async (nt, _ = z) => {
-        if (!b || !_ || !nt.trim()) throw new Error('Room ID, sender, and message are required');
+      async (nt, D = z) => {
+        if (!b || !D || !nt.trim()) throw new Error('Room ID, sender, and message are required');
         try {
           (K(!0), C(null));
-          const m = await at(b, nt, _);
+          const m = await at(b, nt, D);
           if (m.ok) {
-            const M = { id: m.message.id, sender: _, message: nt, timestamp: m.message.timestamp };
+            const M = { id: m.message.id, sender: D, message: nt, timestamp: m.message.timestamp };
             return (
               w((q) => [...q, M].sort((dt, yt) => dt.timestamp - yt.timestamp)),
               Q(m.message.timestamp),
@@ -11885,9 +11886,9 @@ function oh(b, L, z) {
         try {
           (K(!0), C(null));
           const nt = await et(b, 0);
-          if (nt.messages && (w(nt.messages.sort((_, m) => _.timestamp - m.timestamp)), nt.messages.length > 0)) {
-            const _ = Math.max(...nt.messages.map((m) => m.timestamp));
-            Q(_);
+          if (nt.messages && (w(nt.messages.sort((D, m) => D.timestamp - m.timestamp)), nt.messages.length > 0)) {
+            const D = Math.max(...nt.messages.map((m) => m.timestamp));
+            Q(D);
           }
         } catch (nt) {
           (console.error('Error loading initial messages:', nt), C('Failed to load messages'));
@@ -11902,11 +11903,11 @@ function oh(b, L, z) {
       (w([]), Q(0), C(null));
     }, []),
     $ = A.useCallback(() => d.length, [d]),
-    Ct = A.useCallback((nt) => d.filter((_) => _.sender === nt), [d]),
+    Ct = A.useCallback((nt) => d.filter((D) => D.sender === nt), [d]),
     Nt = A.useCallback(() => (d.length > 0 ? d[d.length - 1] : null), [d]),
-    Pt = A.useCallback((nt) => d.some((_) => _.sender === nt), [d]),
+    Pt = A.useCallback((nt) => d.some((D) => D.sender === nt), [d]),
     $t = A.useCallback(() => {
-      const nt = new Set(d.map((_) => _.sender));
+      const nt = new Set(d.map((D) => D.sender));
       return Array.from(nt);
     }, [d]),
     Ot = A.useCallback(
@@ -11922,9 +11923,9 @@ function oh(b, L, z) {
   return (
     A.useEffect(
       () => () => {
-        (U(), k.current && clearTimeout(k.current));
+        (_(), k.current && clearTimeout(k.current));
       },
-      [U]
+      [_]
     ),
     {
       messages: d,
@@ -11959,8 +11960,8 @@ function dh({ roomId: b, role: L, viewerId: z }) {
       if ((p.preventDefault(), !(!d.trim() || !O.trim())))
         try {
           (await S(d.trim(), O.trim()), w(''));
-        } catch (D) {
-          console.error('Error sending message:', D);
+        } catch (U) {
+          console.error('Error sending message:', U);
         }
     },
     et = (p) => {
@@ -12118,8 +12119,8 @@ function mh({ roomId: b, role: L }) {
         (O(!0), F(null));
         const p = await fetch(`/api/diagnostics?roomId=${b}&role=${L}`);
         if (!p.ok) throw new Error(`Failed to fetch diagnostics: ${p.status}`);
-        const D = await p.json();
-        d(D);
+        const U = await p.json();
+        d(U);
       } catch (p) {
         (console.error('Error fetching diagnostics:', p), F(p.message));
       } finally {
@@ -12138,10 +12139,10 @@ function mh({ roomId: b, role: L }) {
     },
     et = (p) => {
       if (p === 0) return '0 Bytes';
-      const D = 1024,
-        U = ['Bytes', 'KB', 'MB', 'GB'],
-        J = Math.floor(Math.log(p) / Math.log(D));
-      return `${parseFloat((p / D ** J).toFixed(2))} ${U[J]}`;
+      const U = 1024,
+        _ = ['Bytes', 'KB', 'MB', 'GB'],
+        J = Math.floor(Math.log(p) / Math.log(U));
+      return `${parseFloat((p / U ** J).toFixed(2))} ${_[J]}`;
     },
     I = (p) => new Date(p).toLocaleString(),
     k = (p) => {
@@ -12453,7 +12454,7 @@ function mh({ roomId: b, role: L }) {
                       i.jsx('h4', { className: 'font-semibold text-red-900 mb-3', children: 'Recent Errors' }),
                       i.jsx('div', {
                         className: 'space-y-2',
-                        children: z.errors.map((p, D) =>
+                        children: z.errors.map((p, U) =>
                           i.jsxs(
                             'div',
                             {
@@ -12463,7 +12464,7 @@ function mh({ roomId: b, role: L }) {
                                 i.jsx('div', { className: 'text-xs text-red-600 mt-1', children: I(p.timestamp) }),
                               ],
                             },
-                            D
+                            U
                           )
                         ),
                       }),
@@ -12502,15 +12503,15 @@ function hh() {
           delay: Math.random() * 3,
           duration: 2 + Math.random() * 2,
         })),
-        D = Array.from({ length: 20 }, (J, ut) => ({ id: ut, top: ut * 8, delay: ut * 0.1 })),
-        U = Array.from({ length: 15 }, (J, ut) => ({ id: ut, left: ut * 8, delay: ut * 0.2 }));
-      return { stars: p, gridLines: D, gridColumns: U };
+        U = Array.from({ length: 20 }, (J, ut) => ({ id: ut, top: ut * 8, delay: ut * 0.1 })),
+        _ = Array.from({ length: 15 }, (J, ut) => ({ id: ut, left: ut * 8, delay: ut * 0.2 }));
+      return { stars: p, gridLines: U, gridColumns: _ };
     }, []);
   A.useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     if (p.has('room')) {
-      const D = p.get('room');
-      (d(D), L('viewer'));
+      const U = p.get('room');
+      (d(U), L('viewer'));
     }
   }, []);
   const et = async () => {
@@ -12520,8 +12521,8 @@ function hh() {
           headers: { 'Content-Type': 'application/json', ...(B?.authSecret && { 'x-auth-secret': B.authSecret }) },
         });
         if (!p.ok) throw new Error(`Failed to create room: ${p.status}`);
-        const D = await p.json();
-        (d(D.roomId), L('host'));
+        const U = await p.json();
+        (d(U.roomId), L('host'));
       } catch (p) {
         (console.error('Error creating room:', p), alert('Failed to create room. Please try again.'));
       }
@@ -12989,4 +12990,4 @@ function hh() {
         });
 }
 sh.createRoot(document.getElementById('root')).render(i.jsx(th.StrictMode, { children: i.jsx(hh, {}) }));
-//# sourceMappingURL=main-DHh-EvqN.js.map
+//# sourceMappingURL=main-COf-QRDK.js.map

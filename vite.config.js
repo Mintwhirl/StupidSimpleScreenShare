@@ -11,7 +11,7 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       input: {
-        main: './public/index.html',
+        main: './index.html',
       },
     },
   },
