@@ -18,7 +18,7 @@ async function handleCandidate(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { roomId, role, candidate } = req.body || {};
+    const { roomId, role, viewerId, candidate } = req.body || {};
 
     const roomValidation = validateRoomId(roomId);
     if (!roomValidation.valid) {
@@ -40,7 +40,11 @@ async function handleCandidate(req, res) {
       return sendError(res, 410, 'Room expired or not found');
     }
 
-    const key = `room:${roomId}:${role}:candidates`;
+    // Use viewerId for viewers to distinguish between multiple viewers
+    const key =
+      role === 'viewer' && viewerId
+        ? `room:${roomId}:${role}:${viewerId}:candidates`
+        : `room:${roomId}:${role}:candidates`;
     await redis.rpush(key, JSON.stringify(candidate));
     await redis.expire(key, TTL_ROOM);
 
@@ -48,7 +52,7 @@ async function handleCandidate(req, res) {
   }
 
   if (req.method === 'GET') {
-    const { roomId, role } = req.query || {};
+    const { roomId, role, viewerId } = req.query || {};
 
     const roomValidation = validateRoomId(roomId);
     if (!roomValidation.valid) {
@@ -65,7 +69,11 @@ async function handleCandidate(req, res) {
       return sendError(res, 410, 'Room expired or not found');
     }
 
-    const key = `room:${roomId}:${role}:candidates`;
+    // Use viewerId for viewers to distinguish between multiple viewers
+    const key =
+      role === 'viewer' && viewerId
+        ? `room:${roomId}:${role}:${viewerId}:candidates`
+        : `room:${roomId}:${role}:candidates`;
     const arr = (await redis.lrange(key, 0, -1)) || [];
 
     if (arr.length > 0) {

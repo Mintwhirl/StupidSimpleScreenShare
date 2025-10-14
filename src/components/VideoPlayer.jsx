@@ -1,8 +1,11 @@
-import { forwardRef, useEffect, useRef } from 'react';
+import { forwardRef, useEffect, useRef, useImperativeHandle } from 'react';
 
 const VideoPlayer = forwardRef(({ className, ...props }, ref) => {
   const videoRef = useRef(null);
   const internalRef = ref || videoRef;
+
+  // Use useImperativeHandle to properly handle ref forwarding
+  useImperativeHandle(ref, () => videoRef.current, []);
 
   // Handle video element events
   useEffect(() => {

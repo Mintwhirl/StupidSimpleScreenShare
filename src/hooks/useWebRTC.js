@@ -38,6 +38,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           body: JSON.stringify({
             roomId,
             role,
+            viewerId: _viewerId, // Include viewer ID for proper identification
             candidate: {
               candidate: candidate.candidate,
               sdpMid: candidate.sdpMid,
@@ -300,7 +301,9 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
 
     candidateIntervalRef.current = setInterval(async () => {
       try {
-        const response = await fetch(`/api/candidate?roomId=${roomId}&role=${role}`);
+        const response = await fetch(
+          `/api/candidate?roomId=${roomId}&role=${role}${_viewerId ? `&viewerId=${_viewerId}` : ''}`
+        );
 
         if (response.ok) {
           const data = await response.json();

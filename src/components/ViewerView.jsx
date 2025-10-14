@@ -3,8 +3,6 @@ import VideoPlayer from './VideoPlayer';
 import { useWebRTC } from '../hooks/useWebRTC';
 
 function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
-  const [connectionStatus, setConnectionStatus] = useState('disconnected');
-  const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [hostStatus, setHostStatus] = useState('unknown');
@@ -18,11 +16,9 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
     error: webrtcError,
   } = useWebRTC(roomId, 'viewer', config, viewerId);
 
-  // Update connection status based on WebRTC state
-  useEffect(() => {
-    setConnectionStatus(connectionState);
-    setIsConnected(connectionState === 'connected');
-  }, [connectionState]);
+  // Derive connection status from WebRTC state
+  const connectionStatus = connectionState;
+  const isConnected = connectionState === 'connected';
 
   // Handle remote stream
   useEffect(() => {
@@ -31,13 +27,23 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
     }
   }, [remoteStream]);
 
-  // Handle WebRTC errors
+  // Handle WebRTC errors and clear errors on success
   useEffect(() => {
     if (webrtcError) {
       setError(webrtcError);
       setIsConnecting(false);
+      setHostStatus('disconnected');
+    } else if (connectionState === 'connected') {
+      // Clear errors when connection succeeds
+      setError(null);
+      setIsConnecting(false);
+      setHostStatus('connected');
+    } else if (connectionState === 'connecting') {
+      setHostStatus('connecting');
+    } else if (connectionState === 'disconnected' || connectionState === 'failed') {
+      setHostStatus('disconnected');
     }
-  }, [webrtcError]);
+  }, [webrtcError, connectionState]);
 
   // Validate room exists
   const validateRoom = useCallback(async (roomId) => {
@@ -75,7 +81,7 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
       }
 
       await connectToHost();
-      setHostStatus('connected');
+      // Don't set hostStatus to 'connected' here - let the WebRTC connection state handle it
     } catch (err) {
       console.error('Error connecting to host:', err);
       setError('Failed to connect to host. Please check the room ID and try again.');
