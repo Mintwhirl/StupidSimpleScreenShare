@@ -11,9 +11,14 @@ export function useApi() {
       setLoading(true);
       setError(null);
 
-      // Check if we're in development mode
+      // Check if we're in development or test mode
       const isDevelopment =
-        import.meta.env.DEV || import.meta.env.MODE === 'development' || window.location.hostname === 'localhost';
+        import.meta.env.DEV ||
+        import.meta.env.MODE === 'development' ||
+        import.meta.env.MODE === 'test' ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname.includes('localhost');
+
       console.log('Environment check:', {
         DEV: import.meta.env.DEV,
         MODE: import.meta.env.MODE,
@@ -22,11 +27,22 @@ export function useApi() {
       });
 
       if (isDevelopment) {
-        // Use mock configuration for development
+        // Use mock configuration for development and testing
         console.log('Development mode: Using mock configuration');
         setConfig({
           authSecret: 'dev-mock-secret-key-123',
           environment: 'development',
+          apiBase: '/api',
+          features: {
+            chat: true,
+            diagnostics: true,
+            recording: false,
+          },
+          rateLimits: {
+            roomCreation: 50,
+            chatMessages: 60,
+            apiCalls: 2000,
+          },
         });
         setLoading(false);
         return;
@@ -40,12 +56,12 @@ export function useApi() {
 
       const data = await response.json();
 
-          if (data.success && data.config) {
-            console.log('Setting config:', data.config);
-            setConfig(data.config);
-          } else {
-            throw new Error('Invalid config response format');
-          }
+      if (data.success && data.config) {
+        console.log('Setting config:', data.config);
+        setConfig(data.config);
+      } else {
+        throw new Error('Invalid config response format');
+      }
     } catch (err) {
       console.error('Failed to fetch client configuration:', err);
       setError(err.message);
@@ -63,11 +79,16 @@ export function useApi() {
   // Create room
   const createRoom = useCallback(async () => {
     try {
-      // Check if we're in development mode
-      const isDevelopment = import.meta.env.DEV;
+      // Check if we're in development or test mode
+      const isDevelopment =
+        import.meta.env.DEV ||
+        import.meta.env.MODE === 'development' ||
+        import.meta.env.MODE === 'test' ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname.includes('localhost');
 
       if (isDevelopment) {
-        // Mock room creation for development
+        // Mock room creation for development and testing
         console.log('Development mode: Mock room creation');
         return {
           success: true,
@@ -82,7 +103,7 @@ export function useApi() {
         ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
       };
       console.log('Request headers:', headers);
-      
+
       const response = await fetch('/api/create-room', {
         method: 'POST',
         headers,
@@ -104,6 +125,28 @@ export function useApi() {
   const sendChatMessage = useCallback(
     async (roomId, message, sender) => {
       try {
+        // Check if we're in development or test mode
+        const isDevelopment =
+          import.meta.env.DEV ||
+          import.meta.env.MODE === 'development' ||
+          import.meta.env.MODE === 'test' ||
+          window.location.hostname === 'localhost' ||
+          window.location.hostname.includes('localhost');
+
+        if (isDevelopment) {
+          // Return mock response for development and testing
+          return {
+            ok: true,
+            message: {
+              id: Date.now().toString(),
+              roomId,
+              sender,
+              message,
+              timestamp: Date.now(),
+            },
+          };
+        }
+
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: {
@@ -134,6 +177,22 @@ export function useApi() {
   // Get chat messages
   const getChatMessages = useCallback(async (roomId, since = 0) => {
     try {
+      // Check if we're in development or test mode
+      const isDevelopment =
+        import.meta.env.DEV ||
+        import.meta.env.MODE === 'development' ||
+        import.meta.env.MODE === 'test' ||
+        window.location.hostname === 'localhost' ||
+        window.location.hostname.includes('localhost');
+
+      if (isDevelopment) {
+        // Return mock response for development and testing
+        return {
+          messages: [],
+          success: true,
+        };
+      }
+
       const response = await fetch(`/api/chat?roomId=${roomId}&since=${since}`);
 
       if (!response.ok) {
