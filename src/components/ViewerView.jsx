@@ -148,9 +148,10 @@ function ViewerView({ config, onGoHome }) {
     });
   };
 
-  // Generate viewer ID if not provided
+  // Generate cryptographically secure viewer ID
   const generateViewerId = () => {
-    const id = `viewer_${Math.random().toString(36).substring(2, 8)}`;
+    // Use crypto.randomUUID() for cryptographically secure randomness
+    const id = `viewer_${crypto.randomUUID().substring(0, 8)}`;
     updateViewerId(id);
     return id;
   };

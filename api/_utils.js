@@ -69,9 +69,37 @@ export function getApiRateLimit() {
 
 // CORS headers helper
 export function setCorsHeaders(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Get allowed origin from environment or default to production domain
+  const allowedOrigin = process.env.ALLOWED_ORIGIN || 'https://stupid-simple-screen-share.vercel.app';
+
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,x-auth-secret');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+}
+
+// Security headers helper
+export function setSecurityHeaders(res) {
+  // Content Security Policy
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
+  );
+
+  // Prevent MIME sniffing
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+
+  // Prevent clickjacking
+  res.setHeader('X-Frame-Options', 'DENY');
+
+  // Force HTTPS (1 year)
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+
+  // Prevent XSS
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+
+  // Referrer policy
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 }
 
 // Input validation helpers

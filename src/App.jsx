@@ -1,7 +1,8 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { useApi } from './hooks/useApi';
 import useAppState from './hooks/useAppState';
 import { RoomProvider } from './contexts/RoomContext';
+import { checkBrowserCompatibility } from './utils/browserSupport';
 import SynthwaveBackground from './components/SynthwaveBackground';
 import HomeView from './components/HomeView';
 import AppHeader from './components/AppHeader';
@@ -15,6 +16,15 @@ const ViewerView = lazy(() => import('./components/ViewerView'));
 
 function App() {
   const { config, loading: configLoading, error: configError } = useApi();
+  const [browserCompatible, setBrowserCompatible] = useState(true);
+  const [browserIssues, setBrowserIssues] = useState([]);
+
+  // Check browser compatibility on mount
+  useEffect(() => {
+    const compatibility = checkBrowserCompatibility();
+    setBrowserCompatible(compatibility.compatible);
+    setBrowserIssues(compatibility.issues);
+  }, []);
   const {
     currentView,
     roomId,
@@ -27,6 +37,25 @@ function App() {
     toggleChat,
     toggleDiagnostics,
   } = useAppState();
+
+  // Browser compatibility check
+  if (!browserCompatible) {
+    return (
+      <div className='min-h-screen flex items-center justify-center bg-gray-900 text-white'>
+        <div className='text-center p-8'>
+          <div className='text-6xl mb-4'>⚠️</div>
+          <h1 className='text-2xl font-bold mb-4'>Unsupported Browser</h1>
+          <p className='text-gray-300 mb-4'>Your browser doesn't support the required features:</p>
+          <ul className='text-left text-gray-400 mb-6'>
+            {browserIssues.map((issue, index) => (
+              <li key={index}>• {issue}</li>
+            ))}
+          </ul>
+          <p className='text-gray-300'>Please use a modern browser like Chrome, Firefox, or Safari.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Loading state
   if (configLoading) {

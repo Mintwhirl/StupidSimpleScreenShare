@@ -398,15 +398,30 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         audio: true,
       });
 
+      // Check what permissions were actually granted
+      const videoTracks = stream.getVideoTracks();
+      const audioTracks = stream.getAudioTracks();
+
+      if (videoTracks.length === 0) {
+        throw new Error('Video permission denied - cannot share screen without video');
+      }
+
+      if (audioTracks.length === 0) {
+        logger.warn('Audio permission denied - screen sharing will be video-only');
+      }
+
       setLocalStream(stream);
 
       // Create peer connection
       const pc = createPeerConnection();
       peerConnectionRef.current = pc;
 
-      // Add stream to peer connection
+      // Add transceivers to peer connection (modern WebRTC approach)
       stream.getTracks().forEach((track) => {
-        pc.addTrack(track, stream);
+        pc.addTransceiver(track, {
+          streams: [stream],
+          direction: 'sendonly', // Host sends media to viewers
+        });
       });
 
       // Create and send offer

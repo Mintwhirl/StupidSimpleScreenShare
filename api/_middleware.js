@@ -3,7 +3,7 @@
  * Abstracts common API patterns to reduce boilerplate
  */
 
-import { createRedisClient, setCorsHeaders, asyncHandler, sendError } from './_utils.js';
+import { createRedisClient, setCorsHeaders, setSecurityHeaders, asyncHandler, sendError } from './_utils.js';
 
 /**
  * Create a standardized API handler with common middleware
@@ -22,7 +22,8 @@ export function createApiHandler(handler, options = {}) {
   } = options;
 
   return asyncHandler(async (req, res) => {
-    // Set CORS headers
+    // Set security headers
+    setSecurityHeaders(res);
     setCorsHeaders(res);
 
     // Handle OPTIONS request
