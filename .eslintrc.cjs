@@ -5,7 +5,7 @@ module.exports = {
     node: true,
   },
   ignorePatterns: ['dist/', 'coverage/', 'node_modules/', '*.min.js', 'build/'],
-  extends: ['airbnb-base', 'plugin:react/recommended', 'plugin:react-hooks/recommended'],
+  extends: ['airbnb-base', 'plugin:react/recommended', 'plugin:react-hooks/recommended', 'prettier'],
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',
@@ -97,15 +97,13 @@ module.exports = {
     semi: ['error', 'always'],
 
     // Indentation
-    indent: ['error', 2],
+    indent: 'off',
 
     // Line endings (allow both Unix and Windows)
     'linebreak-style': 'off',
 
-    // Trailing commas
-    'comma-dangle': ['error', 'always-multiline'],
-
-    // Object curly spacing (let Prettier handle this)
+    // Let Prettier handle formatting rules
+    'comma-dangle': 'off',
     'object-curly-spacing': 'off',
     'object-curly-newline': 'off',
 
