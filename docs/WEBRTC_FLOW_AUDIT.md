@@ -7,9 +7,11 @@ This document provides a comprehensive audit of the WebRTC peer-to-peer connecti
 ## Architecture Summary
 
 - **Host**: Initiates screen sharing, creates WebRTC offer
-- **Viewer**: Connects to host, receives offer, creates answer
+- **Single Viewer**: Connects to host, receives offer, creates answer
 - **Signaling Server**: Redis-based API endpoints for offer/answer/ICE candidate exchange
 - **TURN Servers**: For NAT traversal across different networks
+
+**IMPORTANT**: This implementation supports **ONE viewer per session** due to single-use offer mechanism.
 
 ## Complete WebRTC Flow
 
@@ -270,11 +272,11 @@ useEffect(() => {
 - **Redis Failures**: Graceful degradation with error messages
 - **WebRTC Failures**: Connection state tracking and cleanup
 
-### Multiple Viewers
+### Single Viewer Limitation
 
-- **Viewer ID**: Each viewer has unique ID for ICE candidate routing
-- **Offer Consumption**: Each offer can only be consumed by one viewer
-- **Answer Routing**: Answers routed back to specific host
+- **Single-Use Offers**: Offers are deleted after first retrieval, preventing multiple viewers
+- **Host Limitation**: Host can only handle one peer connection at a time
+- **Architecture**: Designed for one host + one viewer per session
 
 ## State Management
 
@@ -321,10 +323,10 @@ useEffect(() => {
 
 ## Testing Scenarios
 
-### Successful Flow
+### Successful Flow (Single Viewer)
 
 1. Host creates room and starts sharing
-2. Viewer enters room ID and connects
+2. **One** viewer enters room ID and connects
 3. Offer/answer exchange completes
 4. ICE candidates exchanged
 5. WebRTC connection established
@@ -334,8 +336,9 @@ useEffect(() => {
 
 1. **Invalid Room ID**: Immediate "Room not found" error
 2. **No Host**: 60-second timeout with clear error message
-3. **Network Issues**: Proper error handling and retry options
-4. **WebRTC Failures**: Connection state tracking and cleanup
+3. **Multiple Viewers**: Second viewer gets 404 and times out (by design)
+4. **Network Issues**: Proper error handling and retry options
+5. **WebRTC Failures**: Connection state tracking and cleanup
 
 ## Monitoring & Diagnostics
 

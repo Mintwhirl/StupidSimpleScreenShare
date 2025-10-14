@@ -16,6 +16,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
   const offerIntervalRef = useRef(null);
   const answerIntervalRef = useRef(null);
   const candidateIntervalRef = useRef(null);
+  const isMountedRef = useRef(true);
 
   // Initialize ICE servers
   useEffect(() => {
@@ -56,7 +57,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         setError(`Failed to send ICE candidate: ${err.message}`);
       }
     },
-    [roomId, role, config]
+    [roomId, role, config, _viewerId] // Fixed: Added _viewerId to dependency array
   );
 
   // Create peer connection
@@ -198,8 +199,10 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         if (pollCount > maxPolls) {
           clearInterval(offerIntervalRef.current);
           offerIntervalRef.current = null;
-          setError('Connection timeout: No offer received from host. Make sure the host has started sharing.');
-          setConnectionState('failed');
+          if (isMountedRef.current) {
+            setError('Connection timeout: No offer received from host. Make sure the host has started sharing.');
+            setConnectionState('failed');
+          }
           return;
         }
 
@@ -240,15 +243,19 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           console.error('Unexpected error polling for offers:', response.status);
           clearInterval(offerIntervalRef.current);
           offerIntervalRef.current = null;
-          setError(`Server error: ${response.status}`);
-          setConnectionState('failed');
+          if (isMountedRef.current) {
+            setError(`Server error: ${response.status}`);
+            setConnectionState('failed');
+          }
         }
       } catch (err) {
         console.error('Error polling for offers:', err);
         clearInterval(offerIntervalRef.current);
         offerIntervalRef.current = null;
-        setError(`Network error: ${err.message}`);
-        setConnectionState('failed');
+        if (isMountedRef.current) {
+          setError(`Network error: ${err.message}`);
+          setConnectionState('failed');
+        }
       }
     };
 
@@ -273,8 +280,10 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         if (pollCount > maxPolls) {
           clearInterval(answerIntervalRef.current);
           answerIntervalRef.current = null;
-          setError('Connection timeout: No answer received from viewer. Make sure the viewer has connected.');
-          setConnectionState('failed');
+          if (isMountedRef.current) {
+            setError('Connection timeout: No answer received from viewer. Make sure the viewer has connected.');
+            setConnectionState('failed');
+          }
           return;
         }
 
@@ -306,15 +315,19 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           console.error('Unexpected error polling for answers:', response.status);
           clearInterval(answerIntervalRef.current);
           answerIntervalRef.current = null;
-          setError(`Server error: ${response.status}`);
-          setConnectionState('failed');
+          if (isMountedRef.current) {
+            setError(`Server error: ${response.status}`);
+            setConnectionState('failed');
+          }
         }
       } catch (err) {
         console.error('Error polling for answers:', err);
         clearInterval(answerIntervalRef.current);
         answerIntervalRef.current = null;
-        setError(`Network error: ${err.message}`);
-        setConnectionState('failed');
+        if (isMountedRef.current) {
+          setError(`Network error: ${err.message}`);
+          setConnectionState('failed');
+        }
       }
     };
 
@@ -327,8 +340,21 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       clearInterval(candidateIntervalRef.current);
     }
 
+    let pollCount = 0;
+    const maxPolls = 120; // 2 minutes timeout for ICE candidates
+
     candidateIntervalRef.current = setInterval(async () => {
       try {
+        pollCount++;
+
+        // Timeout after maxPolls attempts
+        if (pollCount > maxPolls) {
+          clearInterval(candidateIntervalRef.current);
+          candidateIntervalRef.current = null;
+          console.warn('ICE candidate polling timeout - connection may be stuck');
+          return;
+        }
+
         const response = await fetch(
           `/api/candidate?roomId=${roomId}&role=${role}${_viewerId ? `&viewerId=${_viewerId}` : ''}`
         );
@@ -355,7 +381,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         console.error('Error polling for ICE candidates:', err);
       }
     }, 1000);
-  }, [roomId, role]);
+  }, [roomId, role, _viewerId]); // Fixed: Added _viewerId to dependency array
 
   // Start screen sharing (host)
   const startScreenShare = useCallback(async () => {
@@ -478,6 +504,8 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      isMountedRef.current = false; // Mark component as unmounted
+
       if (offerIntervalRef.current) {
         clearInterval(offerIntervalRef.current);
       }

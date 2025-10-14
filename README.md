@@ -14,8 +14,8 @@ A production-ready browser-based screen sharing application built with React, We
 
 ### User Experience
 
-- **Multi-viewer support** - Multiple viewers can watch a single host simultaneously
-- **Live viewer count** - See how many people are watching in real-time
+- **Single viewer support** - One viewer can watch a single host per session
+- **Connection status** - Real-time connection state monitoring
 - **Built-in text chat** - Communicate without needing external tools
 - **Network diagnostics** - Comprehensive testing tool for troubleshooting connections
 - **Role-based UI** - Different interfaces for hosts vs viewers

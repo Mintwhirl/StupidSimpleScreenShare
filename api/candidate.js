@@ -74,11 +74,14 @@ async function handleCandidate(req, res) {
       role === 'viewer' && viewerId
         ? `room:${roomId}:${role}:${viewerId}:candidates`
         : `room:${roomId}:${role}:candidates`;
-    const arr = (await redis.lrange(key, 0, -1)) || [];
 
-    if (arr.length > 0) {
-      await redis.del(key); // Remove after fetching to prevent duplicates
-    }
+    // Use Redis transaction to atomically read and delete candidates
+    const multi = redis.multi();
+    multi.lrange(key, 0, -1);
+    multi.del(key);
+    const results = await multi.exec();
+
+    const arr = results[0] || [];
 
     try {
       // Upstash Redis auto-parses JSON, so check if it's already an object
