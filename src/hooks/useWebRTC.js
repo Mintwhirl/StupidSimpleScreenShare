@@ -168,7 +168,10 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       clearInterval(answerIntervalRef.current);
     }
 
-    answerIntervalRef.current = setInterval(async () => {
+    let pollCount = 0;
+    let pollInterval = 1000; // Start with 1 second
+
+    const pollForOffer = async () => {
       try {
         const response = await fetch(`/api/offer?roomId=${roomId}`);
 
@@ -190,11 +193,25 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
               await sendAnswer(answer);
             }
           }
+        } else if (response.status === 404) {
+          // Expected 404 - no offer yet, but reduce polling frequency after initial attempts
+          pollCount++;
+          if (pollCount > 10) {
+            // After 10 seconds, reduce to polling every 5 seconds
+            clearInterval(answerIntervalRef.current);
+            pollInterval = 5000;
+            answerIntervalRef.current = setInterval(pollForOffer, pollInterval);
+          }
+        } else {
+          // Unexpected error
+          console.error('Unexpected error polling for offers:', response.status);
         }
       } catch (err) {
         console.error('Error polling for offers:', err);
       }
-    }, 1000);
+    };
+
+    answerIntervalRef.current = setInterval(pollForOffer, pollInterval);
   }, [roomId, sendAnswer]);
 
   // Start polling for answers (host)
@@ -203,7 +220,10 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       clearInterval(answerIntervalRef.current);
     }
 
-    answerIntervalRef.current = setInterval(async () => {
+    let pollCount = 0;
+    let pollInterval = 1000; // Start with 1 second
+
+    const pollForAnswer = async () => {
       try {
         const response = await fetch(`/api/answer?roomId=${roomId}`);
 
@@ -220,11 +240,25 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
               await pc.setRemoteDescription(data.desc);
             }
           }
+        } else if (response.status === 404) {
+          // Expected 404 - no answer yet, but reduce polling frequency after initial attempts
+          pollCount++;
+          if (pollCount > 10) {
+            // After 10 seconds, reduce to polling every 5 seconds
+            clearInterval(answerIntervalRef.current);
+            pollInterval = 5000;
+            answerIntervalRef.current = setInterval(pollForAnswer, pollInterval);
+          }
+        } else {
+          // Unexpected error
+          console.error('Unexpected error polling for answers:', response.status);
         }
       } catch (err) {
         console.error('Error polling for answers:', err);
       }
-    }, 1000);
+    };
+
+    answerIntervalRef.current = setInterval(pollForAnswer, pollInterval);
   }, [roomId]);
 
   // Start polling for ICE candidates

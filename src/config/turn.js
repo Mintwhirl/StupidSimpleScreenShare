@@ -31,11 +31,11 @@ const TURN_SERVERS = [
  */
 export function getIceServers(includeTurn = false) {
   const iceServers = [...DEFAULT_STUN_SERVERS];
-  
+
   if (includeTurn && TURN_SERVERS.length > 0) {
     iceServers.push(...TURN_SERVERS);
   }
-  
+
   return iceServers;
 }
 
@@ -52,9 +52,7 @@ export function getStunServers() {
  * @returns {boolean} True if TURN servers are available
  */
 export function hasTurnServers() {
-  return TURN_SERVERS.length > 0 && 
-         process.env.TURN_USERNAME && 
-         process.env.TURN_PASSWORD;
+  return TURN_SERVERS.length > 0 && process.env.TURN_USERNAME && process.env.TURN_PASSWORD;
 }
 
 /**
@@ -64,11 +62,10 @@ export function hasTurnServers() {
  */
 export function getConnectionQuality(peerConnection) {
   if (!peerConnection) return 'unknown';
-  
-  const stats = peerConnection.getStats();
+
   // This is a simplified implementation
   // In a real app, you'd analyze the stats for connection quality
-  
+
   switch (peerConnection.connectionState) {
     case 'connected':
       return 'excellent';
@@ -89,7 +86,7 @@ export function getConnectionQuality(peerConnection) {
  */
 export function configureWebRTC(peerConnection, useTurn = false) {
   if (!peerConnection) return;
-  
+
   // Set ICE servers
   peerConnection.setConfiguration({
     iceServers: getIceServers(useTurn),
@@ -98,12 +95,12 @@ export function configureWebRTC(peerConnection, useTurn = false) {
     bundlePolicy: 'max-bundle',
     rtcpMuxPolicy: 'require',
   });
-  
+
   // Configure ICE gathering
   peerConnection.addEventListener('icegatheringstatechange', () => {
     console.log('ICE gathering state:', peerConnection.iceGatheringState);
   });
-  
+
   peerConnection.addEventListener('iceconnectionstatechange', () => {
     console.log('ICE connection state:', peerConnection.iceConnectionState);
   });

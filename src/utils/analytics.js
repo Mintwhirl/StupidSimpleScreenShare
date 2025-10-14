@@ -203,7 +203,7 @@ class AnalyticsService {
     // - Mixpanel
     // - Amplitude
     // - Custom analytics service
-    
+
     console.log('Would send to analytics service:', event);
   }
 
@@ -277,12 +277,12 @@ export default analytics;
 // Export individual functions for convenience
 export const trackPageView = (page, properties) => analytics.trackPageView(page, properties);
 export const trackEvent = (eventName, properties) => analytics.trackEvent(eventName, properties);
-export const trackInteraction = (element, action, properties) => analytics.trackInteraction(element, action, properties);
+export const trackInteraction = (element, action, properties) =>
+  analytics.trackInteraction(element, action, properties);
 export const trackScreenShare = (action, properties) => analytics.trackScreenShare(action, properties);
 export const trackChat = (action, properties) => analytics.trackChat(action, properties);
 export const trackWebRTC = (action, properties) => analytics.trackWebRTC(action, properties);
-export const trackPerformance = (metric, value, properties) =>
-  analytics.trackPerformance(metric, value, properties);
+export const trackPerformance = (metric, value, properties) => analytics.trackPerformance(metric, value, properties);
 export const trackError = (error, context) => analytics.trackError(error, context);
 export const identify = (traits) => analytics.identify(traits);
 export const setUserProperties = (properties) => analytics.setUserProperties(properties);
