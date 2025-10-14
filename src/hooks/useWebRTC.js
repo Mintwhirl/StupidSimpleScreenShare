@@ -396,6 +396,9 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       // Start polling for answers
       startAnswerPolling();
 
+      // Start polling for ICE candidates
+      startCandidatePolling();
+
       return stream;
     } catch (err) {
       console.error('Error starting screen share:', err);
@@ -403,7 +406,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       setConnectionState('disconnected');
       throw err;
     }
-  }, [role, createPeerConnection, sendOffer, startAnswerPolling]);
+  }, [role, createPeerConnection, sendOffer, startAnswerPolling, startCandidatePolling]);
 
   // Connect to host (viewer)
   const connectToHost = useCallback(async () => {
