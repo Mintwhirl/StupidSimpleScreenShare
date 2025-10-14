@@ -8,7 +8,7 @@ import { useRoomContext } from '../contexts/RoomContext';
  * Extracted from App.jsx to improve component organization.
  */
 function HomeView({ onNavigateToHost, onNavigateToViewer }) {
-  const { roomId, updateRoomId } = useRoomContext();
+  const { roomId, updateRoomId, toggleDiagnostics } = useRoomContext();
   const { handleCreateRoom, handleJoinRoom } = useRoomManagement();
 
   // Handle room creation
@@ -112,7 +112,7 @@ function HomeView({ onNavigateToHost, onNavigateToViewer }) {
               Start Recording
             </button>
             <button
-              onClick={() => setShowDiagnostics(!showDiagnostics)}
+              onClick={toggleDiagnostics}
               className='bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50'
               aria-label='Toggle diagnostics panel to view connection information'
             >
