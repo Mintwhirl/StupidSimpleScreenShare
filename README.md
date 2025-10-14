@@ -8,7 +8,7 @@ A production-ready browser-based screen sharing application built with React, We
 
 - **Browser-only P2P screen sharing** - No plugins, no downloads, no accounts required
 - **WebRTC with STUN/TURN support** - Direct peer-to-peer connections with relay fallback
-- **Ephemeral rooms** - Automatically expire after 30 minutes for privacy
+- **Ephemeral rooms** - Automatically expire after 1 hour for privacy
 - **Real-time connection quality monitoring** - Connection state indicators and diagnostics
 - **Modern React architecture** - Component-based, hook-driven, maintainable codebase
 
@@ -32,7 +32,7 @@ A production-ready browser-based screen sharing application built with React, We
 ### Security & Quality
 
 - **Comprehensive input validation** - All user inputs sanitized and validated
-- **Rate limiting** - Upstash-powered rate limiting (50 rooms/hour, 60 chat msgs/min, 2000 API calls/min)
+- **Rate limiting** - Upstash-powered rate limiting (50 rooms/hour, 60 chat msgs/min, 2000 API calls/hour)
 - **325 comprehensive tests** - Unit and integration tests with 71.75% code coverage
 - **Automated CI/CD** - GitHub Actions with pre-commit hooks
 - **Code quality** - ESLint, Prettier, and professional development practices
@@ -194,7 +194,7 @@ REDIS_TOKEN=your-redis-token
 ### Privacy
 
 - No video data is stored on servers
-- Rooms automatically expire after 30 minutes
+- Rooms automatically expire after 1 hour
 - No user accounts or personal data collection
 - All communication is encrypted (HTTPS + WebRTC)
 
@@ -202,7 +202,7 @@ REDIS_TOKEN=your-redis-token
 
 - **Room Creation**: 50 rooms per hour per IP
 - **Chat Messages**: 60 messages per minute per IP
-- **API Calls**: 2000 calls per minute per IP
+- **API Calls**: 2000 calls per hour per IP
 
 ## 🧪 Testing
 

@@ -2,293 +2,225 @@
 
 ## Common Issues and Solutions
 
-### 1. Build Failures
+### 1. Connection Issues
 
-#### Issue: ESLint errors during build
+#### Issue: "Connecting..." state never completes
 
-**Symptoms**: Build fails with ESLint rule violations
-**Solution**:
+**Symptoms**: Viewer shows "Connecting..." indefinitely
+**Solutions**:
+
+- Check if host has started screen sharing
+- Verify room ID is correct
+- Check browser console for WebRTC errors
+- Try refreshing the page
+- Ensure both browsers support WebRTC
+
+#### Issue: "Room not found" error
+
+**Symptoms**: Viewer gets "Room not found" when entering room ID
+**Solutions**:
+
+- Verify room ID is exactly 24 characters
+- Check if room has expired (1 hour TTL)
+- Ensure host has created the room first
+- Try creating a new room
+
+#### Issue: Screen sharing fails to start
+
+**Symptoms**: Host clicks "Start Sharing" but nothing happens
+**Solutions**:
+
+- Check browser permissions for screen sharing
+- Ensure browser supports `getDisplayMedia` API
+- Try selecting a different screen/application
+- Check browser console for errors
+
+### 2. WebRTC Issues
+
+#### Issue: No video stream appears
+
+**Symptoms**: Connection established but no video
+**Solutions**:
+
+- Check if host is actually sharing screen
+- Verify WebRTC support in browser
+- Check network connectivity
+- Try different browser (Chrome, Firefox, Safari)
+
+#### Issue: Poor video quality
+
+**Symptoms**: Choppy or low-quality video
+**Solutions**:
+
+- Check network bandwidth
+- Close other bandwidth-intensive applications
+- Try reducing screen resolution
+- Check if TURN servers are working
+
+### 3. Chat Issues
+
+#### Issue: Messages not sending
+
+**Symptoms**: Chat messages don't appear
+**Solutions**:
+
+- Check if room is still active
+- Verify sender name is provided
+- Check rate limiting (60 messages/minute)
+- Refresh page and try again
+
+#### Issue: Messages not receiving
+
+**Symptoms**: Messages sent but not received by others
+**Solutions**:
+
+- Check if other users are in the same room
+- Verify room ID is correct
+- Check network connectivity
+- Try refreshing the page
+
+### 4. Browser Compatibility
+
+#### Issue: WebRTC not supported
+
+**Symptoms**: "WebRTC Support: No" in diagnostics
+**Solutions**:
+
+- Use modern browser (Chrome 60+, Firefox 55+, Safari 11+)
+- Enable WebRTC in browser settings
+- Check if browser is up to date
+- Try different browser
+
+#### Issue: Screen sharing not supported
+
+**Symptoms**: "Screen Share Support: No" in diagnostics
+**Solutions**:
+
+- Use Chrome, Firefox, or Safari
+- Ensure browser is up to date
+- Check browser permissions
+- Try different browser
+
+### 5. Network Issues
+
+#### Issue: Connection fails across networks
+
+**Symptoms**: Works on same network but fails across different networks
+**Solutions**:
+
+- TURN servers are automatically used for NAT traversal
+- Check firewall settings
+- Try different network (mobile hotspot)
+- Contact network administrator
+
+#### Issue: High latency
+
+**Symptoms**: Delayed video or chat
+**Solutions**:
+
+- Check network speed
+- Close other applications
+- Try different network
+- Check server region (Vercel auto-selects)
+
+### 6. Development Issues
+
+#### Issue: Build fails locally
+
+**Solutions**:
 
 ```bash
-# Fix auto-fixable issues
-npm run lint:fix
-
-# Check specific files
-npx eslint src/App.jsx --fix
-
-# Temporarily disable rules if needed (not recommended)
-// eslint-disable-next-line rule-name
-```
-
-#### Issue: TypeScript/JSX compilation errors
-
-**Symptoms**: Build fails with syntax errors
-**Solution**:
-
-```bash
-# Check for syntax errors
-npm run lint
-
-# Verify all imports are correct
-# Check for missing dependencies
+# Clear node_modules and reinstall
+rm -rf node_modules package-lock.json
 npm install
+
+# Check Node.js version (requires 18+)
+node --version
+
+# Run linting
+npm run lint:fix
 ```
 
-### 2. Test Failures
+#### Issue: Tests failing
 
-#### Issue: Tests failing in CI but passing locally
-
-**Symptoms**: CI pipeline shows test failures
-**Common Causes**:
-
-- Missing environment variables
-- Different Node.js versions
-- Timeout issues
-- Missing Redis service in CI
-- Mock object compatibility issues
-
-**Solution**:
+**Solutions**:
 
 ```bash
-# Run tests with same environment as CI
-AUTH_SECRET=test-secret-key-for-ci-123 npm run test
+# Run tests with verbose output
+npm test -- --verbose
+
+# Run specific test file
+npm test -- src/hooks/useApi.test.js
 
 # Check test coverage
 npm run test:coverage
-
-# Run specific test files
-npm run test tests/unit/validateRoomId.test.js
 ```
 
-**CI Environment Fixes Applied**:
-
-- Added Redis service to CI with health checks
-- Extended test timeout from 5 to 10 minutes
-- Added proper environment variables (NODE_ENV, REDIS_URL, etc.)
-- Improved error handling for mock objects
-- Added Node.js engine requirements (>=18.0.0)
-
-#### Issue: Redis connection errors in tests
-
-**Symptoms**: Tests fail with "Redis connection failed"
-**Solution**:
-
-- These are expected in test environment
-- Tests mock Redis connections
-- Check test setup and mocking
-- **Fixed**: Added Redis service to CI environment with proper health checks
-- **Fixed**: Added test environment fallbacks for Redis client creation
-
-### 3. Runtime Issues
-
-#### Issue: Application won't start
-
-**Symptoms**: White screen or loading forever
-**Solution**:
-
-1. Check browser console for errors
-2. Verify API configuration:
-
-   ```bash
-   # Check environment variables
-   echo $AUTH_SECRET
-
-   # Test API endpoints
-   curl http://localhost:3000/api/config
-   ```
-
-3. Check network connectivity
-4. Verify Redis connection (if using production)
-
-#### Issue: WebRTC connection fails
-
-**Symptoms**: Screen sharing doesn't work
-**Solution**:
-
-1. Check browser permissions for screen sharing
-2. Verify TURN/STUN server configuration
-3. Check network firewall settings
-4. Test with different browsers
-5. Check browser console for WebRTC errors
-
-### 4. Development Issues
-
-#### Issue: Hot reload not working
-
-**Symptoms**: Changes not reflected in browser
-**Solution**:
-
-```bash
-# Restart development server
-npm run dev
-
-# Clear browser cache
-# Check for syntax errors in console
-```
-
-#### Issue: ESLint rules too strict
-
-**Symptoms**: Many linting errors
-**Solution**:
-
-1. Review `.eslintrc.cjs` configuration
-2. Check file-specific overrides
-3. Use `// eslint-disable-next-line` for specific cases
-4. Consider updating ESLint configuration
-
-### 5. Performance Issues
-
-#### Issue: Slow build times
-
-**Symptoms**: `npm run build` takes too long
-**Solution**:
-
-```bash
-# Check bundle size
-npm run build
-# Review dist/stats.html
-
-# Optimize imports
-# Use lazy loading for components
-# Check for circular dependencies
-```
-
-#### Issue: Large bundle size
-
-**Symptoms**: Application loads slowly
-**Solution**:
-
-1. Analyze bundle with `npm run build`
-2. Check `dist/stats.html` for large dependencies
-3. Implement code splitting
-4. Use dynamic imports for heavy components
-
-### 6. Deployment Issues
+### 7. Deployment Issues
 
 #### Issue: Vercel deployment fails
 
-**Symptoms**: Build fails on Vercel
-**Solution**:
+**Solutions**:
 
-1. Check `vercel.json` configuration
-2. Verify environment variables in Vercel dashboard
-3. Check Node.js version compatibility
-4. Review build logs for specific errors
+- Check environment variables are set
+- Verify build logs for errors
+- Check Node.js version in vercel.json
+- Ensure all dependencies are in package.json
 
-#### Issue: API endpoints not working in production
+#### Issue: API endpoints not working
 
-**Symptoms**: 500 errors from API
-**Solution**:
+**Solutions**:
 
-1. Check serverless function logs
-2. Verify environment variables
-3. Test API endpoints directly
-4. Check Redis connection (if applicable)
+- Check AUTH_SECRET is set in Vercel
+- Verify Redis connection (Upstash)
+- Check function logs in Vercel dashboard
+- Test endpoints with curl or Postman
 
-### 7. Security Issues
+## Diagnostic Tools
 
-#### Issue: Security audit shows vulnerabilities
+### Built-in Diagnostics
 
-**Symptoms**: `npm audit` shows issues
-**Solution**:
+- Open diagnostics panel in the app
+- Check WebRTC support status
+- Monitor connection quality
+- View browser information
 
-```bash
-# Check for vulnerabilities
-npm audit
+### Browser Console
 
-# Fix automatically fixable issues
-npm audit fix
+- Open Developer Tools (F12)
+- Check Console tab for errors
+- Look for WebRTC-related messages
+- Check Network tab for failed requests
 
-# Review and update dependencies manually
-npm update package-name
-```
+### Network Testing
 
-#### Issue: Authentication errors
-
-**Symptoms**: API returns 401/403 errors
-**Solution**:
-
-1. Verify `AUTH_SECRET` environment variable
-2. Check API request headers
-3. Verify client-side configuration
-4. Test with correct authentication
-
-## Debugging Tools
-
-### Browser Developer Tools
-
-- **Console**: Check for JavaScript errors
-- **Network**: Monitor API requests and responses
-- **Application**: Check localStorage, sessionStorage
-- **Performance**: Analyze runtime performance
-
-### Development Tools
-
-```bash
-# Run with debug logging
-DEBUG=* npm run dev
-
-# Check bundle analysis
-npm run build && open dist/stats.html
-
-# Run tests with coverage
-npm run test:coverage
-```
-
-### API Testing
-
-```bash
-# Test API endpoints
-curl -X GET http://localhost:3000/api/config \
-  -H "x-auth-secret: your-secret"
-
-# Test room creation
-curl -X POST http://localhost:3000/api/create-room \
-  -H "Content-Type: application/json" \
-  -H "x-auth-secret: your-secret" \
-  -d '{}'
-```
+- Test with different browsers
+- Try different networks
+- Check firewall settings
+- Test with mobile hotspot
 
 ## Getting Help
 
-### Logs and Diagnostics
+### Before Reporting Issues
 
-1. Check browser console for client-side errors
-2. Check server logs for API errors
-3. Use the built-in diagnostics panel in the application
-4. Enable debug logging in development
+1. Check this troubleshooting guide
+2. Try different browser
+3. Check browser console for errors
+4. Test with different network
+5. Verify room hasn't expired
 
-### Common Error Messages
+### Reporting Issues
 
-#### "Failed to fetch client configuration"
+When reporting issues, include:
 
-- Check API endpoint availability
-- Verify network connectivity
-- Check CORS settings
+- Browser and version
+- Operating system
+- Network setup
+- Console error messages
+- Steps to reproduce
+- Expected vs actual behavior
 
-#### "Redis connection failed"
+### Contact Information
 
-- Expected in test environment
-- Check Redis configuration in production
-- Verify Redis server is running
-
-#### "Room not found"
-
-- Check room ID format
-- Verify room exists in Redis
-- Check room expiration settings
-
-#### "Bad Request" (400 errors)
-
-- **Fixed**: Enhanced error handling in useApi.js with robust response parsing
-- **Fixed**: Added detailed error logging for debugging
-- **Fixed**: Improved mock object compatibility in tests
-- Check browser console for detailed error information
-- Verify API request format and headers
-
-### Support Resources
-
-- Check existing GitHub issues
-- Review API documentation in `docs/API.md`
-- Check architecture decisions in `docs/ARCHITECTURE_DECISIONS.md`
-- Review development setup in `README.md`
+- GitHub Issues: [Repository Issues](https://github.com/Mintwhirl/StupidSimpleScreenShare/issues)
+- Check [WebRTC Flow Audit](WEBRTC_FLOW_AUDIT.md) for technical details
