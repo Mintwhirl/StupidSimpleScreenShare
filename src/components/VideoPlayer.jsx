@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useRef } from 'react';
+import { forwardRef, useEffect, useRef } from 'react';
 
 const VideoPlayer = forwardRef(({ className, ...props }, ref) => {
   const videoRef = useRef(null);
@@ -74,13 +74,7 @@ const VideoPlayer = forwardRef(({ className, ...props }, ref) => {
     };
   }, [internalRef]);
 
-  return (
-    <video
-      ref={internalRef}
-      className={className}
-      {...props}
-    />
-  );
+  return <video ref={internalRef} className={className} {...props} />;
 });
 
 VideoPlayer.displayName = 'VideoPlayer';

@@ -15,12 +15,12 @@ vi.mock('../../api/_utils.js', async () => {
   return {
     ...actual,
     createRedisClient: vi.fn(() => mockRedis),
-    sendError: vi.fn((res, status, message, error) => {
-      return res.status(status).json({
+    sendError: vi.fn((res, status, message, error) =>
+      res.status(status).json({
         error: message,
         timestamp: new Date().toISOString(),
-      });
-    }),
+      })
+    ),
     checkRateLimit: vi.fn(),
     getChatRateLimit: vi.fn(() => ({
       limit: vi.fn().mockResolvedValue({
@@ -63,7 +63,7 @@ describe('Chat Endpoint Integration', () => {
 
     // Clear all mocks
     vi.clearAllMocks();
-    
+
     // Default Redis responses
     mockRedis.get.mockResolvedValue('{"createdAt":1234567890,"version":"1.0"}');
     mockRedis.lpush.mockResolvedValue(1);
@@ -102,7 +102,7 @@ describe('Chat Endpoint Integration', () => {
       // Verify Redis operations
       expect(mockRedis.lpush).toHaveBeenCalledWith(
         'room:abc123def456789012345678:chat',
-        expect.stringContaining('"sender":"John Doe"'),
+        expect.stringContaining('"sender":"John Doe"')
       );
       expect(mockRedis.ltrim).toHaveBeenCalledWith('room:abc123def456789012345678:chat', 0, 99);
       expect(mockRedis.expire).toHaveBeenCalledWith('room:abc123def456789012345678:chat', 3600);
@@ -224,13 +224,8 @@ describe('Chat Endpoint Integration', () => {
       const chatHandler = (await import('../../api/chat.js')).default;
       await chatHandler(mockReq, mockRes);
 
-      expect(checkRateLimit).toHaveBeenCalledWith(
-        expect.any(Object),
-        'abc123def456789012345678:John Doe',
-        mockRes,
-      );
+      expect(checkRateLimit).toHaveBeenCalledWith(expect.any(Object), 'abc123def456789012345678:John Doe', mockRes);
     });
-
   });
 
   describe('GET /api/chat - Retrieve Messages', () => {

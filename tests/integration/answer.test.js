@@ -13,12 +13,12 @@ vi.mock('../../api/_utils.js', async () => {
   return {
     ...actual,
     createRedisClient: vi.fn(() => mockRedis),
-    sendError: vi.fn((res, status, message, error) => {
-      return res.status(status).json({
+    sendError: vi.fn((res, status, message, error) =>
+      res.status(status).json({
         error: message,
         timestamp: new Date().toISOString(),
-      });
-    }),
+      })
+    ),
     TTL_ROOM: 3600,
   };
 });
@@ -51,7 +51,7 @@ describe('Answer Endpoint Integration', () => {
 
     // Clear all mocks
     vi.clearAllMocks();
-    
+
     // Default Redis responses
     mockRedis.get.mockResolvedValue('{"createdAt":1234567890,"version":"1.0"}');
     mockRedis.set.mockResolvedValue('OK');
@@ -82,7 +82,7 @@ describe('Answer Endpoint Integration', () => {
       // Verify Redis operations
       expect(mockRedis.set).toHaveBeenCalledWith(
         'room:abc123def456789012345678:answer',
-        JSON.stringify(mockReq.body.desc),
+        JSON.stringify(mockReq.body.desc)
       );
       expect(mockRedis.expire).toHaveBeenCalledWith('room:abc123def456789012345678:answer', 3600);
     });
@@ -365,7 +365,7 @@ describe('Answer Endpoint Integration', () => {
         roomId: 'abc123def456789012345678',
         desc: {
           type: 'answer',
-          sdp: 'v=0\r\no=- 987654321 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n' + 'a=ice-ufrag:test\r\n'.repeat(100), // Large SDP
+          sdp: `v=0\r\no=- 987654321 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n${'a=ice-ufrag:test\r\n'.repeat(100)}`, // Large SDP
         },
       };
 
@@ -375,7 +375,7 @@ describe('Answer Endpoint Integration', () => {
       expect(mockRes.json).toHaveBeenCalledWith({ ok: true });
       expect(mockRedis.set).toHaveBeenCalledWith(
         'room:abc123def456789012345678:answer',
-        JSON.stringify(mockReq.body.desc),
+        JSON.stringify(mockReq.body.desc)
       );
     });
 

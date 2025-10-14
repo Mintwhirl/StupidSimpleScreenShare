@@ -14,12 +14,12 @@ vi.mock('../../api/_utils.js', async () => {
   return {
     ...actual,
     createRedisClient: vi.fn(() => mockRedis),
-    sendError: vi.fn((res, status, message, error) => {
-      return res.status(status).json({
+    sendError: vi.fn((res, status, message, error) =>
+      res.status(status).json({
         error: message,
         timestamp: new Date().toISOString(),
-      });
-    }),
+      })
+    ),
     checkRateLimit: vi.fn(),
     getClientIdentifier: vi.fn(() => 'test-client-id'),
     getRoomCreationRateLimit: vi.fn(() => ({
@@ -85,12 +85,9 @@ describe('Create Room Endpoint Integration', () => {
       // Verify Redis operations
       expect(mockRedis.set).toHaveBeenCalledWith(
         expect.stringMatching(/^room:[a-f0-9]{24}:meta$/),
-        expect.stringContaining('"createdAt"'),
+        expect.stringContaining('"createdAt"')
       );
-      expect(mockRedis.expire).toHaveBeenCalledWith(
-        expect.stringMatching(/^room:[a-f0-9]{24}:meta$/),
-        3600,
-      );
+      expect(mockRedis.expire).toHaveBeenCalledWith(expect.stringMatching(/^room:[a-f0-9]{24}:meta$/), 3600);
     });
 
     it('should create a room successfully with valid auth secret in body', async () => {
@@ -185,24 +182,24 @@ describe('Create Room Endpoint Integration', () => {
 
     it('should generate unique room IDs', async () => {
       mockReq.headers['x-auth-secret'] = 'test-secret-key-123';
-      
+
       // Ensure Redis mock is working
       mockRedis.set.mockResolvedValue('OK');
       mockRedis.expire.mockResolvedValue(1);
 
       const createRoomHandler = (await import('../../api/create-room.js')).default;
-      
+
       // Create first room
       await createRoomHandler(mockReq, mockRes);
-      
+
       // Verify the first room was created successfully
       expect(mockRes.json).toHaveBeenCalledWith({
         roomId: expect.stringMatching(/^[a-f0-9]{24}$/),
         expiresIn: 3600,
       });
-      
+
       const firstRoomId = mockRes.json.mock.calls[0][0].roomId;
-      
+
       // Create second room with fresh mocks
       const mockRes2 = {
         status: vi.fn().mockReturnThis(),
@@ -210,7 +207,7 @@ describe('Create Room Endpoint Integration', () => {
         setHeader: vi.fn(),
         end: vi.fn(),
       };
-      
+
       await createRoomHandler(mockReq, mockRes2);
       const secondRoomId = mockRes2.json.mock.calls[0][0].roomId;
 
@@ -225,13 +222,11 @@ describe('Create Room Endpoint Integration', () => {
       const createRoomHandler = (await import('../../api/create-room.js')).default;
       await createRoomHandler(mockReq, mockRes);
 
-      const roomMetaCall = mockRedis.set.mock.calls.find(call => 
-        call[0].includes(':meta')
-      );
-      
+      const roomMetaCall = mockRedis.set.mock.calls.find((call) => call[0].includes(':meta'));
+
       expect(roomMetaCall).toBeDefined();
       const roomMeta = JSON.parse(roomMetaCall[1]);
-      
+
       expect(roomMeta).toHaveProperty('createdAt');
       expect(roomMeta).toHaveProperty('version', '1.0');
       expect(typeof roomMeta.createdAt).toBe('number');
@@ -240,7 +235,7 @@ describe('Create Room Endpoint Integration', () => {
 
     it('should apply rate limiting when AUTH_SECRET is set', async () => {
       mockReq.headers['x-auth-secret'] = 'test-secret-key-123';
-      
+
       // Mock rate limit exceeded
       const { checkRateLimit } = await import('../../api/_utils.js');
       checkRateLimit.mockResolvedValue({

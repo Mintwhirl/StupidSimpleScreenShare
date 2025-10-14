@@ -4,10 +4,26 @@ module.exports = {
     es2021: true,
     node: true,
   },
-  extends: ['airbnb-base'],
+  ignorePatterns: [
+    'dist/',
+    'coverage/',
+    'node_modules/',
+    '*.min.js',
+    'build/',
+  ],
+  extends: ['airbnb-base', 'plugin:react/recommended', 'plugin:react-hooks/recommended'],
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',
+    ecmaFeatures: {
+      jsx: true,
+    },
+  },
+  plugins: ['react', 'react-hooks'],
+  settings: {
+    react: {
+      version: 'detect',
+    },
   },
   rules: {
     // Allow console.log for debugging (common in serverless functions)
@@ -169,6 +185,18 @@ module.exports = {
     'space-unary-ops': 'off',
     'spaced-comment': ['error', 'always'],
     'operator-linebreak': 'off',
+
+    // React-specific rules
+    'react/react-in-jsx-scope': 'off', // Not needed with React 17+
+    'react/prop-types': 'off', // We're not using prop-types
+    'react/jsx-uses-react': 'off', // Not needed with React 17+
+    'react/jsx-uses-vars': 'error',
+    'react/jsx-filename-extension': ['error', { extensions: ['.jsx'] }],
+    'react/jsx-props-no-spreading': 'off', // Allow prop spreading
+    'react/function-component-definition': 'off', // Allow both function and arrow components
+    'react/no-unescaped-entities': 'off', // Allow quotes and apostrophes in JSX
+    'react-hooks/exhaustive-deps': 'warn', // Make this a warning, not error
+    'react-hooks/set-state-in-effect': 'off', // Allow setState in effects for our use case
   },
   overrides: [
     {
@@ -218,6 +246,54 @@ module.exports = {
       rules: {
         // Allow global variables in browser environment
         'no-undef': 'off',
+      },
+    },
+    {
+      // React files
+      files: ['src/**/*.jsx', 'src/**/*.js'],
+      env: {
+        browser: true,
+        node: false,
+      },
+      rules: {
+        // Allow import/prefer-default-export for hooks
+        'import/prefer-default-export': 'off',
+        
+        // Allow longer lines in React components
+        'max-len': [
+          'error',
+          {
+            code: 120,
+            ignoreUrls: true,
+            ignoreStrings: true,
+            ignoreTemplateLiterals: true,
+            ignoreComments: true,
+          },
+        ],
+
+        // Relax some rules for React components
+        'import/no-unresolved': 'off', // Vite handles module resolution
+        'import/order': 'off', // Allow flexible import ordering
+        'no-use-before-define': 'off', // Allow function hoisting
+        'indent': 'off', // Let Prettier handle indentation
+        'arrow-body-style': 'off', // Allow both arrow styles
+        'object-shorthand': 'off', // Allow both shorthand and longhand
+        'no-else-return': 'off', // Allow else after return
+        'padded-blocks': 'off', // Allow padded blocks
+        'implicit-arrow-linebreak': 'off', // Allow flexible arrow linebreaks
+        'function-paren-newline': 'off', // Allow flexible function parens
+        'prefer-template': 'off', // Allow string concatenation
+        'prefer-destructuring': 'off', // Allow both destructuring and dot notation
+        'no-undef': 'off', // Allow undefined variables (React globals)
+      },
+    },
+    {
+      // Config files
+      files: ['vite.config.js', '*.config.js'],
+      rules: {
+        'import/no-extraneous-dependencies': 'off',
+        'import/order': 'off',
+        'import/no-unresolved': 'off',
       },
     },
   ],

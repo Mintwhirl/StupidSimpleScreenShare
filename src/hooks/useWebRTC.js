@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-export function useWebRTC(roomId, role, config, viewerId = null) {
+export function useWebRTC(roomId, role, config, _viewerId = null) {
   // State
   const [connectionState, setConnectionState] = useState('disconnected');
   const [remoteStream, setRemoteStream] = useState(null);
   const [localStream, setLocalStream] = useState(null);
   const [error, setError] = useState(null);
-  const [peerConnections, setPeerConnections] = useState({});
+  const [_peerConnections, _setPeerConnections] = useState({});
   const [iceServers, setIceServers] = useState([]);
 
   // Refs
@@ -18,11 +18,11 @@ export function useWebRTC(roomId, role, config, viewerId = null) {
   // Initialize ICE servers
   useEffect(() => {
     const servers = [];
-    
+
     // Add STUN servers
     servers.push({ urls: 'stun:stun.l.google.com:19302' });
     servers.push({ urls: 'stun:stun1.l.google.com:19302' });
-    
+
     // Add TURN servers if configured
     if (config?.turn) {
       servers.push({
@@ -31,9 +31,43 @@ export function useWebRTC(roomId, role, config, viewerId = null) {
         credential: config.turn.credential,
       });
     }
-    
+
     setIceServers(servers);
   }, [config]);
+
+  // Send ICE candidate
+  const sendICECandidate = useCallback(
+    async (candidate) => {
+      if (!roomId || !role) return;
+
+      try {
+        const response = await fetch('/api/candidate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
+          },
+          body: JSON.stringify({
+            roomId,
+            role,
+            candidate: {
+              candidate: candidate.candidate,
+              sdpMid: candidate.sdpMid,
+              sdpMLineIndex: candidate.sdpMLineIndex,
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to send ICE candidate: ${response.status}`);
+        }
+      } catch (err) {
+        console.error('Error sending ICE candidate:', err);
+        setError(`Failed to send ICE candidate: ${err.message}`);
+      }
+    },
+    [roomId, role, config]
+  );
 
   // Create peer connection
   const createPeerConnection = useCallback(() => {
@@ -69,11 +103,11 @@ export function useWebRTC(roomId, role, config, viewerId = null) {
     pc.ondatachannel = (event) => {
       const channel = event.channel;
       dataChannelRef.current = channel;
-      
+
       channel.onopen = () => {
         console.log('Data channel opened');
       };
-      
+
       channel.onmessage = (event) => {
         console.log('Received data channel message:', event.data);
       };
@@ -82,88 +116,63 @@ export function useWebRTC(roomId, role, config, viewerId = null) {
     return pc;
   }, [iceServers]);
 
-  // Send ICE candidate
-  const sendICECandidate = useCallback(async (candidate) => {
-    if (!roomId || !role) return;
-
-    try {
-      const response = await fetch('/api/candidate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
-        },
-        body: JSON.stringify({
-          roomId,
-          role,
-          candidate: {
-            candidate: candidate.candidate,
-            sdpMid: candidate.sdpMid,
-            sdpMLineIndex: candidate.sdpMLineIndex,
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to send ICE candidate: ${response.status}`);
-      }
-    } catch (err) {
-      console.error('Error sending ICE candidate:', err);
-      setError(`Failed to send ICE candidate: ${err.message}`);
-    }
-  }, [roomId, role, config]);
-
   // Send offer
-  const sendOffer = useCallback(async (offer) => {
-    if (!roomId) return;
+  const sendOffer = useCallback(
+    async (offer) => {
+      if (!roomId) return;
 
-    try {
-      const response = await fetch('/api/offer', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
-        },
-        body: JSON.stringify({
-          roomId,
-          desc: offer,
-        }),
-      });
+      try {
+        const response = await fetch('/api/offer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
+          },
+          body: JSON.stringify({
+            roomId,
+            desc: offer,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`Failed to send offer: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`Failed to send offer: ${response.status}`);
+        }
+      } catch (err) {
+        console.error('Error sending offer:', err);
+        setError(`Failed to send offer: ${err.message}`);
       }
-    } catch (err) {
-      console.error('Error sending offer:', err);
-      setError(`Failed to send offer: ${err.message}`);
-    }
-  }, [roomId, config]);
+    },
+    [roomId, config]
+  );
 
   // Send answer
-  const sendAnswer = useCallback(async (answer) => {
-    if (!roomId) return;
+  const sendAnswer = useCallback(
+    async (answer) => {
+      if (!roomId) return;
 
-    try {
-      const response = await fetch('/api/answer', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
-        },
-        body: JSON.stringify({
-          roomId,
-          desc: answer,
-        }),
-      });
+      try {
+        const response = await fetch('/api/answer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
+          },
+          body: JSON.stringify({
+            roomId,
+            desc: answer,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`Failed to send answer: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`Failed to send answer: ${response.status}`);
+        }
+      } catch (err) {
+        console.error('Error sending answer:', err);
+        setError(`Failed to send answer: ${err.message}`);
       }
-    } catch (err) {
-      console.error('Error sending answer:', err);
-      setError(`Failed to send answer: ${err.message}`);
-    }
-  }, [roomId, config]);
+    },
+    [roomId, config]
+  );
 
   // Start screen sharing (host)
   const startScreenShare = useCallback(async () => {
@@ -232,7 +241,6 @@ export function useWebRTC(roomId, role, config, viewerId = null) {
 
       // Start polling for ICE candidates
       startCandidatePolling();
-
     } catch (err) {
       console.error('Error connecting to host:', err);
       setError(`Failed to connect to host: ${err.message}`);
@@ -289,7 +297,7 @@ export function useWebRTC(roomId, role, config, viewerId = null) {
     answerIntervalRef.current = setInterval(async () => {
       try {
         const response = await fetch(`/api/offer?roomId=${roomId}`);
-        
+
         if (response.ok) {
           const data = await response.json();
           if (data.desc) {
@@ -301,7 +309,7 @@ export function useWebRTC(roomId, role, config, viewerId = null) {
             const pc = peerConnectionRef.current;
             if (pc) {
               await pc.setRemoteDescription(data.desc);
-              
+
               // Create and send answer
               const answer = await pc.createAnswer();
               await pc.setLocalDescription(answer);
@@ -324,7 +332,7 @@ export function useWebRTC(roomId, role, config, viewerId = null) {
     answerIntervalRef.current = setInterval(async () => {
       try {
         const response = await fetch(`/api/answer?roomId=${roomId}`);
-        
+
         if (response.ok) {
           const data = await response.json();
           if (data.desc) {
@@ -354,7 +362,7 @@ export function useWebRTC(roomId, role, config, viewerId = null) {
     candidateIntervalRef.current = setInterval(async () => {
       try {
         const response = await fetch(`/api/candidate?roomId=${roomId}&role=${role}`);
-        
+
         if (response.ok) {
           const data = await response.json();
           if (data.candidates && data.candidates.length > 0) {
@@ -397,7 +405,7 @@ export function useWebRTC(roomId, role, config, viewerId = null) {
     localStream,
     error,
     peerConnections,
-    
+
     // Actions
     startScreenShare,
     stopScreenShare,

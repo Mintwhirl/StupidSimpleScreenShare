@@ -11,12 +11,12 @@ vi.mock('../../api/_utils.js', async () => {
   const actual = await vi.importActual('../../api/_utils.js');
   return {
     ...actual,
-    sendError: vi.fn((res, status, message) => {
-      return res.status(status).json({
+    sendError: vi.fn((res, status, message) =>
+      res.status(status).json({
         error: message,
         timestamp: new Date().toISOString(),
-      });
-    }),
+      })
+    ),
   };
 });
 
@@ -120,14 +120,14 @@ describe('Client Configuration Loading', () => {
   beforeEach(() => {
     originalFetch = global.fetch;
     originalWindow = global.window;
-    
+
     // Mock window object for client.js
     global.window = {
       location: {
         origin: 'http://localhost:3000',
       },
     };
-    
+
     global.fetch = vi.fn();
   });
 
@@ -171,7 +171,7 @@ describe('Client Configuration Loading', () => {
     };
 
     const result = await fetchClientConfig();
-    
+
     expect(global.fetch).toHaveBeenCalledWith('http://localhost:3000/api/config');
     expect(result.success).toBe(true);
     expect(result.authSecret).toBe('test-secret-key-123');
@@ -199,7 +199,7 @@ describe('Client Configuration Loading', () => {
     };
 
     const result = await fetchClientConfig();
-    
+
     expect(global.fetch).toHaveBeenCalledWith('http://localhost:3000/api/config');
     expect(result.success).toBe(false);
     expect(result.authSecret).toBe(null);

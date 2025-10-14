@@ -15,12 +15,12 @@ vi.mock('../../api/_utils.js', async () => {
   return {
     ...actual,
     createRedisClient: vi.fn(() => mockRedis),
-    sendError: vi.fn((res, status, message, error) => {
-      return res.status(status).json({
+    sendError: vi.fn((res, status, message, error) =>
+      res.status(status).json({
         error: message,
         timestamp: new Date().toISOString(),
-      });
-    }),
+      })
+    ),
     TTL_ROOM: 3600,
   };
 });
@@ -53,7 +53,7 @@ describe('Candidate Endpoint Integration', () => {
 
     // Clear all mocks
     vi.clearAllMocks();
-    
+
     // Default Redis responses
     mockRedis.get.mockResolvedValue('{"createdAt":1234567890,"version":"1.0"}');
     mockRedis.rpush.mockResolvedValue(1);
@@ -88,7 +88,7 @@ describe('Candidate Endpoint Integration', () => {
       // Verify Redis operations
       expect(mockRedis.rpush).toHaveBeenCalledWith(
         'room:abc123def456789012345678:host:candidates',
-        JSON.stringify(mockReq.body.candidate),
+        JSON.stringify(mockReq.body.candidate)
       );
       expect(mockRedis.expire).toHaveBeenCalledWith('room:abc123def456789012345678:host:candidates', 3600);
     });
@@ -113,7 +113,7 @@ describe('Candidate Endpoint Integration', () => {
       // Verify Redis operations
       expect(mockRedis.rpush).toHaveBeenCalledWith(
         'room:abc123def456789012345678:viewer:candidates',
-        JSON.stringify(mockReq.body.candidate),
+        JSON.stringify(mockReq.body.candidate)
       );
       expect(mockRedis.expire).toHaveBeenCalledWith('room:abc123def456789012345678:viewer:candidates', 3600);
     });
@@ -258,13 +258,13 @@ describe('Candidate Endpoint Integration', () => {
 
       // Mock candidates exist
       mockRedis.get.mockResolvedValue('{"createdAt":1234567890,"version":"1.0"}'); // Room exists
-      mockRedis.lrange.mockResolvedValue(mockCandidates.map(c => JSON.stringify(c)));
+      mockRedis.lrange.mockResolvedValue(mockCandidates.map((c) => JSON.stringify(c)));
 
       const candidateHandler = (await import('../../api/candidate.js')).default;
       await candidateHandler(mockReq, mockRes);
 
       expect(mockRes.json).toHaveBeenCalledWith({ candidates: mockCandidates });
-      
+
       // Verify Redis operations
       expect(mockRedis.lrange).toHaveBeenCalledWith('room:abc123def456789012345678:host:candidates', 0, -1);
       expect(mockRedis.del).toHaveBeenCalledWith('room:abc123def456789012345678:host:candidates');
@@ -287,13 +287,13 @@ describe('Candidate Endpoint Integration', () => {
 
       // Mock candidates exist
       mockRedis.get.mockResolvedValue('{"createdAt":1234567890,"version":"1.0"}'); // Room exists
-      mockRedis.lrange.mockResolvedValue(mockCandidates.map(c => JSON.stringify(c)));
+      mockRedis.lrange.mockResolvedValue(mockCandidates.map((c) => JSON.stringify(c)));
 
       const candidateHandler = (await import('../../api/candidate.js')).default;
       await candidateHandler(mockReq, mockRes);
 
       expect(mockRes.json).toHaveBeenCalledWith({ candidates: mockCandidates });
-      
+
       // Verify Redis operations
       expect(mockRedis.lrange).toHaveBeenCalledWith('room:abc123def456789012345678:viewer:candidates', 0, -1);
       expect(mockRedis.del).toHaveBeenCalledWith('room:abc123def456789012345678:viewer:candidates');
@@ -314,7 +314,7 @@ describe('Candidate Endpoint Integration', () => {
       await candidateHandler(mockReq, mockRes);
 
       expect(mockRes.json).toHaveBeenCalledWith({ candidates: [] });
-      
+
       // Should not delete when no candidates
       expect(mockRedis.del).not.toHaveBeenCalled();
     });
@@ -480,7 +480,8 @@ describe('Candidate Endpoint Integration', () => {
         roomId: 'abc123def456789012345678',
         role: 'host',
         candidate: {
-          candidate: 'candidate:1 1 UDP 2130706431 192.168.1.100 54400 typ host generation 0 ufrag test network-cost 999',
+          candidate:
+            'candidate:1 1 UDP 2130706431 192.168.1.100 54400 typ host generation 0 ufrag test network-cost 999',
           sdpMid: '0',
           sdpMLineIndex: 0,
           // Add additional properties to make it larger
@@ -502,7 +503,7 @@ describe('Candidate Endpoint Integration', () => {
       expect(mockRes.json).toHaveBeenCalledWith({ ok: true });
       expect(mockRedis.rpush).toHaveBeenCalledWith(
         'room:abc123def456789012345678:host:candidates',
-        JSON.stringify(mockReq.body.candidate),
+        JSON.stringify(mockReq.body.candidate)
       );
     });
 
@@ -519,16 +520,16 @@ describe('Candidate Endpoint Integration', () => {
       };
 
       const candidateHandler = (await import('../../api/candidate.js')).default;
-      
+
       // Store first candidate
       await candidateHandler(mockReq, mockRes);
       expect(mockRes.json).toHaveBeenCalledWith({ ok: true });
-      
+
       // Store second candidate
       mockReq.body.candidate.candidate = 'candidate:2 1 UDP 2130706431 192.168.1.101 54401 typ host';
       await candidateHandler(mockReq, mockRes);
       expect(mockRes.json).toHaveBeenCalledWith({ ok: true });
-      
+
       // Verify both were stored
       expect(mockRedis.rpush).toHaveBeenCalledTimes(2);
     });

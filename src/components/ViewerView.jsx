@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import VideoPlayer from './VideoPlayer';
 import { useWebRTC } from '../hooks/useWebRTC';
 
@@ -8,7 +8,7 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
   const [error, setError] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [hostStatus, setHostStatus] = useState('unknown');
-  
+
   const remoteVideoRef = useRef(null);
   const {
     connectToHost,
@@ -57,7 +57,7 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
       setError(null);
       setIsConnecting(true);
       setHostStatus('connecting');
-      
+
       await connectToHost();
       setHostStatus('connected');
     } catch (err) {
@@ -153,62 +153,50 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex items-center justify-between">
+      <div className='bg-white rounded-lg shadow-md p-6'>
+        <div className='flex items-center justify-between'>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              👀 Viewing Room
-            </h2>
-            <p className="text-gray-600">
-              Connected to room: <span className="font-mono font-medium">{roomId}</span>
+            <h2 className='text-2xl font-bold text-gray-900 mb-2'>👀 Viewing Room</h2>
+            <p className='text-gray-600'>
+              Connected to room: <span className='font-mono font-medium'>{roomId}</span>
             </p>
           </div>
-          <div className="text-right">
-            <div className={`text-sm font-medium ${getStatusColor()}`}>
-              Connection: {getStatusText()}
-            </div>
-            <div className={`text-sm font-medium ${getHostStatusColor()}`}>
-              {getHostStatusText()}
-            </div>
+          <div className='text-right'>
+            <div className={`text-sm font-medium ${getStatusColor()}`}>Connection: {getStatusText()}</div>
+            <div className={`text-sm font-medium ${getHostStatusColor()}`}>{getHostStatusText()}</div>
           </div>
         </div>
       </div>
 
       {/* Viewer ID Section */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Your Viewer ID
-        </h3>
-        <div className="flex items-center space-x-4">
-          <div className="flex-1">
+      <div className='bg-white rounded-lg shadow-md p-6'>
+        <h3 className='text-lg font-semibold text-gray-900 mb-4'>Your Viewer ID</h3>
+        <div className='flex items-center space-x-4'>
+          <div className='flex-1'>
             <input
-              type="text"
+              type='text'
               value={viewerId || ''}
               onChange={(e) => setViewerId(e.target.value)}
-              placeholder="Enter your name or leave blank for auto-generated ID"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder='Enter your name or leave blank for auto-generated ID'
+              className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
             />
           </div>
           <button
             onClick={generateViewerId}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
           >
             Generate ID
           </button>
         </div>
-        <p className="text-sm text-gray-500 mt-2">
-          This ID helps identify you in the chat and diagnostics.
-        </p>
+        <p className='text-sm text-gray-500 mt-2'>This ID helps identify you in the chat and diagnostics.</p>
       </div>
 
       {/* Connection Controls */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Connection Controls
-        </h3>
-        <div className="flex items-center justify-center space-x-4">
+      <div className='bg-white rounded-lg shadow-md p-6'>
+        <h3 className='text-lg font-semibold text-gray-900 mb-4'>Connection Controls</h3>
+        <div className='flex items-center justify-center space-x-4'>
           {!isConnected ? (
             <button
               onClick={handleConnect}
@@ -222,28 +210,28 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
               {isConnecting ? 'Connecting...' : 'Connect to Host'}
             </button>
           ) : (
-            <div className="flex items-center space-x-4">
+            <div className='flex items-center space-x-4'>
               <button
                 onClick={handleReconnect}
-                className="px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                className='px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors'
               >
                 Reconnect
               </button>
               <button
                 onClick={handleDisconnect}
-                className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className='px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors'
               >
                 Disconnect
               </button>
             </div>
           )}
         </div>
-        
+
         {isConnected && (
-          <div className="mt-4 text-center">
-            <div className="flex items-center justify-center space-x-2 text-green-600">
-              <div className="w-2 h-2 bg-green-600 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium">Connected to Host</span>
+          <div className='mt-4 text-center'>
+            <div className='flex items-center justify-center space-x-2 text-green-600'>
+              <div className='w-2 h-2 bg-green-600 rounded-full animate-pulse'></div>
+              <span className='text-sm font-medium'>Connected to Host</span>
             </div>
           </div>
         )}
@@ -251,18 +239,18 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
 
       {/* Error Display */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <div className="text-red-600 mr-2">⚠️</div>
+        <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
+          <div className='flex items-center'>
+            <div className='text-red-600 mr-2'>⚠️</div>
             <div>
-              <h4 className="text-red-800 font-medium">Connection Error</h4>
-              <p className="text-red-700 text-sm mt-1">{error}</p>
+              <h4 className='text-red-800 font-medium'>Connection Error</h4>
+              <p className='text-red-700 text-sm mt-1'>{error}</p>
             </div>
           </div>
-          <div className="mt-3">
+          <div className='mt-3'>
             <button
               onClick={handleReconnect}
-              className="text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors"
+              className='text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors'
             >
               Try Again
             </button>
@@ -272,27 +260,25 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
 
       {/* Remote Video Display */}
       {isConnected && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Host's Screen
-          </h3>
-          <div className="relative">
+        <div className='bg-white rounded-lg shadow-md p-6'>
+          <h3 className='text-lg font-semibold text-gray-900 mb-4'>Host's Screen</h3>
+          <div className='relative'>
             <VideoPlayer
               ref={remoteVideoRef}
-              className="w-full max-w-4xl mx-auto rounded-lg border border-gray-200 bg-black"
+              className='w-full max-w-4xl mx-auto rounded-lg border border-gray-200 bg-black'
               autoPlay
               playsInline
             />
             {!remoteStream && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600">Waiting for host to start sharing...</p>
+              <div className='absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg'>
+                <div className='text-center'>
+                  <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4'></div>
+                  <p className='text-gray-600'>Waiting for host to start sharing...</p>
                 </div>
               </div>
             )}
             {remoteStream && (
-              <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+              <div className='absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs'>
                 Live
               </div>
             )}
@@ -302,18 +288,14 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
 
       {/* Waiting State */}
       {!isConnected && !isConnecting && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">📺</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Ready to View
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Click "Connect to Host" to start viewing the shared screen.
-            </p>
+        <div className='bg-white rounded-lg shadow-md p-6'>
+          <div className='text-center py-12'>
+            <div className='text-6xl mb-4'>📺</div>
+            <h3 className='text-xl font-semibold text-gray-900 mb-2'>Ready to View</h3>
+            <p className='text-gray-600 mb-6'>Click "Connect to Host" to start viewing the shared screen.</p>
             <button
               onClick={handleConnect}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className='px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
             >
               Connect to Host
             </button>
@@ -322,11 +304,9 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
       )}
 
       {/* Instructions */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-4">
-          📋 Instructions
-        </h3>
-        <div className="space-y-2 text-sm text-blue-800">
+      <div className='bg-blue-50 border border-blue-200 rounded-lg p-6'>
+        <h3 className='text-lg font-semibold text-blue-900 mb-4'>📋 Instructions</h3>
+        <div className='space-y-2 text-sm text-blue-800'>
           <p>• Make sure the host has started sharing their screen</p>
           <p>• Click "Connect to Host" to join the viewing session</p>
           <p>• Use the Chat feature to communicate with the host</p>
@@ -336,10 +316,10 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
       </div>
 
       {/* Actions */}
-      <div className="flex justify-center space-x-4">
+      <div className='flex justify-center space-x-4'>
         <button
           onClick={onGoHome}
-          className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+          className='px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors'
         >
           Back to Home
         </button>
