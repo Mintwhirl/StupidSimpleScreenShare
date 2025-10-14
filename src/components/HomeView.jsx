@@ -1,4 +1,5 @@
 import { useRoomManagement } from '../hooks/useRoomManagement';
+import { useRoomContext } from '../contexts/RoomContext';
 
 /**
  * HomeView Component
@@ -6,14 +7,16 @@ import { useRoomManagement } from '../hooks/useRoomManagement';
  * Renders the main home screen with room creation and joining functionality.
  * Extracted from App.jsx to improve component organization.
  */
-function HomeView({ roomId, setRoomId, onNavigateToHost, onNavigateToViewer, showDiagnostics, setShowDiagnostics }) {
+function HomeView({ onNavigateToHost, onNavigateToViewer }) {
+  const { roomId, updateRoomId } = useRoomContext();
   const { handleCreateRoom, handleJoinRoom } = useRoomManagement();
 
   // Handle room creation
   const handleCreateRoomClick = async () => {
     try {
       const data = await handleCreateRoom();
-      onNavigateToHost(data.roomId);
+      updateRoomId(data.roomId);
+      onNavigateToHost();
     } catch (error) {
       console.error('Room creation error:', error);
       alert(`Failed to create room: ${error.message}. Please try again.`);
@@ -154,7 +157,7 @@ function HomeView({ roomId, setRoomId, onNavigateToHost, onNavigateToViewer, sho
               type='text'
               placeholder='Paste room id here'
               value={roomId}
-              onChange={(e) => setRoomId(e.target.value)}
+              onChange={(e) => updateRoomId(e.target.value)}
               className='bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white placeholder-gray-300 font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50'
               aria-label='Enter room ID to join a screen sharing session'
             />

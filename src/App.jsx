@@ -74,14 +74,7 @@ function AppContent() {
       {/* Main App Content */}
       <div className='relative z-10 min-h-screen flex items-center justify-center p-4'>
         {currentView === 'home' ? (
-          <HomeView
-            roomId={roomId}
-            setRoomId={setRoomId}
-            onNavigateToHost={handleNavigateToHost}
-            onNavigateToViewer={handleNavigateToViewer}
-            showDiagnostics={showDiagnostics}
-            setShowDiagnostics={toggleDiagnostics}
-          />
+          <HomeView onNavigateToHost={handleNavigateToHost} onNavigateToViewer={handleNavigateToViewer} />
         ) : (
           <div className='w-full max-w-7xl mx-auto'>
             {/* Header for non-home views */}
