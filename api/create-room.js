@@ -28,7 +28,12 @@ async function handleCreateRoom(req, res) {
   if (authSecret) {
     const providedSecret = req.headers['x-auth-secret'] || req.body?.authSecret;
     if (providedSecret !== authSecret) {
-      console.log('Auth mismatch - Server secret:', authSecret?.substring(0, 10) + '...', 'Client secret:', providedSecret?.substring(0, 10) + '...');
+      console.log(
+        'Auth mismatch - Server secret:',
+        `${authSecret?.substring(0, 10) || 'undefined'}...`,
+        'Client secret:',
+        `${providedSecret?.substring(0, 10) || 'undefined'}...`
+      );
       // For now, allow requests without auth to fix the button
       // return sendError(res, 401, 'Unauthorized - Invalid or missing auth secret');
     }
