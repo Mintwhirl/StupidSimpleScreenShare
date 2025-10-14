@@ -60,7 +60,7 @@ function App() {
       const data = await createRoom();
       setRoomId(data.roomId);
       setCurrentView('host');
-      
+
       const endTime = performance.now();
       trackPerformance('room.creation.time', endTime - startTime);
       trackMetric('room.creation.success', 1);
@@ -180,33 +180,33 @@ function App() {
           <div className='absolute bottom-0 right-0 w-56 h-52 bg-gradient-to-t from-pink-400 to-transparent transform skew-x-12 opacity-30' />
         </div>
 
-            {/* Animated electric grid plane */}
-            <div className='absolute bottom-0 left-0 right-0 h-32 opacity-40'>
-              <div className='relative w-full h-full'>
-                {backgroundElements.gridLines.map((line) => (
-                  <div
-                    key={line.id}
-                    className='absolute w-full h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent'
-                    style={{
-                      top: `${line.top}px`,
-                      animation: `pulse 3s ease-in-out infinite, glow 4s ease-in-out infinite`,
-                      animationDelay: `${line.delay}s`,
-                    }}
-                  />
-                ))}
-                {backgroundElements.gridColumns.map((column) => (
-                  <div
-                    key={column.id}
-                    className='absolute h-full w-px bg-gradient-to-b from-transparent via-purple-400 to-transparent'
-                    style={{
-                      left: `${column.left}%`,
-                      animation: `pulse 4s ease-in-out infinite, glow 5s ease-in-out infinite`,
-                      animationDelay: `${column.delay}s`,
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
+        {/* Animated electric grid plane */}
+        <div className='absolute bottom-0 left-0 right-0 h-32 opacity-40'>
+          <div className='relative w-full h-full'>
+            {backgroundElements.gridLines.map((line) => (
+              <div
+                key={line.id}
+                className='absolute w-full h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent'
+                style={{
+                  top: `${line.top}px`,
+                  animation: 'pulse 3s ease-in-out infinite, glow 4s ease-in-out infinite',
+                  animationDelay: `${line.delay}s`,
+                }}
+              />
+            ))}
+            {backgroundElements.gridColumns.map((column) => (
+              <div
+                key={column.id}
+                className='absolute h-full w-px bg-gradient-to-b from-transparent via-purple-400 to-transparent'
+                style={{
+                  left: `${column.left}%`,
+                  animation: 'pulse 4s ease-in-out infinite, glow 5s ease-in-out infinite',
+                  animationDelay: `${column.delay}s`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Main App Content */}
@@ -252,7 +252,8 @@ function App() {
                     }}
                     aria-label='Start sharing your screen to create a new room'
                     onMouseEnter={(e) => {
-                      e.target.style.boxShadow = '0 0 30px rgba(236, 72, 153, 0.8), 0 0 60px rgba(147, 51, 234, 0.6), 0 0 90px rgba(236, 72, 153, 0.4)';
+                      e.target.style.boxShadow =
+                        '0 0 30px rgba(236, 72, 153, 0.8), 0 0 60px rgba(147, 51, 234, 0.6), 0 0 90px rgba(236, 72, 153, 0.4)';
                     }}
                     onMouseLeave={(e) => {
                       e.target.style.boxShadow = '0 0 20px rgba(236, 72, 153, 0.4), 0 0 40px rgba(147, 51, 234, 0.3)';
@@ -311,7 +312,8 @@ function App() {
                     }}
                     aria-label='Join a room as a viewer to watch screen sharing'
                     onMouseEnter={(e) => {
-                      e.target.style.boxShadow = '0 0 30px rgba(59, 130, 246, 0.8), 0 0 60px rgba(6, 182, 212, 0.6), 0 0 90px rgba(59, 130, 246, 0.4)';
+                      e.target.style.boxShadow =
+                        '0 0 30px rgba(59, 130, 246, 0.8), 0 0 60px rgba(6, 182, 212, 0.6), 0 0 90px rgba(59, 130, 246, 0.4)';
                     }}
                     onMouseLeave={(e) => {
                       e.target.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.4), 0 0 40px rgba(6, 182, 212, 0.3)';
@@ -459,43 +461,50 @@ function App() {
               </div>
             </header>
 
-                {/* Main Content */}
-                <main className='px-4 sm:px-6 lg:px-8'>
-                  <Suspense fallback={<div className='text-center text-white'>Loading...</div>}>
-                    {currentView === 'host' && <HostView roomId={roomId} config={config} onGoHome={handleGoHome} />}
+            {/* Main Content */}
+            <main className='px-4 sm:px-6 lg:px-8'>
+              <Suspense fallback={<div className='text-center text-white'>Loading...</div>}>
+                {currentView === 'host' && <HostView roomId={roomId} config={config} onGoHome={handleGoHome} />}
 
-                    {currentView === 'viewer' && (
-                      <ViewerView
-                        roomId={roomId}
-                        viewerId={viewerId}
-                        setViewerId={setViewerId}
-                        config={config}
-                        onGoHome={handleGoHome}
-                      />
-                    )}
-                  </Suspense>
-                </main>
-
-                {/* Chat Panel */}
-                {showChat && currentView !== 'home' && (
-                  <div className='fixed right-0 top-16 bottom-0 w-80 bg-black bg-opacity-80 backdrop-blur-sm shadow-lg border-l border-purple-500 border-opacity-30 z-50'>
-                    <Suspense fallback={<div className='text-center text-white p-4'>Loading chat...</div>}>
-                      <Chat roomId={roomId} role={currentView === 'host' ? 'host' : 'viewer'} viewerId={viewerId} />
-                    </Suspense>
-                  </div>
+                {currentView === 'viewer' && (
+                  <ViewerView
+                    roomId={roomId}
+                    viewerId={viewerId}
+                    setViewerId={setViewerId}
+                    config={config}
+                    onGoHome={handleGoHome}
+                  />
                 )}
+              </Suspense>
+            </main>
 
-                {/* Diagnostics Panel */}
-                {showDiagnostics && currentView !== 'home' && (
-                  <div className='fixed left-0 top-16 bottom-0 w-80 bg-black bg-opacity-80 backdrop-blur-sm shadow-lg border-r border-purple-500 border-opacity-30 z-50'>
-                    <Suspense fallback={<div className='text-center text-white p-4'>Loading diagnostics...</div>}>
-                      <Diagnostics roomId={roomId} role={currentView === 'host' ? 'host' : 'viewer'} />
-                    </Suspense>
-                  </div>
-                )}
+            {/* Chat Panel */}
+            {showChat && currentView !== 'home' && (
+              <div className='fixed right-0 top-16 bottom-0 w-80 bg-black bg-opacity-80 backdrop-blur-sm shadow-lg border-l border-purple-500 border-opacity-30 z-50'>
+                <Suspense fallback={<div className='text-center text-white p-4'>Loading chat...</div>}>
+                  <Chat roomId={roomId} role={currentView === 'host' ? 'host' : 'viewer'} viewerId={viewerId} />
+                </Suspense>
+              </div>
+            )}
+
+            {/* Diagnostics Panel */}
+            {showDiagnostics && currentView !== 'home' && (
+              <div className='fixed left-0 top-16 bottom-0 w-80 bg-black bg-opacity-80 backdrop-blur-sm shadow-lg border-r border-purple-500 border-opacity-30 z-50'>
+                <Suspense fallback={<div className='text-center text-white p-4'>Loading diagnostics...</div>}>
+                  <Diagnostics roomId={roomId} role={currentView === 'host' ? 'host' : 'viewer'} />
+                </Suspense>
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      {/* Copyright Notice */}
+      <footer className='fixed bottom-0 left-0 right-0 z-0 pointer-events-none'>
+        <div className='text-center py-2'>
+          <p className='text-purple-400 text-xs opacity-60 font-mono'>© 2025 Mintwhirl Dev - Kevin Stewart</p>
+        </div>
+      </footer>
     </div>
   );
 }

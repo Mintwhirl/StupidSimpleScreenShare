@@ -1,5 +1,5 @@
-import { r as t, j as e } from './main-DEmRS2_I.js';
-import { u as R, V as I } from './useWebRTC-DWdJ4QII.js';
+import { r as t, j as e } from './main-C8fQYyf5.js';
+import { u as R, V as I } from './useWebRTC-V30adTSf.js';
 function T({ roomId: i, config: u, onGoHome: g }) {
   const [r, d] = t.useState(!1),
     [n, b] = t.useState('disconnected'),
@@ -235,4 +235,4 @@ function T({ roomId: i, config: u, onGoHome: g }) {
   });
 }
 export { T as default };
-//# sourceMappingURL=HostView-NSlyEnKb.js.map
+//# sourceMappingURL=HostView-Byx0XX7b.js.map

@@ -1,7 +1,7 @@
 const __vite__mapDeps = (
   i,
   m = __vite__mapDeps,
-  d = m.f || (m.f = ['assets/HostView-NSlyEnKb.js', 'assets/useWebRTC-DWdJ4QII.js', 'assets/ViewerView-C_jMyvY1.js'])
+  d = m.f || (m.f = ['assets/HostView-Byx0XX7b.js', 'assets/useWebRTC-V30adTSf.js', 'assets/ViewerView-DBHpJwjN.js'])
 ) => i.map((i) => d[i]);
 (function () {
   const _ = document.createElement('link').relList;
@@ -12,7 +12,7 @@ const __vite__mapDeps = (
       if (J.type === 'childList')
         for (const $ of J.addedNodes) $.tagName === 'LINK' && $.rel === 'modulepreload' && r($);
   }).observe(document, { childList: !0, subtree: !0 });
-  function M(Y) {
+  function x(Y) {
     const J = {};
     return (
       Y.integrity && (J.integrity = Y.integrity),
@@ -28,7 +28,7 @@ const __vite__mapDeps = (
   function r(Y) {
     if (Y.ep) return;
     Y.ep = !0;
-    const J = M(Y);
+    const J = x(Y);
     fetch(Y.href, J);
   }
 })();
@@ -51,7 +51,7 @@ function ah() {
   z0 = 1;
   var z = Symbol.for('react.transitional.element'),
     _ = Symbol.for('react.fragment');
-  function M(r, Y, J) {
+  function x(r, Y, J) {
     var $ = null;
     if ((J !== void 0 && ($ = '' + J), Y.key !== void 0 && ($ = '' + Y.key), 'key' in Y)) {
       J = {};
@@ -59,7 +59,7 @@ function ah() {
     } else J = Y;
     return ((Y = J.ref), { $$typeof: z, type: r, key: $, ref: Y !== void 0 ? Y : null, props: J });
   }
-  return ((zu.Fragment = _), (zu.jsx = M), (zu.jsxs = M), zu);
+  return ((zu.Fragment = _), (zu.jsx = x), (zu.jsxs = x), zu);
 }
 var T0;
 function uh() {
@@ -82,7 +82,7 @@ function nh() {
   A0 = 1;
   var z = Symbol.for('react.transitional.element'),
     _ = Symbol.for('react.portal'),
-    M = Symbol.for('react.fragment'),
+    x = Symbol.for('react.fragment'),
     r = Symbol.for('react.strict_mode'),
     Y = Symbol.for('react.profiler'),
     J = Symbol.for('react.consumer'),
@@ -140,7 +140,7 @@ function nh() {
   function Ze(o, T) {
     return _l(o.type, T, o.props);
   }
-  function Ml(o) {
+  function xl(o) {
     return typeof o == 'object' && o !== null && o.$$typeof === z;
   }
   function Kt(o) {
@@ -218,7 +218,7 @@ function nh() {
               return Da;
             }))
           : V != null &&
-            (Ml(V) &&
+            (xl(V) &&
               (V = Ze(
                 V,
                 O + (V.key == null || (o && o.key === V.key) ? '' : ('' + V.key).replace(ze, '$&/') + '/') + ct
@@ -245,7 +245,7 @@ function nh() {
     }
     return ct;
   }
-  function x(o, T, O) {
+  function M(o, T, O) {
     if (o == null) return o;
     var C = [],
       V = 0;
@@ -293,9 +293,9 @@ function nh() {
             console.error(o);
           },
     yt = {
-      map: x,
+      map: M,
       forEach: function (o, T, O) {
-        x(
+        M(
           o,
           function () {
             T.apply(this, arguments);
@@ -306,7 +306,7 @@ function nh() {
       count: function (o) {
         var T = 0;
         return (
-          x(o, function () {
+          M(o, function () {
             T++;
           }),
           T
@@ -314,13 +314,13 @@ function nh() {
       },
       toArray: function (o) {
         return (
-          x(o, function (T) {
+          M(o, function (T) {
             return T;
           }) || []
         );
       },
       only: function (o) {
-        if (!Ml(o)) throw Error('React.Children.only expected to receive a single React element child.');
+        if (!xl(o)) throw Error('React.Children.only expected to receive a single React element child.');
         return o;
       },
     };
@@ -328,7 +328,7 @@ function nh() {
     (L.Activity = R),
     (L.Children = yt),
     (L.Component = Q),
-    (L.Fragment = M),
+    (L.Fragment = x),
     (L.Profiler = Y),
     (L.PureComponent = D),
     (L.StrictMode = r),
@@ -398,7 +398,7 @@ function nh() {
     (L.forwardRef = function (o) {
       return { $$typeof: it, render: o };
     }),
-    (L.isValidElement = Ml),
+    (L.isValidElement = xl),
     (L.lazy = function (o) {
       return { $$typeof: Z, _payload: { _status: -1, _result: o }, _init: G };
     }),
@@ -499,30 +499,30 @@ var mf = { exports: {} },
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
- */ var M0;
+ */ var x0;
 function ch() {
   return (
-    M0 ||
-      ((M0 = 1),
+    x0 ||
+      ((x0 = 1),
       (function (z) {
-        function _(b, x) {
+        function _(b, M) {
           var G = b.length;
-          b.push(x);
+          b.push(M);
           t: for (; 0 < G; ) {
             var rt = (G - 1) >>> 1,
               yt = b[rt];
-            if (0 < Y(yt, x)) ((b[rt] = x), (b[G] = yt), (G = rt));
+            if (0 < Y(yt, M)) ((b[rt] = M), (b[G] = yt), (G = rt));
             else break t;
           }
         }
-        function M(b) {
+        function x(b) {
           return b.length === 0 ? null : b[0];
         }
         function r(b) {
           if (b.length === 0) return null;
-          var x = b[0],
+          var M = b[0],
             G = b.pop();
-          if (G !== x) {
+          if (G !== M) {
             b[0] = G;
             t: for (var rt = 0, yt = b.length, o = yt >>> 1; rt < o; ) {
               var T = 2 * (rt + 1) - 1,
@@ -535,11 +535,11 @@ function ch() {
               else break t;
             }
           }
-          return x;
+          return M;
         }
-        function Y(b, x) {
-          var G = b.sortIndex - x.sortIndex;
-          return G !== 0 ? G : b.id - x.id;
+        function Y(b, M) {
+          var G = b.sortIndex - M.sortIndex;
+          return G !== 0 ? G : b.id - M.id;
         }
         if (((z.unstable_now = void 0), typeof performance == 'object' && typeof performance.now == 'function')) {
           var J = performance;
@@ -566,19 +566,19 @@ function ch() {
           X = typeof clearTimeout == 'function' ? clearTimeout : null,
           D = typeof setImmediate < 'u' ? setImmediate : null;
         function U(b) {
-          for (var x = M(p); x !== null; ) {
-            if (x.callback === null) r(p);
-            else if (x.startTime <= b) (r(p), (x.sortIndex = x.expirationTime), _(j, x));
+          for (var M = x(p); M !== null; ) {
+            if (M.callback === null) r(p);
+            else if (M.startTime <= b) (r(p), (M.sortIndex = M.expirationTime), _(j, M));
             else break;
-            x = M(p);
+            M = x(p);
           }
         }
         function zt(b) {
           if (((Ct = !1), U(b), !Et))
-            if (M(j) !== null) ((Et = !0), Rt || ((Rt = !0), Kt()));
+            if (x(j) !== null) ((Et = !0), Rt || ((Rt = !0), Kt()));
             else {
-              var x = M(p);
-              x !== null && El(zt, x.startTime - b);
+              var M = x(p);
+              M !== null && El(zt, M.startTime - b);
             }
         }
         var Rt = !1,
@@ -588,67 +588,67 @@ function ch() {
         function Ze() {
           return tl ? !0 : !(z.unstable_now() - _l < St);
         }
-        function Ml() {
+        function xl() {
           if (((tl = !1), Rt)) {
             var b = z.unstable_now();
             _l = b;
-            var x = !0;
+            var M = !0;
             try {
               t: {
                 ((Et = !1), Ct && ((Ct = !1), X(k), (k = -1)), (jt = !0));
                 var G = W;
                 try {
                   l: {
-                    for (U(b), R = M(j); R !== null && !(R.expirationTime > b && Ze()); ) {
+                    for (U(b), R = x(j); R !== null && !(R.expirationTime > b && Ze()); ) {
                       var rt = R.callback;
                       if (typeof rt == 'function') {
                         ((R.callback = null), (W = R.priorityLevel));
                         var yt = rt(R.expirationTime <= b);
                         if (((b = z.unstable_now()), typeof yt == 'function')) {
-                          ((R.callback = yt), U(b), (x = !0));
+                          ((R.callback = yt), U(b), (M = !0));
                           break l;
                         }
-                        (R === M(j) && r(j), U(b));
+                        (R === x(j) && r(j), U(b));
                       } else r(j);
-                      R = M(j);
+                      R = x(j);
                     }
-                    if (R !== null) x = !0;
+                    if (R !== null) M = !0;
                     else {
-                      var o = M(p);
-                      (o !== null && El(zt, o.startTime - b), (x = !1));
+                      var o = x(p);
+                      (o !== null && El(zt, o.startTime - b), (M = !1));
                     }
                   }
                   break t;
                 } finally {
                   ((R = null), (W = G), (jt = !1));
                 }
-                x = void 0;
+                M = void 0;
               }
             } finally {
-              x ? Kt() : (Rt = !1);
+              M ? Kt() : (Rt = !1);
             }
           }
         }
         var Kt;
         if (typeof D == 'function')
           Kt = function () {
-            D(Ml);
+            D(xl);
           };
         else if (typeof MessageChannel < 'u') {
           var ze = new MessageChannel(),
             Ul = ze.port2;
-          ((ze.port1.onmessage = Ml),
+          ((ze.port1.onmessage = xl),
             (Kt = function () {
               Ul.postMessage(null);
             }));
         } else
           Kt = function () {
-            Q(Ml, 0);
+            Q(xl, 0);
           };
-        function El(b, x) {
+        function El(b, M) {
           k = Q(function () {
             b(z.unstable_now());
-          }, x);
+          }, M);
         }
         ((z.unstable_IdlePriority = 5),
           (z.unstable_ImmediatePriority = 1),
@@ -674,13 +674,13 @@ function ch() {
               case 1:
               case 2:
               case 3:
-                var x = 3;
+                var M = 3;
                 break;
               default:
-                x = W;
+                M = W;
             }
             var G = W;
-            W = x;
+            W = M;
             try {
               return b();
             } finally {
@@ -690,7 +690,7 @@ function ch() {
           (z.unstable_requestPaint = function () {
             tl = !0;
           }),
-          (z.unstable_runWithPriority = function (b, x) {
+          (z.unstable_runWithPriority = function (b, M) {
             switch (b) {
               case 1:
               case 2:
@@ -704,12 +704,12 @@ function ch() {
             var G = W;
             W = b;
             try {
-              return x();
+              return M();
             } finally {
               W = G;
             }
           }),
-          (z.unstable_scheduleCallback = function (b, x, G) {
+          (z.unstable_scheduleCallback = function (b, M, G) {
             var rt = z.unstable_now();
             switch (
               (typeof G == 'object' && G !== null
@@ -734,21 +734,21 @@ function ch() {
             }
             return (
               (yt = G + yt),
-              (b = { id: Z++, callback: x, priorityLevel: b, startTime: G, expirationTime: yt, sortIndex: -1 }),
+              (b = { id: Z++, callback: M, priorityLevel: b, startTime: G, expirationTime: yt, sortIndex: -1 }),
               G > rt
                 ? ((b.sortIndex = G),
                   _(p, b),
-                  M(j) === null && b === M(p) && (Ct ? (X(k), (k = -1)) : (Ct = !0), El(zt, G - rt)))
+                  x(j) === null && b === x(p) && (Ct ? (X(k), (k = -1)) : (Ct = !0), El(zt, G - rt)))
                 : ((b.sortIndex = yt), _(j, b), Et || jt || ((Et = !0), Rt || ((Rt = !0), Kt()))),
               b
             );
           }),
           (z.unstable_shouldYield = Ze),
           (z.unstable_wrapCallback = function (b) {
-            var x = W;
+            var M = W;
             return function () {
               var G = W;
-              W = x;
+              W = M;
               try {
                 return b.apply(this, arguments);
               } finally {
@@ -760,9 +760,9 @@ function ch() {
     yf
   );
 }
-var x0;
+var M0;
 function fh() {
-  return (x0 || ((x0 = 1), (hf.exports = ch())), hf.exports);
+  return (M0 || ((M0 = 1), (hf.exports = ch())), hf.exports);
 }
 var vf = { exports: {} },
   Zt = {};
@@ -793,20 +793,20 @@ function sh() {
       ' for the full message or use the non-minified dev environment for full errors and additional helpful warnings.'
     );
   }
-  function M() {}
+  function x() {}
   var r = {
       d: {
-        f: M,
+        f: x,
         r: function () {
           throw Error(_(522));
         },
-        D: M,
-        C: M,
-        L: M,
-        m: M,
-        X: M,
-        S: M,
-        M,
+        D: x,
+        C: x,
+        L: x,
+        m: x,
+        X: x,
+        S: x,
+        M: x,
       },
       p: 0,
       findDOMNode: null,
@@ -953,7 +953,7 @@ function rh() {
   N0 = 1;
   var z = fh(),
     _ = Sf(),
-    M = oh();
+    x = oh();
   function r(t) {
     var l = 'https://react.dev/errors/' + t;
     if (1 < arguments.length) {
@@ -1082,11 +1082,11 @@ function rh() {
     St = Symbol.for('react.lazy'),
     _l = Symbol.for('react.activity'),
     Ze = Symbol.for('react.memo_cache_sentinel'),
-    Ml = Symbol.iterator;
+    xl = Symbol.iterator;
   function Kt(t) {
     return t === null || typeof t != 'object'
       ? null
-      : ((t = (Ml && t[Ml]) || t['@@iterator']), typeof t == 'function' ? t : null);
+      : ((t = (xl && t[xl]) || t['@@iterator']), typeof t == 'function' ? t : null);
   }
   var ze = Symbol.for('react.client.reference');
   function Ul(t) {
@@ -1134,7 +1134,7 @@ function rh() {
   }
   var El = Array.isArray,
     b = _.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,
-    x = M.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,
+    M = x.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,
     G = { pending: !1, data: null, method: null, action: null },
     rt = [],
     yt = -1;
@@ -1182,7 +1182,7 @@ function rh() {
       e = Kr(l, t.type);
     l !== e && (O(V, t), O(C, e));
   }
-  function Mu(t) {
+  function xu(t) {
     (V.current === t && (T(C), T(V)), ct.current === t && (T(ct), (bu._currentValue = G)));
   }
   var Kn, pf;
@@ -1351,7 +1351,7 @@ Error generating stack: ` +
     B0 = z.unstable_getCurrentPriorityLevel,
     zf = z.unstable_ImmediatePriority,
     Tf = z.unstable_UserBlockingPriority,
-    xu = z.unstable_NormalPriority,
+    Mu = z.unstable_NormalPriority,
     Y0 = z.unstable_LowPriority,
     Af = z.unstable_IdlePriority,
     G0 = z.log,
@@ -1531,14 +1531,14 @@ Error generating stack: ` +
         }
       e &= ~E;
     }
-    (a !== 0 && Mf(t, a, 0), n !== 0 && u === 0 && t.tag !== 0 && (t.suspendedLanes |= n & ~(i & ~l)));
+    (a !== 0 && xf(t, a, 0), n !== 0 && u === 0 && t.tag !== 0 && (t.suspendedLanes |= n & ~(i & ~l)));
   }
-  function Mf(t, l, e) {
+  function xf(t, l, e) {
     ((t.pendingLanes |= l), (t.suspendedLanes &= ~l));
     var a = 31 - al(l);
     ((t.entangledLanes |= l), (t.entanglements[a] = t.entanglements[a] | 1073741824 | (e & 261930)));
   }
-  function xf(t, l) {
+  function Mf(t, l) {
     var e = (t.entangledLanes |= l);
     for (t = t.entanglements; e; ) {
       var a = 31 - al(e),
@@ -1593,15 +1593,15 @@ Error generating stack: ` +
     return ((t &= -t), 2 < t ? (8 < t ? ((t & 134217727) !== 0 ? 32 : 268435456) : 8) : 2);
   }
   function Df() {
-    var t = x.p;
+    var t = M.p;
     return t !== 0 ? t : ((t = window.event), t === void 0 ? 32 : y0(t.type));
   }
   function Nf(t, l) {
-    var e = x.p;
+    var e = M.p;
     try {
-      return ((x.p = t), l());
+      return ((M.p = t), l());
     } finally {
-      x.p = e;
+      M.p = e;
     }
   }
   var Fl = Math.random().toString(36).slice(2),
@@ -2180,7 +2180,7 @@ Error generating stack: ` +
       l
     );
   }
-  var Me = {
+  var xe = {
       eventPhase: 0,
       bubbles: 0,
       cancelable: 0,
@@ -2190,8 +2190,8 @@ Error generating stack: ` +
       defaultPrevented: 0,
       isTrusted: 0,
     },
-    Gu = kt(Me),
-    Ba = R({}, Me, { view: 0, detail: 0 }),
+    Gu = kt(xe),
+    Ba = R({}, xe, { view: 0, detail: 0 }),
     ld = kt(Ba),
     di,
     mi,
@@ -2236,15 +2236,15 @@ Error generating stack: ` +
     ad = kt(ed),
     ud = R({}, Ba, { relatedTarget: 0 }),
     hi = kt(ud),
-    nd = R({}, Me, { animationName: 0, elapsedTime: 0, pseudoElement: 0 }),
+    nd = R({}, xe, { animationName: 0, elapsedTime: 0, pseudoElement: 0 }),
     id = kt(nd),
-    cd = R({}, Me, {
+    cd = R({}, xe, {
       clipboardData: function (t) {
         return 'clipboardData' in t ? t.clipboardData : window.clipboardData;
       },
     }),
     fd = kt(cd),
-    sd = R({}, Me, { data: 0 }),
+    sd = R({}, xe, { data: 0 }),
     kf = kt(sd),
     od = {
       Esc: 'Escape',
@@ -2362,7 +2362,7 @@ Error generating stack: ` +
       getModifierState: yi,
     }),
     bd = kt(gd),
-    Sd = R({}, Me, { propertyName: 0, elapsedTime: 0, pseudoElement: 0 }),
+    Sd = R({}, xe, { propertyName: 0, elapsedTime: 0, pseudoElement: 0 }),
     pd = kt(Sd),
     Ed = R({}, Xu, {
       deltaX: function (t) {
@@ -2375,13 +2375,13 @@ Error generating stack: ` +
       deltaMode: 0,
     }),
     zd = kt(Ed),
-    Td = R({}, Me, { newState: 0, oldState: 0 }),
+    Td = R({}, xe, { newState: 0, oldState: 0 }),
     Ad = kt(Td),
     _d = [9, 13, 27, 32],
     vi = Hl && 'CompositionEvent' in window,
     Ga = null;
   Hl && 'documentMode' in document && (Ga = document.documentMode);
-  var Md = Hl && 'TextEvent' in window && !Ga,
+  var xd = Hl && 'TextEvent' in window && !Ga,
     Wf = Hl && (!vi || (Ga && 8 < Ga && 11 >= Ga)),
     Ff = ' ',
     If = !1;
@@ -2403,7 +2403,7 @@ Error generating stack: ` +
     return ((t = t.detail), typeof t == 'object' && 'data' in t ? t.data : null);
   }
   var Pe = !1;
-  function xd(t, l) {
+  function Md(t, l) {
     switch (t) {
       case 'compositionend':
         return ts(l);
@@ -2614,18 +2614,18 @@ Error generating stack: ` +
         0 < a.length &&
           ((l = new Gu('onSelect', 'select', null, l, e)), t.push({ event: l, listeners: a }), (l.target = ta))));
   }
-  function xe(t, l) {
+  function Me(t, l) {
     var e = {};
     return ((e[t.toLowerCase()] = l.toLowerCase()), (e['Webkit' + t] = 'webkit' + l), (e['Moz' + t] = 'moz' + l), e);
   }
   var la = {
-      animationend: xe('Animation', 'AnimationEnd'),
-      animationiteration: xe('Animation', 'AnimationIteration'),
-      animationstart: xe('Animation', 'AnimationStart'),
-      transitionrun: xe('Transition', 'TransitionRun'),
-      transitionstart: xe('Transition', 'TransitionStart'),
-      transitioncancel: xe('Transition', 'TransitionCancel'),
-      transitionend: xe('Transition', 'TransitionEnd'),
+      animationend: Me('Animation', 'AnimationEnd'),
+      animationiteration: Me('Animation', 'AnimationIteration'),
+      animationstart: Me('Animation', 'AnimationStart'),
+      transitionrun: Me('Transition', 'TransitionRun'),
+      transitionstart: Me('Transition', 'TransitionStart'),
+      transitioncancel: Me('Transition', 'TransitionCancel'),
+      transitionend: Me('Transition', 'TransitionEnd'),
     },
     zi = {},
     ms = {};
@@ -2758,7 +2758,7 @@ Error generating stack: ` +
   function nl(t, l, e, a) {
     return new Xd(t, l, e, a);
   }
-  function Mi(t) {
+  function xi(t) {
     return ((t = t.prototype), !(!t || !t.isReactComponent));
   }
   function Rl(t, l) {
@@ -2818,7 +2818,7 @@ Error generating stack: ` +
   }
   function Ku(t, l, e, a, u, n) {
     var i = 0;
-    if (((a = t), typeof t == 'function')) Mi(t) && (i = 1);
+    if (((a = t), typeof t == 'function')) xi(t) && (i = 1);
     else if (typeof t == 'string') i = wm(t, e, C.current) ? 26 : t === 'html' || t === 'head' || t === 'body' ? 27 : 5;
     else
       t: switch (t) {
@@ -2861,7 +2861,7 @@ Error generating stack: ` +
   function Ne(t, l, e, a) {
     return ((t = nl(7, t, a, l)), (t.lanes = e), t);
   }
-  function xi(t, l, e) {
+  function Mi(t, l, e) {
     return ((t = nl(6, t, null, l)), (t.lanes = e), t);
   }
   function Es(t) {
@@ -2891,14 +2891,14 @@ Error generating stack: ` +
     yl = [],
     vl = 0,
     Pl = null,
-    xl = 1,
+    Ml = 1,
     Ol = '';
   function ql(t, l) {
     ((ua[na++] = Va), (ua[na++] = Ju), (Ju = t), (Va = l));
   }
   function Ts(t, l, e) {
-    ((yl[vl++] = xl), (yl[vl++] = Ol), (yl[vl++] = Pl), (Pl = t));
-    var a = xl;
+    ((yl[vl++] = Ml), (yl[vl++] = Ol), (yl[vl++] = Pl), (Pl = t));
+    var a = Ml;
     t = Ol;
     var u = 32 - al(a) - 1;
     ((a &= ~(1 << u)), (e += 1));
@@ -2908,9 +2908,9 @@ Error generating stack: ` +
       ((n = (a & ((1 << i) - 1)).toString(32)),
         (a >>= i),
         (u -= i),
-        (xl = (1 << (32 - al(l) + u)) | (e << u) | a),
+        (Ml = (1 << (32 - al(l) + u)) | (e << u) | a),
         (Ol = n + t));
-    } else ((xl = (1 << n) | (e << u) | a), (Ol = t));
+    } else ((Ml = (1 << n) | (e << u) | a), (Ol = t));
   }
   function Di(t) {
     t.return !== null && (ql(t, 1), Ts(t, 1, 0));
@@ -2918,10 +2918,10 @@ Error generating stack: ` +
   function Ni(t) {
     for (; t === Ju; ) ((Ju = ua[--na]), (ua[na] = null), (Va = ua[--na]), (ua[na] = null));
     for (; t === Pl; )
-      ((Pl = yl[--vl]), (yl[vl] = null), (Ol = yl[--vl]), (yl[vl] = null), (xl = yl[--vl]), (yl[vl] = null));
+      ((Pl = yl[--vl]), (yl[vl] = null), (Ol = yl[--vl]), (yl[vl] = null), (Ml = yl[--vl]), (yl[vl] = null));
   }
   function As(t, l) {
-    ((yl[vl++] = xl), (yl[vl++] = Ol), (yl[vl++] = Pl), (xl = l.id), (Ol = l.overflow), (Pl = t));
+    ((yl[vl++] = Ml), (yl[vl++] = Ol), (yl[vl++] = Pl), (Ml = l.id), (Ol = l.overflow), (Pl = t));
   }
   var Gt = null,
     gt = null,
@@ -2983,7 +2983,7 @@ Error generating stack: ` +
         : (l = !1),
       l || le(t, !0));
   }
-  function Ms(t) {
+  function xs(t) {
     for (Gt = t.return; Gt; )
       switch (Gt.tag) {
         case 5:
@@ -3001,7 +3001,7 @@ Error generating stack: ` +
   }
   function ia(t) {
     if (t !== Gt) return !1;
-    if (!et) return (Ms(t), (et = !0), !1);
+    if (!et) return (xs(t), (et = !0), !1);
     var l = t.tag,
       e;
     if (
@@ -3009,7 +3009,7 @@ Error generating stack: ` +
         ((e = l === 5) && ((e = t.type), (e = !(e !== 'form' && e !== 'button') || $c(t.type, t.memoizedProps))),
         (e = !e)),
       e && gt && le(t),
-      Ms(t),
+      xs(t),
       l === 13)
     ) {
       if (((t = t.memoizedState), (t = t !== null ? t.dehydrated : null), !t)) throw Error(r(317));
@@ -3125,12 +3125,12 @@ Error generating stack: ` +
     ((je = t), (Bl = null), (t = t.dependencies), t !== null && (t.firstContext = null));
   }
   function Xt(t) {
-    return xs(je, t);
+    return Ms(je, t);
   }
   function $u(t, l) {
-    return (je === null && Ce(t), xs(t, l));
+    return (je === null && Ce(t), Ms(t, l));
   }
-  function xs(t, l) {
+  function Ms(t, l) {
     var e = l._currentValue;
     if (((l = { context: l, memoizedValue: e, next: null }), Bl === null)) {
       if (t === null) throw Error(r(308));
@@ -3345,7 +3345,7 @@ Error generating stack: ` +
     }
     function c(d, s, m, S) {
       return s === null || s.tag !== 6
-        ? ((s = xi(m, d.mode, S)), (s.return = d), s)
+        ? ((s = Mi(m, d.mode, S)), (s.return = d), s)
         : ((s = u(s, m)), (s.return = d), s);
     }
     function f(d, s, m, S) {
@@ -3372,7 +3372,7 @@ Error generating stack: ` +
     }
     function E(d, s, m) {
       if ((typeof s == 'string' && s !== '') || typeof s == 'number' || typeof s == 'bigint')
-        return ((s = xi('' + s, d.mode, m)), (s.return = d), s);
+        return ((s = Mi('' + s, d.mode, m)), (s.return = d), s);
       if (typeof s == 'object' && s !== null) {
         switch (s.$$typeof) {
           case jt:
@@ -3575,7 +3575,7 @@ Error generating stack: ` +
         ? ((m = '' + m),
           s !== null && s.tag === 6
             ? (e(d, s.sibling), (S = u(s, m)), (S.return = d), (d = S))
-            : (e(d, s), (S = xi(m, d.mode, S)), (S.return = d), (d = S)),
+            : (e(d, s), (S = Mi(m, d.mode, S)), (S.return = d), (d = S)),
           i(d))
         : e(d, s);
     }
@@ -3636,7 +3636,7 @@ Error generating stack: ` +
   function Wa(t, l, e) {
     if (((l = l.updateQueue), l !== null && ((l = l.shared), (e & 4194048) !== 0))) {
       var a = l.lanes;
-      ((a &= t.pendingLanes), (e |= a), (l.lanes = e), xf(t, e));
+      ((a &= t.pendingLanes), (e |= a), (l.lanes = e), Mf(t, e));
     }
   }
   function Li(t, l) {
@@ -3769,23 +3769,23 @@ Error generating stack: ` +
     bl = null;
   function ie(t) {
     var l = t.alternate;
-    (O(Mt, Mt.current & 1),
+    (O(xt, xt.current & 1),
       O(il, t),
       bl === null && (l === null || da.current !== null || l.memoizedState !== null) && (bl = t));
   }
   function Ki(t) {
-    (O(Mt, Mt.current), O(il, t), bl === null && (bl = t));
+    (O(xt, xt.current), O(il, t), bl === null && (bl = t));
   }
   function Xs(t) {
-    t.tag === 22 ? (O(Mt, Mt.current), O(il, t), bl === null && (bl = t)) : ce();
+    t.tag === 22 ? (O(xt, xt.current), O(il, t), bl === null && (bl = t)) : ce();
   }
   function ce() {
-    (O(Mt, Mt.current), O(il, il.current));
+    (O(xt, xt.current), O(il, il.current));
   }
   function cl(t) {
-    (T(il), bl === t && (bl = null), T(Mt));
+    (T(il), bl === t && (bl = null), T(xt));
   }
-  var Mt = o(0);
+  var xt = o(0);
   function en(t) {
     for (var l = t; l !== null; ) {
       if (l.tag === 13) {
@@ -3897,7 +3897,7 @@ Error generating stack: ` +
     var t = { memoizedState: null, baseState: null, baseQueue: null, queue: null, next: null };
     return (Dt === null ? (w.memoizedState = Dt = t) : (Dt = Dt.next = t), Dt);
   }
-  function xt() {
+  function Mt() {
     if (dt === null) {
       var t = w.alternate;
       t = t !== null ? t.memoizedState : null;
@@ -3971,7 +3971,7 @@ Error generating stack: ` +
     return typeof l == 'function' ? l(t) : l;
   }
   function fn(t) {
-    var l = xt();
+    var l = Mt();
     return Pi(l, dt, t);
   }
   function Pi(t, l, e) {
@@ -4050,7 +4050,7 @@ Error generating stack: ` +
     return (u === null && (a.lanes = 0), [t.memoizedState, a.dispatch]);
   }
   function tc(t) {
-    var l = xt(),
+    var l = Mt(),
       e = l.queue;
     if (e === null) throw Error(r(311));
     e.lastRenderedReducer = t;
@@ -4071,7 +4071,7 @@ Error generating stack: ` +
   }
   function Zs(t, l, e) {
     var a = w,
-      u = xt(),
+      u = Mt(),
       n = et;
     if (n) {
       if (e === void 0) throw Error(r(407));
@@ -4276,7 +4276,7 @@ Error generating stack: ` +
     );
   }
   function eo(t) {
-    var l = xt();
+    var l = Mt();
     return ao(l, dt, t);
   }
   function ao(t, l, e) {
@@ -4287,7 +4287,7 @@ Error generating stack: ` +
         throw i === oa ? Fu : i;
       }
     else a = l;
-    l = xt();
+    l = Mt();
     var u = l.queue,
       n = u.dispatch;
     return (
@@ -4299,10 +4299,10 @@ Error generating stack: ` +
     t.action = l;
   }
   function uo(t) {
-    var l = xt(),
+    var l = Mt(),
       e = dt;
     if (e !== null) return ao(l, e, t);
-    (xt(), (l = l.memoizedState), (e = xt()));
+    (Mt(), (l = l.memoizedState), (e = Mt()));
     var a = e.queue.dispatch;
     return ((e.memoizedState = t), [l, a, !1]);
   }
@@ -4317,14 +4317,14 @@ Error generating stack: ` +
     );
   }
   function no() {
-    return xt().memoizedState;
+    return Mt().memoizedState;
   }
   function sn(t, l, e, a) {
     var u = wt();
     ((w.flags |= t), (u.memoizedState = ya(1 | l, { destroy: void 0 }, e, a === void 0 ? null : a)));
   }
   function on(t, l, e, a) {
-    var u = xt();
+    var u = Mt();
     a = a === void 0 ? null : a;
     var n = u.memoizedState.inst;
     dt !== null && a !== null && Ji(a, dt.memoizedState.deps)
@@ -4347,7 +4347,7 @@ Error generating stack: ` +
     }
   }
   function co(t) {
-    var l = xt().memoizedState;
+    var l = Mt().memoizedState;
     return (
       Wd({ ref: l, nextImpl: t }),
       function () {
@@ -4384,13 +4384,13 @@ Error generating stack: ` +
   }
   function uc() {}
   function mo(t, l) {
-    var e = xt();
+    var e = Mt();
     l = l === void 0 ? null : l;
     var a = e.memoizedState;
     return l !== null && Ji(l, a[1]) ? a[0] : ((e.memoizedState = [t, l]), t);
   }
   function ho(t, l) {
-    var e = xt();
+    var e = Mt();
     l = l === void 0 ? null : l;
     var a = e.memoizedState;
     if (l !== null && Ji(l, a[1])) return a[0];
@@ -4419,8 +4419,8 @@ Error generating stack: ` +
           : ((t = yr()), (w.lanes |= t), (oe |= t), l);
   }
   function vo(t, l, e, a, u) {
-    var n = x.p;
-    x.p = n !== 0 && 8 > n ? n : 8;
+    var n = M.p;
+    M.p = n !== 0 && 8 > n ? n : 8;
     var i = b.T,
       c = {};
     ((b.T = c), fc(t, !1, l, e));
@@ -4434,7 +4434,7 @@ Error generating stack: ` +
     } catch (E) {
       lu(t, l, { then: function () {}, status: 'rejected', reason: E }, ol());
     } finally {
-      ((x.p = n), i !== null && c.types !== null && (i.types = c.types), (b.T = i));
+      ((M.p = n), i !== null && c.types !== null && (i.types = c.types), (b.T = i));
     }
   }
   function Fd() {}
@@ -4486,10 +4486,10 @@ Error generating stack: ` +
     return Xt(bu);
   }
   function So() {
-    return xt().memoizedState;
+    return Mt().memoizedState;
   }
   function po() {
-    return xt().memoizedState;
+    return Mt().memoizedState;
   }
   function Id(t) {
     for (var l = t.return; l !== null; ) {
@@ -4551,7 +4551,7 @@ Error generating stack: ` +
   function To(t, l, e) {
     if ((e & 4194048) !== 0) {
       var a = l.lanes;
-      ((a &= t.pendingLanes), (e |= a), (l.lanes = e), xf(t, e));
+      ((a &= t.pendingLanes), (e |= a), (l.lanes = e), Mf(t, e));
     }
   }
   var eu = {
@@ -4676,7 +4676,7 @@ Error generating stack: ` +
           l = vt.identifierPrefix;
         if (et) {
           var e = Ol,
-            a = xl;
+            a = Ml;
           ((e = (a & ~(1 << (32 - al(a) - 1))).toString(32) + e),
             (l = '_' + l + 'R_' + e),
             (e = un++),
@@ -4727,12 +4727,12 @@ Error generating stack: ` +
       },
       useDebugValue: uc,
       useDeferredValue: function (t, l) {
-        var e = xt();
+        var e = Mt();
         return yo(e, dt.memoizedState, t, l);
       },
       useTransition: function () {
         var t = fn(Xl)[0],
-          l = xt().memoizedState;
+          l = Mt().memoizedState;
         return [typeof t == 'boolean' ? t : tu(t), l];
       },
       useSyncExternalStore: Zs,
@@ -4741,7 +4741,7 @@ Error generating stack: ` +
       useFormState: eo,
       useActionState: eo,
       useOptimistic: function (t, l) {
-        var e = xt();
+        var e = Mt();
         return $s(e, dt, t, l);
       },
       useMemoCache: Ii,
@@ -4765,12 +4765,12 @@ Error generating stack: ` +
     },
     useDebugValue: uc,
     useDeferredValue: function (t, l) {
-      var e = xt();
+      var e = Mt();
       return dt === null ? nc(e, t, l) : yo(e, dt.memoizedState, t, l);
     },
     useTransition: function () {
       var t = tc(Xl)[0],
-        l = xt().memoizedState;
+        l = Mt().memoizedState;
       return [typeof t == 'boolean' ? t : tu(t), l];
     },
     useSyncExternalStore: Zs,
@@ -4779,7 +4779,7 @@ Error generating stack: ` +
     useFormState: uo,
     useActionState: uo,
     useOptimistic: function (t, l) {
-      var e = xt();
+      var e = Mt();
       return dt !== null ? $s(e, dt, t, l) : ((e.baseState = t), [t, e.queue.dispatch]);
     },
     useMemoCache: Ii,
@@ -4817,7 +4817,7 @@ Error generating stack: ` +
       ((a.tag = 2), l != null && (a.callback = l), (l = ne(t, a, e)), l !== null && (Pt(l, t, e), Wa(l, t, e)));
     },
   };
-  function Mo(t, l, e, a, u, n, i) {
+  function xo(t, l, e, a, u, n, i) {
     return (
       (t = t.stateNode),
       typeof t.shouldComponentUpdate == 'function'
@@ -4827,7 +4827,7 @@ Error generating stack: ` +
           : !0
     );
   }
-  function xo(t, l, e, a) {
+  function Mo(t, l, e, a) {
     ((t = l.state),
       typeof l.componentWillReceiveProps == 'function' && l.componentWillReceiveProps(e, a),
       typeof l.UNSAFE_componentWillReceiveProps == 'function' && l.UNSAFE_componentWillReceiveProps(e, a),
@@ -5004,7 +5004,7 @@ Error generating stack: ` +
   function Ro(t, l, e, a, u) {
     if (t === null) {
       var n = e.type;
-      return typeof n == 'function' && !Mi(n) && n.defaultProps === void 0 && e.compare === null
+      return typeof n == 'function' && !xi(n) && n.defaultProps === void 0 && e.compare === null
         ? ((l.tag = 15), (l.type = n), qo(t, l, n, a, u))
         : ((t = Ku(e.type, null, a, l, l.mode, u)), (t.ref = l.ref), (t.return = l), (l.child = t));
     }
@@ -5098,7 +5098,7 @@ Error generating stack: ` +
               t !== null &&
                 ((l.memoizedState = {
                   dehydrated: t,
-                  treeContext: Pl !== null ? { id: xl, overflow: Ol } : null,
+                  treeContext: Pl !== null ? { id: Ml, overflow: Ol } : null,
                   retryLane: 536870912,
                   hydrationErrors: null,
                 }),
@@ -5218,7 +5218,7 @@ Error generating stack: ` +
         g ||
           (typeof n.UNSAFE_componentWillReceiveProps != 'function' &&
             typeof n.componentWillReceiveProps != 'function') ||
-          ((c || h !== i) && xo(l, n, a, i)),
+          ((c || h !== i) && Mo(l, n, a, i)),
         (ae = !1));
       var y = l.memoizedState;
       ((n.state = y),
@@ -5227,7 +5227,7 @@ Error generating stack: ` +
         (h = l.memoizedState),
         c || y !== h || ae
           ? (typeof E == 'function' && (oc(l, e, E, a), (h = l.memoizedState)),
-            (f = ae || Mo(l, e, f, a, y, h, i))
+            (f = ae || xo(l, e, f, a, y, h, i))
               ? (g ||
                   (typeof n.UNSAFE_componentWillMount != 'function' && typeof n.componentWillMount != 'function') ||
                   (typeof n.componentWillMount == 'function' && n.componentWillMount(),
@@ -5256,7 +5256,7 @@ Error generating stack: ` +
         (h = typeof c == 'function' || typeof n.getSnapshotBeforeUpdate == 'function') ||
           (typeof n.UNSAFE_componentWillReceiveProps != 'function' &&
             typeof n.componentWillReceiveProps != 'function') ||
-          ((i !== E || y !== f) && xo(l, n, a, f)),
+          ((i !== E || y !== f) && Mo(l, n, a, f)),
         (ae = !1),
         (y = l.memoizedState),
         (n.state = y),
@@ -5265,7 +5265,7 @@ Error generating stack: ` +
       var v = l.memoizedState;
       i !== E || y !== v || ae || (t !== null && t.dependencies !== null && ku(t.dependencies))
         ? (typeof c == 'function' && (oc(l, e, c, a), (v = l.memoizedState)),
-          (g = ae || Mo(l, e, g, a, y, v, f) || (t !== null && t.dependencies !== null && ku(t.dependencies)))
+          (g = ae || xo(l, e, g, a, y, v, f) || (t !== null && t.dependencies !== null && ku(t.dependencies)))
             ? (h ||
                 (typeof n.UNSAFE_componentWillUpdate != 'function' && typeof n.componentWillUpdate != 'function') ||
                 (typeof n.componentWillUpdate == 'function' && n.componentWillUpdate(a, v, f),
@@ -5323,7 +5323,7 @@ Error generating stack: ` +
       n = (l.flags & 128) !== 0,
       i;
     if (
-      ((i = n) || (i = t !== null && t.memoizedState === null ? !1 : (Mt.current & 2) !== 0),
+      ((i = n) || (i = t !== null && t.memoizedState === null ? !1 : (xt.current & 2) !== 0),
       i && ((u = !0), (l.flags &= -129)),
       (i = (l.flags & 32) !== 0),
       (l.flags &= -33),
@@ -5338,7 +5338,7 @@ Error generating stack: ` +
               t !== null &&
                 ((l.memoizedState = {
                   dehydrated: t,
-                  treeContext: Pl !== null ? { id: xl, overflow: Ol } : null,
+                  treeContext: Pl !== null ? { id: Ml, overflow: Ol } : null,
                   retryLane: 536870912,
                   hydrationErrors: null,
                 }),
@@ -5497,11 +5497,11 @@ Error generating stack: ` +
       u = a.revealOrder,
       n = a.tail;
     a = a.children;
-    var i = Mt.current,
+    var i = xt.current,
       c = (i & 2) !== 0;
     if (
       (c ? ((i = (i & 1) | 2), (l.flags |= 128)) : (i &= 1),
-      O(Mt, i),
+      O(xt, i),
       Qt(t, l, a, e),
       (a = et ? Va : 0),
       !c && t !== null && (t.flags & 128) !== 0)
@@ -5600,7 +5600,7 @@ Error generating stack: ` +
         if (
           ((u = l.memoizedState),
           u !== null && ((u.rendering = null), (u.tail = null), (u.lastEffect = null)),
-          O(Mt, Mt.current),
+          O(xt, xt.current),
           a)
         )
           break;
@@ -5625,7 +5625,7 @@ Error generating stack: ` +
         t: {
           var a = l.pendingProps;
           if (((t = Re(l.elementType)), (l.type = t), typeof t == 'function'))
-            Mi(t)
+            xi(t)
               ? ((a = Ge(t, a)), (l.tag = 1), (l = Qo(null, l, t, a, e)))
               : ((l.tag = 0), (l = hc(null, l, t, a, e)));
           else {
@@ -5918,7 +5918,7 @@ Error generating stack: ` +
           null
         );
       case 27:
-        if ((Mu(l), (e = F.current), (u = l.type), t !== null && l.stateNode != null)) t.memoizedProps !== a && Ll(l);
+        if ((xu(l), (e = F.current), (u = l.type), t !== null && l.stateNode != null)) t.memoizedProps !== a && Ll(l);
         else {
           if (!a) {
             if (l.stateNode === null) throw Error(r(166));
@@ -5928,7 +5928,7 @@ Error generating stack: ` +
         }
         return (bt(l), null);
       case 5:
-        if ((Mu(l), (u = l.type), t !== null && l.stateNode != null)) t.memoizedProps !== a && Ll(l);
+        if ((xu(l), (u = l.type), t !== null && l.stateNode != null)) t.memoizedProps !== a && Ll(l);
         else {
           if (!a) {
             if (l.stateNode === null) throw Error(r(166));
@@ -6069,7 +6069,7 @@ Error generating stack: ` +
       case 10:
         return (Yl(l.type), bt(l), null);
       case 19:
-        if ((T(Mt), (a = l.memoizedState), a === null)) return (bt(l), null);
+        if ((T(xt), (a = l.memoizedState), a === null)) return (bt(l), null);
         if (((u = (l.flags & 128) !== 0), (n = a.rendering), n === null))
           if (u) uu(a, !1);
           else {
@@ -6089,7 +6089,7 @@ Error generating stack: ` +
 
                   )
                     (ps(e, t), (e = e.sibling));
-                  return (O(Mt, (Mt.current & 1) | 2), et && ql(l, a.treeForkCount), l.child);
+                  return (O(xt, (xt.current & 1) | 2), et && ql(l, a.treeForkCount), l.child);
                 }
                 t = t.sibling;
               }
@@ -6122,8 +6122,8 @@ Error generating stack: ` +
             (a.tail = t.sibling),
             (a.renderingStartTime = ll()),
             (t.sibling = null),
-            (e = Mt.current),
-            O(Mt, u ? (e & 1) | 2 : e & 1),
+            (e = xt.current),
+            O(xt, u ? (e & 1) | 2 : e & 1),
             et && ql(l, a.treeForkCount),
             t)
           : (bt(l), null);
@@ -6180,7 +6180,7 @@ Error generating stack: ` +
       case 26:
       case 27:
       case 5:
-        return (Mu(l), null);
+        return (xu(l), null);
       case 31:
         if (l.memoizedState !== null) {
           if ((cl(l), l.alternate === null)) throw Error(r(340));
@@ -6194,7 +6194,7 @@ Error generating stack: ` +
         }
         return ((t = l.flags), t & 65536 ? ((l.flags = (t & -65537) | 128), l) : null);
       case 19:
-        return (T(Mt), null);
+        return (T(xt), null);
       case 4:
         return (_t(), null);
       case 10:
@@ -6224,7 +6224,7 @@ Error generating stack: ` +
       case 26:
       case 27:
       case 5:
-        Mu(l);
+        xu(l);
         break;
       case 4:
         _t();
@@ -6236,7 +6236,7 @@ Error generating stack: ` +
         cl(l);
         break;
       case 19:
-        T(Mt);
+        T(xt);
         break;
       case 10:
         Yl(l.type);
@@ -6382,7 +6382,7 @@ Error generating stack: ` +
   function Tc(t, l, e) {
     try {
       var a = t.stateNode;
-      (Mm(a, t.type, e, l), (a[Jt] = l));
+      (xm(a, t.type, e, l), (a[Jt] = l));
     } catch (u) {
       ot(t, t.return, u);
     }
@@ -6434,7 +6434,7 @@ Error generating stack: ` +
   }
   var Zl = !1,
     Ut = !1,
-    Mc = !1,
+    xc = !1,
     tr = typeof WeakSet == 'function' ? WeakSet : Set,
     Bt = null;
   function nm(t, l) {
@@ -6679,7 +6679,7 @@ Error generating stack: ` +
           ($t
             ? ((t = pt),
               $r(t.nodeType === 9 ? t.body : t.nodeName === 'HTML' ? t.ownerDocument.body : t, e.stateNode),
-              xa(t))
+              Ma(t))
             : $r(pt, e.stateNode));
         break;
       case 4:
@@ -6708,7 +6708,7 @@ Error generating stack: ` +
     if (l.memoizedState === null && ((t = l.alternate), t !== null && ((t = t.memoizedState), t !== null))) {
       t = t.dehydrated;
       try {
-        xa(t);
+        Ma(t);
       } catch (e) {
         ot(l, l.return, e);
       }
@@ -6720,7 +6720,7 @@ Error generating stack: ` +
       ((t = l.alternate), t !== null && ((t = t.memoizedState), t !== null && ((t = t.dehydrated), t !== null)))
     )
       try {
-        xa(t);
+        Ma(t);
       } catch (e) {
         ot(l, l.return, e);
       }
@@ -6890,7 +6890,7 @@ Error generating stack: ` +
           }
         }
         (a & 4 && t.stateNode != null && ((u = t.memoizedProps), Tc(t, u, e !== null ? e.memoizedProps : u)),
-          a & 1024 && (Mc = !0));
+          a & 1024 && (xc = !0));
         break;
       case 6:
         if ((Wt(l, t), Ft(t), a & 4)) {
@@ -6914,11 +6914,11 @@ Error generating stack: ` +
           a & 4 && e !== null && e.memoizedState.isDehydrated)
         )
           try {
-            xa(l.containerInfo);
+            Ma(l.containerInfo);
           } catch (N) {
             ot(t, t.return, N);
           }
-        Mc && ((Mc = !1), cr(t));
+        xc && ((xc = !1), cr(t));
         break;
       case 4:
         ((a = Tl), (Tl = jn(t.stateNode.containerInfo)), Wt(l, t), Ft(t), (Tl = a));
@@ -7152,7 +7152,7 @@ Error generating stack: ` +
       l = l.sibling;
     }
   }
-  function xc(t, l) {
+  function Mc(t, l) {
     var e = null;
     (t !== null &&
       t.memoizedState !== null &&
@@ -7221,7 +7221,7 @@ Error generating stack: ` +
             : n._visibility & 2
               ? Al(t, l, e, a)
               : ((n._visibility |= 2), va(t, l, e, a, (l.subtreeFlags & 10256) !== 0 || !1)),
-          u & 2048 && xc(i, l));
+          u & 2048 && Mc(i, l));
         break;
       case 24:
         (Al(t, l, e, a), u & 2048 && Oc(l.alternate, l));
@@ -7252,7 +7252,7 @@ Error generating stack: ` +
               ? va(n, i, c, f, u)
               : cu(n, i)
             : ((g._visibility |= 2), va(n, i, c, f, u)),
-            u && h & 2048 && xc(i.alternate, i));
+            u && h & 2048 && Mc(i.alternate, i));
           break;
         case 24:
           (va(n, i, c, f, u), u && h & 2048 && Oc(i.alternate, i));
@@ -7271,7 +7271,7 @@ Error generating stack: ` +
           u = a.flags;
         switch (a.tag) {
           case 22:
-            (cu(e, a), u & 2048 && xc(a.alternate, a));
+            (cu(e, a), u & 2048 && Mc(a.alternate, a));
             break;
           case 24:
             (cu(e, a), u & 2048 && Oc(a.alternate, a));
@@ -7611,7 +7611,7 @@ Error generating stack: ` +
         i = 1 << n;
       ((a[n] = -1), (u &= ~i));
     }
-    e !== 0 && Mf(t, e, l);
+    e !== 0 && xf(t, e, l);
   }
   function Tn() {
     return (nt & 6) === 0 ? (du(0), !1) : !0;
@@ -7901,7 +7901,7 @@ Error generating stack: ` +
   }
   function _r(t, l, e, a, u, n, i, c, f) {
     t.cancelPendingCommit = null;
-    do Mn();
+    do xn();
     while (Ht !== 0);
     if ((nt & 6) !== 0) throw Error(r(327));
     if (l !== null) {
@@ -7920,24 +7920,24 @@ Error generating stack: ` +
         (l.subtreeFlags & 10256) !== 0 || (l.flags & 10256) !== 0
           ? ((t.callbackNode = null),
             (t.callbackPriority = 0),
-            vm(xu, function () {
+            vm(Mu, function () {
               return (Nr(), null);
             }))
           : ((t.callbackNode = null), (t.callbackPriority = 0)),
         (a = (l.flags & 13878) !== 0),
         (l.subtreeFlags & 13878) !== 0 || a)
       ) {
-        ((a = b.T), (b.T = null), (u = x.p), (x.p = 2), (i = nt), (nt |= 4));
+        ((a = b.T), (b.T = null), (u = M.p), (M.p = 2), (i = nt), (nt |= 4));
         try {
           nm(t, l, e);
         } finally {
-          ((nt = i), (x.p = u), (b.T = a));
+          ((nt = i), (M.p = u), (b.T = a));
         }
       }
-      ((Ht = 1), Mr(), xr(), Or());
+      ((Ht = 1), xr(), Mr(), Or());
     }
   }
-  function Mr() {
+  function xr() {
     if (Ht === 1) {
       Ht = 0;
       var t = de,
@@ -7945,8 +7945,8 @@ Error generating stack: ` +
         e = (l.flags & 13878) !== 0;
       if ((l.subtreeFlags & 13878) !== 0 || e) {
         ((e = b.T), (b.T = null));
-        var a = x.p;
-        x.p = 2;
+        var a = M.p;
+        M.p = 2;
         var u = nt;
         nt |= 4;
         try {
@@ -8000,13 +8000,13 @@ Error generating stack: ` +
           }
           ((Yn = !!Jc), (kc = Jc = null));
         } finally {
-          ((nt = u), (x.p = a), (b.T = e));
+          ((nt = u), (M.p = a), (b.T = e));
         }
       }
       ((t.current = l), (Ht = 2));
     }
   }
-  function xr() {
+  function Mr() {
     if (Ht === 2) {
       Ht = 0;
       var t = de,
@@ -8014,14 +8014,14 @@ Error generating stack: ` +
         e = (l.flags & 8772) !== 0;
       if ((l.subtreeFlags & 8772) !== 0 || e) {
         ((e = b.T), (b.T = null));
-        var a = x.p;
-        x.p = 2;
+        var a = M.p;
+        M.p = 2;
         var u = nt;
         nt |= 4;
         try {
           lr(t, l.alternate, l);
         } finally {
-          ((nt = u), (x.p = a), (b.T = e));
+          ((nt = u), (M.p = a), (b.T = e));
         }
       }
       Ht = 3;
@@ -8043,17 +8043,17 @@ Error generating stack: ` +
           el.onCommitFiberRoot(Na, l, void 0, (l.current.flags & 128) === 128);
         } catch {}
       if (a !== null) {
-        ((l = b.T), (u = x.p), (x.p = 2), (b.T = null));
+        ((l = b.T), (u = M.p), (M.p = 2), (b.T = null));
         try {
           for (var n = t.onRecoverableError, i = 0; i < a.length; i++) {
             var c = a[i];
             n(c.value, { componentStack: c.stack });
           }
         } finally {
-          ((b.T = l), (x.p = u));
+          ((b.T = l), (M.p = u));
         }
       }
-      ((kl & 3) !== 0 && Mn(),
+      ((kl & 3) !== 0 && xn(),
         Nl(t),
         (u = t.pendingLanes),
         (e & 261930) !== 0 && (u & 42) !== 0 ? (t === Hc ? ru++ : ((ru = 0), (Hc = t))) : (ru = 0),
@@ -8063,8 +8063,8 @@ Error generating stack: ` +
   function Dr(t, l) {
     (t.pooledCacheLanes &= l) === 0 && ((l = t.pooledCache), l != null && ((t.pooledCache = null), Ka(l)));
   }
-  function Mn() {
-    return (Mr(), xr(), Or(), Nr());
+  function xn() {
+    return (xr(), Mr(), Or(), Nr());
   }
   function Nr() {
     if (Ht !== 5) return !1;
@@ -8073,9 +8073,9 @@ Error generating stack: ` +
     jc = 0;
     var e = ti(kl),
       a = b.T,
-      u = x.p;
+      u = M.p;
     try {
-      ((x.p = 32 > e ? 32 : e), (b.T = null), (e = Cc), (Cc = null));
+      ((M.p = 32 > e ? 32 : e), (b.T = null), (e = Cc), (Cc = null));
       var n = de,
         i = kl;
       if (((Ht = 0), (pa = de = null), (kl = 0), (nt & 6) !== 0)) throw Error(r(331));
@@ -8093,7 +8093,7 @@ Error generating stack: ` +
         } catch {}
       return !0;
     } finally {
-      ((x.p = u), (b.T = a), Dr(t, l));
+      ((M.p = u), (b.T = a), Dr(t, l));
     }
   }
   function Ur(t, l, e) {
@@ -8170,14 +8170,14 @@ Error generating stack: ` +
   function vm(t, l) {
     return Wn(t, l);
   }
-  var xn = null,
+  var Mn = null,
     Ta = null,
     Yc = !1,
     On = !1,
     Gc = !1,
     he = 0;
   function Nl(t) {
-    (t !== Ta && t.next === null && (Ta === null ? (xn = Ta = t) : (Ta = Ta.next = t)),
+    (t !== Ta && t.next === null && (Ta === null ? (Mn = Ta = t) : (Ta = Ta.next = t)),
       (On = !0),
       Yc || ((Yc = !0), bm()));
   }
@@ -8185,7 +8185,7 @@ Error generating stack: ` +
     if (!Gc && On) {
       Gc = !0;
       do
-        for (var e = !1, a = xn; a !== null; ) {
+        for (var e = !1, a = Mn; a !== null; ) {
           if (t !== 0) {
             var u = a.pendingLanes;
             if (u === 0) var n = 0;
@@ -8214,11 +8214,11 @@ Error generating stack: ` +
     On = Yc = !1;
     var t = 0;
     he !== 0 && Om() && (t = he);
-    for (var l = ll(), e = null, a = xn; a !== null; ) {
+    for (var l = ll(), e = null, a = Mn; a !== null; ) {
       var u = a.next,
         n = Hr(a, l);
       (n === 0
-        ? ((a.next = null), e === null ? (xn = u) : (e.next = u), u === null && (Ta = e))
+        ? ((a.next = null), e === null ? (Mn = u) : (e.next = u), u === null && (Ta = e))
         : ((e = a), (t !== 0 || (n & 3) !== 0) && (On = !0)),
         (a = u));
     }
@@ -8247,13 +8247,13 @@ Error generating stack: ` +
           e = Tf;
           break;
         case 32:
-          e = xu;
+          e = Mu;
           break;
         case 268435456:
           e = Af;
           break;
         default:
-          e = xu;
+          e = Mu;
       }
       return ((a = Rr.bind(null, t)), (e = Wn(e, a)), (t.callbackPriority = l), (t.callbackNode = e), l);
     }
@@ -8262,7 +8262,7 @@ Error generating stack: ` +
   function Rr(t, l) {
     if (Ht !== 0 && Ht !== 5) return ((t.callbackNode = null), (t.callbackPriority = 0), null);
     var e = t.callbackNode;
-    if (Mn() && t.callbackNode !== e) return null;
+    if (xn() && t.callbackNode !== e) return null;
     var a = tt;
     return (
       (a = Uu(t, t === vt ? a : 0, t.cancelPendingCommit !== null || t.timeoutHandle !== -1)),
@@ -8272,7 +8272,7 @@ Error generating stack: ` +
     );
   }
   function qr(t, l) {
-    if (Mn()) return null;
+    if (xn()) return null;
     vr(t, l, !0);
   }
   function bm() {
@@ -8717,7 +8717,7 @@ Error generating stack: ` +
             ((lt = new kf(lt, t, null, e, g)),
             E.push({ event: lt, listeners: H }),
             K ? (lt.data = K) : ((K = ts(e)), K !== null && (lt.data = K)))),
-          (K = Md ? xd(t, e) : Od(t, e)) &&
+          (K = xd ? Md(t, e) : Od(t, e)) &&
             ((lt = Nn(h, 'onBeforeInput')),
             0 < lt.length &&
               ((H = new kf('onBeforeInput', 'beforeinput', null, e, g)),
@@ -9217,7 +9217,7 @@ Error generating stack: ` +
     }
     for (c in e) e.hasOwnProperty(c) && ((a = e[c]), a != null && mt(t, l, c, a, e, null));
   }
-  function Mm(t, l, e, a) {
+  function xm(t, l, e, a) {
     switch (l) {
       case 'div':
       case 'span':
@@ -9421,7 +9421,7 @@ Error generating stack: ` +
         return !1;
     }
   }
-  function xm() {
+  function Mm() {
     if (typeof performance.getEntriesByType == 'function') {
       for (var t = 0, l = 0, e = performance.getEntriesByType('resource'), a = 0; a < e.length; a++) {
         var u = e[a],
@@ -9515,7 +9515,7 @@ Error generating stack: ` +
       if ((t.removeChild(e), u && u.nodeType === 8))
         if (((e = u.data), e === '/$' || e === '/&')) {
           if (a === 0) {
-            (t.removeChild(u), xa(l));
+            (t.removeChild(u), Ma(l));
             return;
           }
           a--;
@@ -9536,7 +9536,7 @@ Error generating stack: ` +
         } else e === 'body' && yu(t.ownerDocument.body);
       e = u;
     } while (e);
-    xa(l);
+    Ma(l);
   }
   function Wr(t, l) {
     var e = t;
@@ -9727,8 +9727,8 @@ Error generating stack: ` +
   function jn(t) {
     return typeof t.getRootNode == 'function' ? t.getRootNode() : t.nodeType === 9 ? t : t.ownerDocument;
   }
-  var $l = x.d;
-  x.d = { f: Rm, r: qm, D: Bm, C: Ym, L: Gm, m: Xm, X: Lm, S: Qm, M: Zm };
+  var $l = M.d;
+  M.d = { f: Rm, r: qm, D: Bm, C: Ym, L: Gm, m: Xm, X: Lm, S: Qm, M: Zm };
   function Rm() {
     var t = $l.f(),
       l = Tn();
@@ -9773,7 +9773,7 @@ Error generating stack: ` +
           n = _a(t);
           break;
         case 'script':
-          n = Ma(t);
+          n = xa(t);
       }
       pl.has(n) ||
         ((t = R({ rel: 'preload', href: l === 'image' && e && e.imageSrcSet ? void 0 : t, as: l }, e)),
@@ -9798,7 +9798,7 @@ Error generating stack: ` +
         case 'sharedworker':
         case 'worker':
         case 'script':
-          n = Ma(t);
+          n = xa(t);
       }
       if (!pl.has(n) && ((t = R({ rel: 'modulepreload', href: t }, l)), pl.set(n, t), e.querySelector(u) === null)) {
         switch (a) {
@@ -9851,7 +9851,7 @@ Error generating stack: ` +
     var e = Aa;
     if (e && t) {
       var a = Je(e).hoistableScripts,
-        u = Ma(t),
+        u = xa(t),
         n = a.get(u);
       n ||
         ((n = e.querySelector(gu(u))),
@@ -9871,7 +9871,7 @@ Error generating stack: ` +
     var e = Aa;
     if (e && t) {
       var a = Je(e).hoistableScripts,
-        u = Ma(t),
+        u = xa(t),
         n = a.get(u);
       n ||
         ((n = e.querySelector(gu(u))),
@@ -9937,7 +9937,7 @@ Error generating stack: ` +
           (l = e.async),
           (e = e.src),
           typeof e == 'string' && l && typeof l != 'function' && typeof l != 'symbol'
-            ? ((l = Ma(e)),
+            ? ((l = xa(e)),
               (e = Je(u).hoistableScripts),
               (a = e.get(l)),
               a || ((a = { type: 'script', instance: null, count: 0, state: null }), e.set(l, a)),
@@ -9972,7 +9972,7 @@ Error generating stack: ` +
         qt(l),
         t.head.appendChild(l));
   }
-  function Ma(t) {
+  function xa(t) {
     return '[src="' + dl(t) + '"]';
   }
   function gu(t) {
@@ -10009,7 +10009,7 @@ Error generating stack: ` +
           );
         case 'script':
           return (
-            (n = Ma(e.src)),
+            (n = xa(e.src)),
             (u = t.querySelector(gu(n)))
               ? ((l.instance = u), qt(u), u)
               : ((a = e),
@@ -10165,7 +10165,7 @@ Error generating stack: ` +
                 ((t.unsuspend = null), n());
               }
             }, 6e4 + l);
-            0 < t.imgBytes && af === 0 && (af = 62500 * xm());
+            0 < t.imgBytes && af === 0 && (af = 62500 * Mm());
             var u = setTimeout(
               function () {
                 if (
@@ -10314,21 +10314,21 @@ Error generating stack: ` +
   function Wm(t, l, e, a) {
     var u = b.T;
     b.T = null;
-    var n = x.p;
+    var n = M.p;
     try {
-      ((x.p = 2), nf(t, l, e, a));
+      ((M.p = 2), nf(t, l, e, a));
     } finally {
-      ((x.p = n), (b.T = u));
+      ((M.p = n), (b.T = u));
     }
   }
   function Fm(t, l, e, a) {
     var u = b.T;
     b.T = null;
-    var n = x.p;
+    var n = M.p;
     try {
-      ((x.p = 8), nf(t, l, e, a));
+      ((M.p = 8), nf(t, l, e, a));
     } finally {
-      ((x.p = n), (b.T = u));
+      ((M.p = n), (b.T = u));
     }
   }
   function nf(t, l, e, a) {
@@ -10470,7 +10470,7 @@ Error generating stack: ` +
             return 2;
           case Tf:
             return 8;
-          case xu:
+          case Mu:
           case Y0:
             return 32;
           case Af:
@@ -10615,7 +10615,7 @@ Error generating stack: ` +
         }
       }));
   }
-  function xa(t) {
+  function Ma(t) {
     function l(f) {
       return Qn(f, t);
     }
@@ -10717,7 +10717,7 @@ Error generating stack: ` +
   };
   var E0 = _.version;
   if (E0 !== '19.2.0') throw Error(r(527, E0, '19.2.0'));
-  x.findDOMNode = function (t) {
+  M.findDOMNode = function (t) {
     var l = t._reactInternals;
     if (l === void 0)
       throw typeof t.render == 'function' ? Error(r(188)) : ((t = Object.keys(t).join(',')), Error(r(268, t)));
@@ -10816,9 +10816,9 @@ const hh = C0(mh),
     return '/' + z;
   },
   j0 = {},
-  wn = function (_, M, r) {
+  wn = function (_, x, r) {
     let Y = Promise.resolve();
-    if (M && M.length > 0) {
+    if (x && x.length > 0) {
       let j = function (p) {
         return Promise.all(
           p.map((Z) =>
@@ -10833,7 +10833,7 @@ const hh = C0(mh),
       const $ = document.querySelector('meta[property=csp-nonce]'),
         it = $?.nonce || $?.getAttribute('nonce');
       Y = j(
-        M.map((p) => {
+        x.map((p) => {
           if (((p = vh(p)), p in j0)) return;
           j0[p] = !0;
           const Z = p.endsWith('.css'),
@@ -10867,7 +10867,7 @@ const hh = C0(mh),
   };
 function gh() {
   const [z, _] = ft.useState(null),
-    [M, r] = ft.useState(!0),
+    [x, r] = ft.useState(!0),
     [Y, J] = ft.useState(null),
     $ = ft.useCallback(async () => {
       try {
@@ -11030,7 +11030,7 @@ function gh() {
     }, []);
   return {
     config: z,
-    loading: M,
+    loading: x,
     error: Y,
     fetchConfig: $,
     createRoom: it,
@@ -11052,30 +11052,30 @@ class _u {
       (this.performance = { pageLoad: null, connectionTime: null, messageLatency: [] }),
       (this.isEnabled = !0));
   }
-  trackMetric(_, M, r = {}) {
+  trackMetric(_, x, r = {}) {
     if (!this.isEnabled) return;
-    const Y = { name: _, value: M, tags: r, timestamp: Date.now() };
+    const Y = { name: _, value: x, tags: r, timestamp: Date.now() };
     (this.metrics.set(_, Y), console.log('Metric tracked:', Y));
   }
-  trackError(_, M = {}) {
+  trackError(_, x = {}) {
     const r = {
       message: _.message,
       stack: _.stack,
-      context: M,
+      context: x,
       timestamp: Date.now(),
       url: window.location.href,
       userAgent: navigator.userAgent,
     };
     (this.errors.push(r), console.error('Error tracked:', r), this.isEnabled && _u.sendErrorToService(r));
   }
-  trackPerformance(_, M) {
-    this.isEnabled && ((this.performance[_] = M), console.log(`Performance: ${_} = ${M}ms`));
+  trackPerformance(_, x) {
+    this.isEnabled && ((this.performance[_] = x), console.log(`Performance: ${_} = ${x}ms`));
   }
   trackWebRTCStats(_) {
     !_ ||
       !this.isEnabled ||
-      _.getStats().then((M) => {
-        M.forEach((r) => {
+      _.getStats().then((x) => {
+        x.forEach((r) => {
           r.type === 'candidate-pair' &&
             r.state === 'succeeded' &&
             (this.trackMetric('webrtc.connection.success', 1),
@@ -11083,19 +11083,19 @@ class _u {
         });
       });
   }
-  trackMessageLatency(_, M) {
-    const r = M - _;
+  trackMessageLatency(_, x) {
+    const r = x - _;
     (this.performance.messageLatency.push(r),
       this.performance.messageLatency.length > 100 && this.performance.messageLatency.shift(),
       this.trackMetric('chat.message.latency', r));
   }
   getPerformanceSummary() {
     const _ = this.performance.messageLatency,
-      M = _.length > 0 ? _.reduce((r, Y) => r + Y, 0) / _.length : 0;
+      x = _.length > 0 ? _.reduce((r, Y) => r + Y, 0) / _.length : 0;
     return {
       pageLoad: this.performance.pageLoad,
       connectionTime: this.performance.connectionTime,
-      averageMessageLatency: M,
+      averageMessageLatency: x,
       messageCount: _.length,
       errorCount: this.errors.length,
     };
@@ -11129,7 +11129,7 @@ typeof window < 'u' &&
       _ = Oa.getAllErrors();
     (_u.sendMetricsToService(z), _.length > 0 && _u.sendErrorToService(_));
   }));
-const Au = (z, _, M) => Oa.trackMetric(z, _, M),
+const Au = (z, _, x) => Oa.trackMetric(z, _, x),
   bh = (z, _) => Oa.trackError(z, _),
   Sh = (z, _) => Oa.trackPerformance(z, _);
 class Le {
@@ -11152,12 +11152,12 @@ class Le {
       _
     );
   }
-  trackPageView(_, M = {}) {
+  trackPageView(_, x = {}) {
     const r = {
       type: 'page_view',
       page: _,
       properties: {
-        ...M,
+        ...x,
         sessionId: this.sessionId,
         userId: this.userId,
         timestamp: Date.now(),
@@ -11167,31 +11167,31 @@ class Le {
     };
     (this.pageViews.push(r), console.log('Page view tracked:', r), this.isEnabled && Le.sendToAnalytics(r));
   }
-  trackEvent(_, M = {}) {
+  trackEvent(_, x = {}) {
     const r = {
       type: 'event',
       name: _,
-      properties: { ...M, sessionId: this.sessionId, userId: this.userId, timestamp: Date.now() },
+      properties: { ...x, sessionId: this.sessionId, userId: this.userId, timestamp: Date.now() },
     };
     (this.events.push(r), console.log('Event tracked:', r), this.isEnabled && Le.sendToAnalytics(r));
   }
-  trackInteraction(_, M, r = {}) {
-    this.trackEvent('user_interaction', { element: _, action: M, ...r });
+  trackInteraction(_, x, r = {}) {
+    this.trackEvent('user_interaction', { element: _, action: x, ...r });
   }
-  trackScreenShare(_, M = {}) {
-    this.trackEvent('screen_share', { action: _, ...M });
+  trackScreenShare(_, x = {}) {
+    this.trackEvent('screen_share', { action: _, ...x });
   }
-  trackChat(_, M = {}) {
-    this.trackEvent('chat', { action: _, ...M });
+  trackChat(_, x = {}) {
+    this.trackEvent('chat', { action: _, ...x });
   }
-  trackWebRTC(_, M = {}) {
-    this.trackEvent('webrtc', { action: _, ...M });
+  trackWebRTC(_, x = {}) {
+    this.trackEvent('webrtc', { action: _, ...x });
   }
-  trackPerformance(_, M, r = {}) {
-    this.trackEvent('performance', { metric: _, value: M, ...r });
+  trackPerformance(_, x, r = {}) {
+    this.trackEvent('performance', { metric: _, value: x, ...r });
   }
-  trackError(_, M = {}) {
-    this.trackEvent('error', { message: _.message, stack: _.stack, context: M });
+  trackError(_, x = {}) {
+    this.trackEvent('error', { message: _.message, stack: _.stack, context: x });
   }
   getSessionSummary() {
     return {
@@ -11213,8 +11213,8 @@ class Le {
     console.log('Would send to analytics service:', _);
   }
   identify(_) {
-    const M = { type: 'identify', userId: this.userId, traits: _, timestamp: Date.now() };
-    (console.log('User identified:', M), this.isEnabled && Le.sendToAnalytics(M));
+    const x = { type: 'identify', userId: this.userId, traits: _, timestamp: Date.now() };
+    (console.log('User identified:', x), this.isEnabled && Le.sendToAnalytics(x));
   }
   setUserProperties(_) {
     (localStorage.setItem('analytics_user_properties', JSON.stringify(_)), this.identify(_));
@@ -11240,14 +11240,14 @@ typeof window < 'u' &&
   }));
 const gf = (z, _) => Ee.trackPageView(z, _),
   bf = (z, _) => Ee.trackEvent(z, _),
-  ph = (z, _, M) => Ee.trackInteraction(z, _, M),
-  Eh = ft.lazy(() => wn(() => import('./HostView-NSlyEnKb.js'), __vite__mapDeps([0, 1]))),
-  zh = ft.lazy(() => wn(() => import('./ViewerView-C_jMyvY1.js'), __vite__mapDeps([2, 1]))),
-  Th = ft.lazy(() => wn(() => import('./Chat-Y4XnLm7A.js'), [])),
-  Ah = ft.lazy(() => wn(() => import('./Diagnostics-BR1n0VXx.js'), []));
+  ph = (z, _, x) => Ee.trackInteraction(z, _, x),
+  Eh = ft.lazy(() => wn(() => import('./HostView-Byx0XX7b.js'), __vite__mapDeps([0, 1]))),
+  zh = ft.lazy(() => wn(() => import('./ViewerView-DBHpJwjN.js'), __vite__mapDeps([2, 1]))),
+  Th = ft.lazy(() => wn(() => import('./Chat-B0NNttqE.js'), [])),
+  Ah = ft.lazy(() => wn(() => import('./Diagnostics-BBcanyKf.js'), []));
 function _h() {
   const [z, _] = ft.useState('home'),
-    [M, r] = ft.useState(''),
+    [x, r] = ft.useState(''),
     [Y, J] = ft.useState(''),
     [$, it] = ft.useState(!1),
     [j, p] = ft.useState(!1),
@@ -11290,11 +11290,11 @@ function _h() {
       }
     },
     tl = () => {
-      if (!M.trim()) {
+      if (!x.trim()) {
         (Au('room.join.error', 1, { reason: 'no_room_id' }), alert('Please enter a room ID'));
         return;
       }
-      (Au('room.join.attempt', 1), bf('room_joined', { roomId: M.trim() }), gf('viewer'), _('viewer'));
+      (Au('room.join.attempt', 1), bf('room_joined', { roomId: x.trim() }), gf('viewer'), _('viewer'));
     },
     Q = () => {
       (bf('navigation', { from: z, to: 'home' }), gf('home'), _('home'), r(''), J(''), it(!1), p(!1));
@@ -11558,7 +11558,7 @@ function _h() {
                                     A.jsx('input', {
                                       type: 'text',
                                       placeholder: 'Paste room id here',
-                                      value: M,
+                                      value: x,
                                       onChange: (U) => r(U.target.value),
                                       className:
                                         'bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white placeholder-gray-300 font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50',
@@ -11730,7 +11730,7 @@ function _h() {
                                     z !== 'home' &&
                                       A.jsxs('span', {
                                         className: 'ml-4 text-sm text-purple-300',
-                                        children: ['Room: ', M],
+                                        children: ['Room: ', x],
                                       }),
                                   ],
                                 }),
@@ -11768,9 +11768,9 @@ function _h() {
                           children: A.jsxs(ft.Suspense, {
                             fallback: A.jsx('div', { className: 'text-center text-white', children: 'Loading...' }),
                             children: [
-                              z === 'host' && A.jsx(Eh, { roomId: M, config: Z, onGoHome: Q }),
+                              z === 'host' && A.jsx(Eh, { roomId: x, config: Z, onGoHome: Q }),
                               z === 'viewer' &&
-                                A.jsx(zh, { roomId: M, viewerId: Y, setViewerId: J, config: Z, onGoHome: Q }),
+                                A.jsx(zh, { roomId: x, viewerId: Y, setViewerId: J, config: Z, onGoHome: Q }),
                             ],
                           }),
                         }),
@@ -11784,7 +11784,7 @@ function _h() {
                                 className: 'text-center text-white p-4',
                                 children: 'Loading chat...',
                               }),
-                              children: A.jsx(Th, { roomId: M, role: z === 'host' ? 'host' : 'viewer', viewerId: Y }),
+                              children: A.jsx(Th, { roomId: x, role: z === 'host' ? 'host' : 'viewer', viewerId: Y }),
                             }),
                           }),
                         j &&
@@ -11797,15 +11797,25 @@ function _h() {
                                 className: 'text-center text-white p-4',
                                 children: 'Loading diagnostics...',
                               }),
-                              children: A.jsx(Ah, { roomId: M, role: z === 'host' ? 'host' : 'viewer' }),
+                              children: A.jsx(Ah, { roomId: x, role: z === 'host' ? 'host' : 'viewer' }),
                             }),
                           }),
                       ],
                     }),
+            }),
+            A.jsx('footer', {
+              className: 'fixed bottom-0 left-0 right-0 z-0 pointer-events-none',
+              children: A.jsx('div', {
+                className: 'text-center py-2',
+                children: A.jsx('p', {
+                  className: 'text-purple-400 text-xs opacity-60 font-mono',
+                  children: '© 2025 Mintwhirl Dev - Kevin Stewart',
+                }),
+              }),
             }),
           ],
         });
 }
 hh.createRoot(document.getElementById('root')).render(A.jsx(ih.StrictMode, { children: A.jsx(_h, {}) }));
 export { A as j, ft as r, gh as u };
-//# sourceMappingURL=main-DEmRS2_I.js.map
+//# sourceMappingURL=main-C8fQYyf5.js.map

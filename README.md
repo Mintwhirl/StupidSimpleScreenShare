@@ -9,37 +9,29 @@ A production-ready browser-based screen sharing application built with React, We
 - **Browser-only P2P screen sharing** - No plugins, no downloads, no accounts required
 - **WebRTC with STUN/TURN support** - Direct peer-to-peer connections with relay fallback
 - **Ephemeral rooms** - Automatically expire after 30 minutes for privacy
-- **Real-time connection quality monitoring** - RTT, packet loss, and connection state indicators
+- **Real-time connection quality monitoring** - Connection state indicators and diagnostics
 - **Modern React architecture** - Component-based, hook-driven, maintainable codebase
 
-### Advanced Features
+### User Experience
 
-- **Screen recording** - Record your screen share with MediaRecorder API (VP9/VP8/WebM/MP4)
 - **Multi-viewer support** - Multiple viewers can watch a single host simultaneously
 - **Live viewer count** - See how many people are watching in real-time
 - **Built-in text chat** - Communicate without needing external tools
 - **Network diagnostics** - Comprehensive testing tool for troubleshooting connections
-- **Auto-reconnection** - Viewers automatically reconnect on temporary network issues
 - **Role-based UI** - Different interfaces for hosts vs viewers
 - **Mobile-optimized** - Responsive design with touch-friendly controls
-- **Fullscreen support** - Double-tap or button to go fullscreen on mobile
-- **URL-based reconnection** - Auto-reconnect after page refresh
 
-### Stunning Visual Design
+### Visual Design
 
 - **Synthwave theme** - Retro-futuristic design with purple skies and neon accents
 - **Animated background** - Stars, glowing sun, geometric mountains, and electric grid
 - **Frosted glass UI** - Translucent panels with backdrop blur effects
 - **Custom typography** - "Righteous" font with glowing text effects
 - **Interactive buttons** - Gradients, glows, and smooth hover animations
-- **Mobile-first design** - Scales beautifully from mobile to desktop
 
 ### Security & Quality
 
 - **Comprehensive input validation** - All user inputs sanitized and validated
-- **Enterprise-grade error handling** - Graceful failures with user-friendly messages
-- **Security hardening** - XSS prevention, length limits, cryptographically secure IDs
-- **Accessibility** - Full ARIA labels, keyboard navigation, screen reader support
 - **Rate limiting** - Upstash-powered rate limiting (50 rooms/hour, 60 chat msgs/min, 2000 API calls/min)
 - **325 comprehensive tests** - Unit and integration tests with 71.75% code coverage
 - **Automated CI/CD** - GitHub Actions with pre-commit hooks
@@ -126,8 +118,7 @@ npm run format
 1. **Join Room**: Enter the room ID provided by the host
 2. **Watch Screen**: The host's screen will appear automatically
 3. **Chat**: Use the built-in chat to communicate with the host
-4. **Fullscreen**: Double-tap or use the fullscreen button for better viewing
-5. **Reconnect**: If disconnected, refresh the page to reconnect
+4. **Reconnect**: If disconnected, refresh the page to reconnect
 
 ## 🔧 Configuration
 
@@ -140,10 +131,6 @@ AUTH_SECRET=your-secure-secret-key-here
 # Optional Redis configuration (defaults to Upstash)
 REDIS_URL=your-redis-url
 REDIS_TOKEN=your-redis-token
-
-# Optional rate limiting (defaults to Upstash)
-RATELIMIT_URL=your-ratelimit-url
-RATELIMIT_TOKEN=your-ratelimit-token
 ```
 
 ### Vercel Deployment
@@ -225,7 +212,6 @@ RATELIMIT_TOKEN=your-ratelimit-token
 - **71.75% code coverage** on API layer
 - **Unit tests** for all validation functions and utilities
 - **Integration tests** for all API endpoints
-- **Complex mocking** for Redis, WebRTC, and external dependencies
 
 ### Running Tests
 
@@ -238,9 +224,6 @@ npm run test:coverage
 
 # Run tests in watch mode
 npm run test:watch
-
-# Run specific test file
-npm test -- tests/unit/validateRoomId.test.js
 ```
 
 ## 🚀 Deployment
@@ -250,33 +233,6 @@ npm test -- tests/unit/validateRoomId.test.js
 1. **Connect Repository**: Link your GitHub repository to Vercel
 2. **Set Environment Variables**: Add required environment variables
 3. **Deploy**: Vercel will automatically deploy on every push
-
-### Manual Deployment
-
-```bash
-# Build for production
-npm run build
-
-# Deploy to your preferred platform
-# The dist/ directory contains the built application
-```
-
-## 📊 Performance
-
-### Optimizations
-
-- **Code splitting** - Lazy load components for faster initial load
-- **Tree shaking** - Remove unused code from production builds
-- **Image optimization** - Optimized static assets
-- **Caching** - Proper cache headers for static assets
-- **CDN** - Global edge locations via Vercel
-
-### Metrics
-
-- **First Contentful Paint**: < 1.5s
-- **Largest Contentful Paint**: < 2.5s
-- **Cumulative Layout Shift**: < 0.1
-- **First Input Delay**: < 100ms
 
 ## 🤝 Contributing
 
@@ -297,22 +253,16 @@ npm run build
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+**Copyright © 2025 Mintwhirl Dev - Kevin Stewart**
 
-- **WebRTC** - For peer-to-peer communication
-- **React** - For the component-based architecture
-- **Vercel** - For serverless deployment
-- **Upstash** - For Redis and rate limiting
-- **Tailwind CSS** - For the utility-first styling
-- **Vitest** - For the testing framework
+Commercial use requires explicit written permission from the copyright holder.
 
 ## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/Mintwhirl/StupidSimpleScreenShare/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/Mintwhirl/StupidSimpleScreenShare/discussions)
-- **Email**: Contact through GitHub profile
 
 ---
 

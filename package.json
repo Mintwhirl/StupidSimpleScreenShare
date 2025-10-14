@@ -1,7 +1,9 @@
 {
   "name": "stupid-simple-screen-share",
   "version": "1.0.0",
-  "description": "A minimal proof-of-concept browser-only screen-share app.",
+  "description": "A production-ready browser-based screen sharing application with stunning synthwave design.",
+  "author": "Kevin Stewart <mintwhirl.dev>",
+  "license": "CC-BY-NC-SA-4.0",
   "main": "index.js",
   "type": "module",
   "scripts": {
