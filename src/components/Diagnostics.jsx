@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 function Diagnostics({ roomId, role }) {
   const [diagnostics, setDiagnostics] = useState(null);
@@ -8,7 +8,7 @@ function Diagnostics({ roomId, role }) {
   const [refreshInterval, setRefreshInterval] = useState(5000);
 
   // Fetch diagnostics data
-  const fetchDiagnostics = async () => {
+  const fetchDiagnostics = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -27,7 +27,7 @@ function Diagnostics({ roomId, role }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [roomId, role]);
 
   // Auto-refresh diagnostics
   useEffect(() => {
@@ -36,7 +36,7 @@ function Diagnostics({ roomId, role }) {
       const interval = setInterval(fetchDiagnostics, refreshInterval);
       return () => clearInterval(interval);
     }
-  }, [autoRefresh, refreshInterval, roomId, role]);
+  }, [autoRefresh, refreshInterval, roomId, role, fetchDiagnostics]);
 
   // Manual refresh
   const handleRefresh = () => {

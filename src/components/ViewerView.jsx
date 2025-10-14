@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import VideoPlayer from './VideoPlayer';
 import { useWebRTC } from '../hooks/useWebRTC';
 
@@ -44,10 +44,10 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
     if (roomId && !isConnecting && !isConnected) {
       handleConnect();
     }
-  }, [roomId]);
+  }, [roomId, handleConnect, isConnected, isConnecting]);
 
   // Handle connection to host
-  const handleConnect = async () => {
+  const handleConnect = useCallback(async () => {
     if (!roomId.trim()) {
       setError('Please enter a room ID');
       return;
@@ -67,7 +67,7 @@ function ViewerView({ roomId, viewerId, setViewerId, config, onGoHome }) {
     } finally {
       setIsConnecting(false);
     }
-  };
+  }, [roomId, connectToHost]);
 
   // Handle disconnection
   const handleDisconnect = async () => {

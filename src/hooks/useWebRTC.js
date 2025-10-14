@@ -114,7 +114,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     };
 
     return pc;
-  }, [iceServers]);
+  }, [iceServers, sendICECandidate]);
 
   // Send offer
   const sendOffer = useCallback(
@@ -220,7 +220,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       setConnectionState('disconnected');
       throw err;
     }
-  }, [role, createPeerConnection, sendOffer]);
+  }, [role, createPeerConnection, sendOffer, startAnswerPolling]);
 
   // Connect to host (viewer)
   const connectToHost = useCallback(async () => {
@@ -247,7 +247,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       setConnectionState('disconnected');
       throw err;
     }
-  }, [role, createPeerConnection]);
+  }, [role, createPeerConnection, startCandidatePolling, startOfferPolling]);
 
   // Stop screen sharing
   const stopScreenShare = useCallback(async () => {
