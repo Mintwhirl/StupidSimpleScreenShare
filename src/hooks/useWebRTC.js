@@ -9,8 +9,19 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
   const [remoteStream, setRemoteStream] = useState(null);
   const [localStream, setLocalStream] = useState(null);
   const [error, setError] = useState(null);
-  // Removed unused _peerConnections state (dead code)
   const [iceServers, setIceServers] = useState([]);
+
+  // Multi-viewer support: Map of viewerId to peer connections
+  const [peerConnections, _setPeerConnections] = useState(new Map());
+  const [viewerCount, _setViewerCount] = useState(0);
+
+  // Granular error state for better user feedback
+  const [errorState, setErrorState] = useState({
+    type: null, // 'permission', 'network', 'webrtc', 'timeout', 'unknown'
+    code: null, // Specific error code
+    message: null, // User-friendly message
+    details: null, // Technical details for debugging
+  });
 
   // Refs
   const peerConnectionRef = useRef(null);
@@ -26,6 +37,13 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     const servers = getIceServers(config?.useTurn !== false); // Default to true unless explicitly disabled
     setIceServers(servers);
   }, [config]);
+
+  // Helper function to set granular error state
+  const setGranularError = useCallback((type, code, message, details = null) => {
+    setErrorState({ type, code, message, details });
+    setError(message);
+    logger.error(`WebRTC Error [${type}]: ${message}`, { code, details });
+  }, []);
 
   // Send ICE candidate
   const sendICECandidate = useCallback(
@@ -403,11 +421,18 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       const audioTracks = stream.getAudioTracks();
 
       if (videoTracks.length === 0) {
+        setGranularError(
+          'permission',
+          'VIDEO_DENIED',
+          'Video permission is required to share your screen. Please allow video access and try again.',
+          'User denied video permission in getDisplayMedia'
+        );
         throw new Error('Video permission denied - cannot share screen without video');
       }
 
       if (audioTracks.length === 0) {
         logger.warn('Audio permission denied - screen sharing will be video-only');
+        // Don't throw error for audio - video-only is acceptable
       }
 
       setLocalStream(stream);
@@ -446,7 +471,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       setConnectionState('disconnected');
       throw err;
     }
-  }, [role, createPeerConnection, sendOffer, startAnswerPolling, startCandidatePolling]);
+  }, [role, createPeerConnection, sendOffer, startAnswerPolling, startCandidatePolling, setGranularError]);
 
   // Connect to host (viewer)
   const connectToHost = useCallback(async () => {
@@ -544,7 +569,9 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     remoteStream,
     localStream,
     error,
-    // Removed unused peerConnections (dead code)
+    errorState, // Granular error state for better UI feedback
+    peerConnections, // Multi-viewer support
+    viewerCount, // Number of connected viewers
 
     // Actions
     startScreenShare,

@@ -1,19 +1,53 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useReducer } from 'react';
 import VideoPlayer from './VideoPlayer';
 import { useWebRTC } from '../hooks/useWebRTC';
 import { useRoomContext } from '../contexts/RoomContext';
 import { validateViewerId } from '../utils/validation';
 import { CONNECTION_STATES, UI_TEXT, STATUS_COLORS, ERROR_MESSAGES, API_ENDPOINTS } from '../constants';
 
+// Connection state machine for robust reconnection logic
+const connectionReducer = (state, action) => {
+  switch (action.type) {
+    case 'CONNECT_REQUESTED':
+      return { ...state, status: 'connecting', error: null, reconnectAttempts: 0 };
+    case 'CONNECT_SUCCESS':
+      return { ...state, status: 'connected', error: null, reconnectAttempts: 0 };
+    case 'CONNECT_FAILED':
+      return { ...state, status: 'failed', error: action.error, reconnectAttempts: state.reconnectAttempts + 1 };
+    case 'DISCONNECT_REQUESTED':
+      return { ...state, status: 'disconnecting', error: null };
+    case 'DISCONNECT_SUCCESS':
+      return { ...state, status: 'disconnected', error: null, reconnectAttempts: 0 };
+    case 'RECONNECT_REQUESTED':
+      return { ...state, status: 'reconnecting', error: null };
+    case 'RESET':
+      return { status: 'idle', error: null, reconnectAttempts: 0 };
+    default:
+      return state;
+  }
+};
+
 function ViewerView({ config, onGoHome }) {
   const { roomId, viewerId, updateViewerId, updateSenderSecret } = useRoomContext();
   const [error, setError] = useState(null);
-  // Remove redundant state - derive everything from connectionState
-  // Removed unused _roomIdError state (dead code)
   const [viewerIdError, setViewerIdError] = useState(null);
-  // Remove local senderSecret state - use context instead
+  const [connectionStateMachine, dispatch] = useReducer(connectionReducer, {
+    status: 'idle',
+    error: null,
+    reconnectAttempts: 0,
+  });
 
   const remoteVideoRef = useRef(null);
+  const reconnectTimeoutRef = useRef(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Validation functions (only for viewerId since roomId comes from context)
   const validateViewerIdInput = useCallback((value) => {
@@ -94,7 +128,9 @@ function ViewerView({ config, onGoHome }) {
         return;
       }
 
+      dispatch({ type: 'CONNECT_REQUESTED' });
       await connectToHost();
+      dispatch({ type: 'CONNECT_SUCCESS' });
 
       // Register sender ID for chat if viewerId is provided
       if (viewerId && viewerId.trim()) {
@@ -118,29 +154,64 @@ function ViewerView({ config, onGoHome }) {
     } catch (err) {
       console.error('Error connecting to host:', err);
       setError(ERROR_MESSAGES.CONNECTION_FAILED);
+      dispatch({ type: 'CONNECT_FAILED', error: err.message });
     }
   }, [roomId, connectToHost, validateRoom, viewerId, validateViewerIdInput, updateSenderSecret]);
 
   // Removed auto-connect logic - user must manually click "Connect to Host"
 
-  // Handle disconnection
-  const handleDisconnect = async () => {
+  // Handle disconnection with state machine
+  const handleDisconnect = useCallback(async () => {
+    if (connectionStateMachine.status === 'disconnecting' || connectionStateMachine.status === 'disconnected') {
+      return; // Already disconnecting or disconnected
+    }
+
+    dispatch({ type: 'DISCONNECT_REQUESTED' });
+
     try {
       await disconnect();
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = null;
       }
+      dispatch({ type: 'DISCONNECT_SUCCESS' });
     } catch (err) {
       console.error('Error disconnecting:', err);
+      dispatch({ type: 'CONNECT_FAILED', error: 'Failed to disconnect properly' });
     }
-  };
+  }, [disconnect, connectionStateMachine.status]);
 
-  // Handle reconnection
-  const handleReconnect = () => {
-    handleDisconnect().then(() => {
-      setTimeout(handleConnect, 1000);
-    });
-  };
+  // Handle reconnection with proper state machine and feedback
+  const handleReconnect = useCallback(async () => {
+    if (connectionStateMachine.status === 'reconnecting' || connectionStateMachine.status === 'connecting') {
+      return; // Already reconnecting
+    }
+
+    // Clear any existing reconnect timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+
+    dispatch({ type: 'RECONNECT_REQUESTED' });
+
+    try {
+      // First disconnect cleanly
+      await handleDisconnect();
+
+      // Wait for disconnect to complete before reconnecting
+      reconnectTimeoutRef.current = setTimeout(async () => {
+        try {
+          await handleConnect();
+        } catch (err) {
+          console.error('Reconnection failed:', err);
+          dispatch({ type: 'CONNECT_FAILED', error: 'Reconnection failed' });
+        }
+      }, 1000);
+    } catch (err) {
+      console.error('Error during reconnection process:', err);
+      dispatch({ type: 'CONNECT_FAILED', error: 'Reconnection process failed' });
+    }
+  }, [connectionStateMachine.status, handleDisconnect, handleConnect]);
 
   // Generate cryptographically secure viewer ID
   const generateViewerId = () => {
