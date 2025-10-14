@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import HostView from './components/HostView';
 import ViewerView from './components/ViewerView';
 import Chat from './components/Chat';
@@ -12,6 +12,31 @@ function App() {
   const [showChat, setShowChat] = useState(false);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const { config, loading: configLoading, error: configError } = useApi();
+
+  // Generate static random values for background elements to prevent infinite re-renders
+  const backgroundElements = useMemo(() => {
+    const stars = Array.from({ length: 50 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      delay: Math.random() * 3,
+      duration: 2 + Math.random() * 2,
+    }));
+
+    const gridLines = Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      top: i * 8,
+      delay: i * 0.1,
+    }));
+
+    const gridColumns = Array.from({ length: 15 }, (_, i) => ({
+      id: i,
+      left: i * 8,
+      delay: i * 0.2,
+    }));
+
+    return { stars, gridLines, gridColumns };
+  }, []);
 
   // Check for room parameter in URL on mount
   useEffect(() => {
@@ -103,15 +128,15 @@ function App() {
         <div className='absolute inset-0 bg-gradient-to-b from-purple-900 via-purple-800 to-indigo-900'>
           {/* Animated stars */}
           <div className='absolute inset-0'>
-            {[...Array(50)].map((_, i) => (
+            {backgroundElements.stars.map((star) => (
               <div
-                key={i}
+                key={star.id}
                 className='absolute w-1 h-1 bg-white rounded-full animate-pulse'
                 style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  animationDelay: `${Math.random() * 3}s`,
-                  animationDuration: `${2 + Math.random() * 2}s`,
+                  left: `${star.left}%`,
+                  top: `${star.top}%`,
+                  animationDelay: `${star.delay}s`,
+                  animationDuration: `${star.duration}s`,
                 }}
               />
             ))}
@@ -137,24 +162,24 @@ function App() {
         {/* Animated electric grid plane */}
         <div className='absolute bottom-0 left-0 right-0 h-32 opacity-40'>
           <div className='relative w-full h-full'>
-            {[...Array(20)].map((_, i) => (
+            {backgroundElements.gridLines.map((line) => (
               <div
-                key={i}
+                key={line.id}
                 className='absolute w-full h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent animate-pulse'
                 style={{
-                  top: `${i * 8}px`,
-                  animationDelay: `${i * 0.1}s`,
+                  top: `${line.top}px`,
+                  animationDelay: `${line.delay}s`,
                   animationDuration: '3s',
                 }}
               />
             ))}
-            {[...Array(15)].map((_, i) => (
+            {backgroundElements.gridColumns.map((column) => (
               <div
-                key={i}
+                key={column.id}
                 className='absolute h-full w-px bg-gradient-to-b from-transparent via-purple-400 to-transparent animate-pulse'
                 style={{
-                  left: `${i * 8}%`,
-                  animationDelay: `${i * 0.2}s`,
+                  left: `${column.left}%`,
+                  animationDelay: `${column.delay}s`,
                   animationDuration: '4s',
                 }}
               />
