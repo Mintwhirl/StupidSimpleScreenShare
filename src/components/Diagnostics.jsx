@@ -7,6 +7,17 @@ function Diagnostics({ roomId, role }) {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(5000);
 
+  // Detect browser capabilities
+  const detectBrowserCapabilities = () => {
+    const capabilities = {
+      userAgent: navigator.userAgent,
+      platform: navigator.platform,
+      webrtcSupport: !!(window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection),
+      screenShareSupport: !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia),
+    };
+    return capabilities;
+  };
+
   // Fetch diagnostics data
   const fetchDiagnostics = useCallback(async () => {
     try {
@@ -19,8 +30,21 @@ function Diagnostics({ roomId, role }) {
         throw new Error(`Failed to fetch diagnostics: ${response.status}`);
       }
 
-      const data = await response.json();
-      setDiagnostics(data);
+      const serverData = await response.json();
+
+      // Combine server data with client-side browser capabilities
+      const browserCapabilities = detectBrowserCapabilities();
+
+      const combinedData = {
+        ...serverData,
+        connectionStatus: serverData.room?.status || 'unknown',
+        role: role,
+        roomId: roomId,
+        browser: browserCapabilities,
+        timestamp: Date.now(),
+      };
+
+      setDiagnostics(combinedData);
     } catch (err) {
       console.error('Error fetching diagnostics:', err);
       setError(err.message);

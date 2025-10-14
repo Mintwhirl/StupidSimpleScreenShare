@@ -22,8 +22,12 @@ function AppHeader({ currentView, roomId, showChat, showDiagnostics, onToggleCha
                   className={`px-3 py-1 text-sm rounded transition-all ${
                     showChat
                       ? 'bg-blue-600 text-white shadow-lg shadow-blue-500 shadow-opacity-50'
-                      : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
+                      : 'bg-white bg-opacity-20 text-gray-800 hover:bg-opacity-30'
                   }`}
+                  style={{
+                    color: showChat ? 'white' : '#1f2937',
+                    backgroundColor: showChat ? '#2563eb' : 'rgba(255, 255, 255, 0.2)',
+                  }}
                 >
                   Chat
                 </button>
@@ -32,14 +36,22 @@ function AppHeader({ currentView, roomId, showChat, showDiagnostics, onToggleCha
                   className={`px-3 py-1 text-sm rounded transition-all ${
                     showDiagnostics
                       ? 'bg-green-600 text-white shadow-lg shadow-green-500 shadow-opacity-50'
-                      : 'bg-white bg-opacity-20 text-white hover:bg-opacity-30'
+                      : 'bg-white bg-opacity-20 text-gray-800 hover:bg-opacity-30'
                   }`}
+                  style={{
+                    color: showDiagnostics ? 'white' : '#1f2937',
+                    backgroundColor: showDiagnostics ? '#16a34a' : 'rgba(255, 255, 255, 0.2)',
+                  }}
                 >
                   Diagnostics
                 </button>
                 <button
                   onClick={onGoHome}
-                  className='px-3 py-1 text-sm bg-white bg-opacity-20 text-white rounded hover:bg-opacity-30 transition-all'
+                  className='px-3 py-1 text-sm bg-white bg-opacity-20 text-gray-800 rounded hover:bg-opacity-30 transition-all'
+                  style={{
+                    color: '#1f2937',
+                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                  }}
                 >
                   Home
                 </button>
