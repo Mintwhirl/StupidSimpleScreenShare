@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useChat } from '../hooks/useChat';
 
-function Chat({ roomId, role, viewerId }) {
+function Chat({ roomId, role, viewerId, senderSecret }) {
   const [message, setMessage] = useState('');
   const [sender, setSender] = useState(viewerId || role);
   const [isTyping, setIsTyping] = useState(false);
@@ -9,7 +9,7 @@ function Chat({ roomId, role, viewerId }) {
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  const { messages, sendMessage, loading, error, isConnected } = useChat(roomId, role, sender);
+  const { messages, sendMessage, loading, error, isConnected } = useChat(roomId, role, sender, senderSecret);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {

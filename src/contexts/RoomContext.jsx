@@ -14,6 +14,7 @@ export const RoomProvider = ({ children }) => {
   const [roomId, setRoomId] = useState('');
   const [viewerId, setViewerId] = useState('');
   const [role, setRole] = useState('viewer'); // 'host' or 'viewer'
+  const [senderSecret, setSenderSecret] = useState(null); // Secret for chat authentication
 
   const updateRoomId = useCallback((newRoomId) => {
     setRoomId(newRoomId);
@@ -27,10 +28,15 @@ export const RoomProvider = ({ children }) => {
     setRole(newRole);
   }, []);
 
+  const updateSenderSecret = useCallback((newSecret) => {
+    setSenderSecret(newSecret);
+  }, []);
+
   const resetRoom = useCallback(() => {
     setRoomId('');
     setViewerId('');
     setRole('viewer');
+    setSenderSecret(null);
   }, []);
 
   const value = {
@@ -38,11 +44,13 @@ export const RoomProvider = ({ children }) => {
     roomId,
     viewerId,
     role,
+    senderSecret,
 
     // Actions
     updateRoomId,
     updateViewerId,
     updateRole,
+    updateSenderSecret,
     resetRoom,
   };
 

@@ -48,11 +48,24 @@ async function handleRegisterSender(req, res) {
     const clientId = getClientIdentifier(req);
     const senderKey = `room:${roomId}:sender:${senderId.trim()}`;
 
-    // Register the sender ID for this client
-    await redis.set(senderKey, clientId);
+    // Generate a unique secret for this sender
+    const senderSecret = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+    // Store both client ID and secret
+    const senderData = {
+      clientId,
+      secret: senderSecret,
+      registeredAt: Date.now(),
+    };
+
+    await redis.set(senderKey, JSON.stringify(senderData));
     await redis.expire(senderKey, TTL_ROOM);
 
-    return res.json({ ok: true, message: 'Sender ID registered successfully' });
+    return res.json({
+      ok: true,
+      message: 'Sender ID registered successfully',
+      secret: senderSecret, // Return secret to client
+    });
   } catch (error) {
     console.error('Error registering sender:', error);
     return sendError(res, 500, 'Failed to register sender ID', error);

@@ -6,11 +6,12 @@ import { validateRoomId, validateViewerId } from '../utils/validation';
 import { CONNECTION_STATES, UI_TEXT, STATUS_COLORS, ERROR_MESSAGES, API_ENDPOINTS } from '../constants';
 
 function ViewerView({ config, onGoHome }) {
-  const { roomId, viewerId, updateViewerId } = useRoomContext();
+  const { roomId, viewerId, updateViewerId, updateSenderSecret } = useRoomContext();
   const [error, setError] = useState(null);
   // Remove redundant state - derive everything from connectionState
   const [_roomIdError, setRoomIdError] = useState(null);
   const [viewerIdError, setViewerIdError] = useState(null);
+  // Remove local senderSecret state - use context instead
 
   const remoteVideoRef = useRef(null);
 
@@ -104,11 +105,16 @@ function ViewerView({ config, onGoHome }) {
       // Register sender ID for chat if viewerId is provided
       if (viewerId && viewerId.trim()) {
         try {
-          await fetch(API_ENDPOINTS.REGISTER_SENDER, {
+          const response = await fetch(API_ENDPOINTS.REGISTER_SENDER, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ roomId, senderId: viewerId.trim() }),
           });
+
+          if (response.ok) {
+            const data = await response.json();
+            updateSenderSecret(data.secret); // Store the secret in context
+          }
         } catch (err) {
           console.warn('Failed to register sender ID:', err);
         }
@@ -119,7 +125,7 @@ function ViewerView({ config, onGoHome }) {
       console.error('Error connecting to host:', err);
       setError(ERROR_MESSAGES.CONNECTION_FAILED);
     }
-  }, [roomId, connectToHost, validateRoom, viewerId, validateRoomIdInput, validateViewerIdInput]);
+  }, [roomId, connectToHost, validateRoom, viewerId, validateRoomIdInput, validateViewerIdInput, updateSenderSecret]);
 
   // Removed auto-connect logic - user must manually click "Connect to Host"
 

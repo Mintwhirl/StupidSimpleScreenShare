@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useApi } from './useApi';
 
-export function useChat(roomId, role, sender) {
+export function useChat(roomId, role, sender, secret = null) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -89,7 +89,7 @@ export function useChat(roomId, role, sender) {
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [roomId, sender, startPolling, stopPolling]);
+  }, [roomId, sender, secret, startPolling, stopPolling]);
 
   // Send a message
   const sendMessage = useCallback(
@@ -102,7 +102,7 @@ export function useChat(roomId, role, sender) {
         setLoading(true);
         setError(null);
 
-        const data = await apiSendMessage(roomId, message, messageSender);
+        const data = await apiSendMessage(roomId, message, messageSender, secret);
 
         if (data.ok) {
           // Add the sent message to the local state immediately

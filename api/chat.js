@@ -40,7 +40,7 @@ async function handleChat(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { message, sender } = req.body || {};
+    const { message, sender, secret } = req.body || {};
 
     const messageValidation = validateMessage(message);
     if (!messageValidation.valid) {
@@ -55,10 +55,19 @@ async function handleChat(req, res) {
     // Validate sender is authorized for this room
     const clientId = getClientIdentifier(req);
     const senderKey = `room:${roomId}:sender:${sender.trim()}`;
-    const authorizedSender = await redis.get(senderKey);
+    const authorizedSenderData = await redis.get(senderKey);
 
-    if (!authorizedSender || authorizedSender !== clientId) {
-      return sendError(res, 403, 'Unauthorized: Invalid sender ID for this room');
+    if (!authorizedSenderData) {
+      return sendError(res, 403, 'Unauthorized: Sender not registered for this room');
+    }
+
+    try {
+      const senderData = JSON.parse(authorizedSenderData);
+      if (senderData.clientId !== clientId || senderData.secret !== secret) {
+        return sendError(res, 403, 'Unauthorized: Invalid sender credentials');
+      }
+    } catch (parseError) {
+      return sendError(res, 403, 'Unauthorized: Invalid sender data');
     }
 
     // Rate limiting: 60 messages per minute per room+sender combo

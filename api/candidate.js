@@ -1,44 +1,11 @@
-import {
-  createRedisClient,
-  setCorsHeaders,
-  asyncHandler,
-  sendError,
-  validateRoomId,
-  validateRole,
-  validateICECandidate,
-  TTL_ROOM,
-} from './_utils.js';
+import { createCompleteHandler } from './_middleware.js';
+import { sendError, validateRoomId, validateRole, validateICECandidate, TTL_ROOM } from './_utils.js';
 
-async function handleCandidate(req, res) {
-  const redis = createRedisClient();
-  setCorsHeaders(res);
-
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-
+async function handleCandidate(req, res, { redis }) {
   if (req.method === 'POST') {
     const { roomId, role, viewerId, candidate } = req.body || {};
 
-    const roomValidation = validateRoomId(roomId);
-    if (!roomValidation.valid) {
-      return sendError(res, 400, roomValidation.error);
-    }
-
-    const roleValidation = validateRole(role);
-    if (!roleValidation.valid) {
-      return sendError(res, 400, roleValidation.error);
-    }
-
-    const candidateValidation = validateICECandidate(candidate);
-    if (!candidateValidation.valid) {
-      return sendError(res, 400, candidateValidation.error);
-    }
-
-    const roomExists = await redis.get(`room:${roomId}:meta`);
-    if (!roomExists) {
-      return sendError(res, 410, 'Room expired or not found');
-    }
+    // Validation is now handled by middleware
 
     // Use viewerId for viewers to distinguish between multiple viewers
     const key =
@@ -95,4 +62,12 @@ async function handleCandidate(req, res) {
   return sendError(res, 405, 'Method not allowed');
 }
 
-export default asyncHandler(handleCandidate);
+export default createCompleteHandler(handleCandidate, {
+  requireRoom: true,
+  allowedMethods: ['GET', 'POST', 'OPTIONS'],
+  validators: {
+    roomId: validateRoomId,
+    role: validateRole,
+    candidate: validateICECandidate,
+  },
+});

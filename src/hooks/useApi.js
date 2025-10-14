@@ -137,7 +137,7 @@ export function useApi() {
 
   // Send chat message
   const sendChatMessage = useCallback(
-    async (roomId, message, sender) => {
+    async (roomId, message, sender, secret = null) => {
       try {
         // Check if we're in development or test mode
         const isDevelopment =
@@ -171,6 +171,7 @@ export function useApi() {
             roomId,
             message,
             sender,
+            ...(secret && { secret }),
           }),
         });
 

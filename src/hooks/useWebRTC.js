@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getIceServers } from '../config/turn.js';
+import logger from '../utils/logger';
 
 export function useWebRTC(roomId, role, config, _viewerId = null) {
   // State
@@ -53,7 +54,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           throw new Error(`Failed to send ICE candidate: ${response.status}`);
         }
       } catch (err) {
-        console.error('Error sending ICE candidate:', err);
+        logger.error('Error sending ICE candidate:', err);
         setError(`Failed to send ICE candidate: ${err.message}`);
       }
     },
@@ -75,7 +76,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
 
     // Handle connection state changes
     pc.onconnectionstatechange = () => {
-      console.log('Connection state changed:', pc.connectionState);
+      logger.webrtc('Connection state changed', { state: pc.connectionState });
       setConnectionState(pc.connectionState);
 
       // Clear polling intervals when connected or failed
@@ -97,12 +98,12 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
 
     // Handle ICE connection state changes
     pc.oniceconnectionstatechange = () => {
-      console.log('ICE connection state changed:', pc.iceConnectionState);
+      logger.webrtc('ICE connection state changed', { state: pc.iceConnectionState });
     };
 
     // Handle remote stream
     pc.ontrack = (event) => {
-      console.log('Received remote stream:', event.streams[0]);
+      logger.webrtc('Received remote stream', { stream: event.streams[0] });
       setRemoteStream(event.streams[0]);
     };
 
@@ -112,11 +113,11 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       dataChannelRef.current = channel;
 
       channel.onopen = () => {
-        console.log('Data channel opened');
+        logger.webrtc('Data channel opened');
       };
 
       channel.onmessage = (event) => {
-        console.log('Received data channel message:', event.data);
+        logger.webrtc('Received data channel message', { data: event.data });
       };
     };
 
@@ -145,7 +146,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           throw new Error(`Failed to send offer: ${response.status}`);
         }
       } catch (err) {
-        console.error('Error sending offer:', err);
+        logger.error('Error sending offer:', err);
         setError(`Failed to send offer: ${err.message}`);
       }
     },
@@ -174,7 +175,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           throw new Error(`Failed to send answer: ${response.status}`);
         }
       } catch (err) {
-        console.error('Error sending answer:', err);
+        logger.error('Error sending answer:', err);
         setError(`Failed to send answer: ${err.message}`);
       }
     },
@@ -240,7 +241,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           }
         } else {
           // Unexpected error
-          console.error('Unexpected error polling for offers:', response.status);
+          logger.error('Unexpected error polling for offers:', response.status);
           clearInterval(offerIntervalRef.current);
           offerIntervalRef.current = null;
           if (isMountedRef.current) {
@@ -249,7 +250,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           }
         }
       } catch (err) {
-        console.error('Error polling for offers:', err);
+        logger.error('Error polling for offers:', err);
         clearInterval(offerIntervalRef.current);
         offerIntervalRef.current = null;
         if (isMountedRef.current) {
@@ -312,7 +313,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           }
         } else {
           // Unexpected error
-          console.error('Unexpected error polling for answers:', response.status);
+          logger.error('Unexpected error polling for answers:', response.status);
           clearInterval(answerIntervalRef.current);
           answerIntervalRef.current = null;
           if (isMountedRef.current) {
@@ -321,7 +322,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           }
         }
       } catch (err) {
-        console.error('Error polling for answers:', err);
+        logger.error('Error polling for answers:', err);
         clearInterval(answerIntervalRef.current);
         answerIntervalRef.current = null;
         if (isMountedRef.current) {
@@ -351,7 +352,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         if (pollCount > maxPolls) {
           clearInterval(candidateIntervalRef.current);
           candidateIntervalRef.current = null;
-          console.warn('ICE candidate polling timeout - connection may be stuck');
+          logger.warn('ICE candidate polling timeout - connection may be stuck');
           return;
         }
 
@@ -368,17 +369,17 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
                 try {
                   await pc.addIceCandidate(candidate);
                 } catch (candidateErr) {
-                  console.warn('Failed to add ICE candidate:', candidateErr);
+                  logger.warn('Failed to add ICE candidate:', candidateErr);
                 }
               }
             }
           }
         } else if (response.status !== 404) {
           // 404 is expected when no candidates, but other errors are concerning
-          console.error('Error polling for ICE candidates:', response.status);
+          logger.error('Error polling for ICE candidates:', response.status);
         }
       } catch (err) {
-        console.error('Error polling for ICE candidates:', err);
+        logger.error('Error polling for ICE candidates:', err);
       }
     }, 1000);
   }, [roomId, role, _viewerId]); // Fixed: Added _viewerId to dependency array
@@ -427,7 +428,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
 
       return stream;
     } catch (err) {
-      console.error('Error starting screen share:', err);
+      logger.error('Error starting screen share:', err);
       setError(`Failed to start screen sharing: ${err.message}`);
       setConnectionState('disconnected');
       throw err;
@@ -448,7 +449,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       // Start polling for offers (ICE candidate polling will start when peer connection is created)
       startOfferPolling();
     } catch (err) {
-      console.error('Error connecting to host:', err);
+      logger.error('Error connecting to host:', err);
       setError(`Failed to connect to host: ${err.message}`);
       setConnectionState('disconnected');
       throw err;
@@ -489,7 +490,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       setConnectionState('disconnected');
       setRemoteStream(null);
     } catch (err) {
-      console.error('Error stopping screen share:', err);
+      logger.error('Error stopping screen share:', err);
       setError(`Failed to stop screen sharing: ${err.message}`);
     }
   }, [localStream]);
