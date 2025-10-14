@@ -4,13 +4,7 @@ module.exports = {
     es2021: true,
     node: true,
   },
-  ignorePatterns: [
-    'dist/',
-    'coverage/',
-    'node_modules/',
-    '*.min.js',
-    'build/',
-  ],
+  ignorePatterns: ['dist/', 'coverage/', 'node_modules/', '*.min.js', 'build/'],
   extends: ['airbnb-base', 'plugin:react/recommended', 'plugin:react-hooks/recommended'],
   parserOptions: {
     ecmaVersion: 'latest',
@@ -114,7 +108,7 @@ module.exports = {
     // Object curly spacing (let Prettier handle this)
     'object-curly-spacing': 'off',
     'object-curly-newline': 'off',
-    
+
     // Array bracket spacing (let Prettier handle this)
     'array-bracket-spacing': 'off',
 
@@ -258,7 +252,7 @@ module.exports = {
       rules: {
         // Allow import/prefer-default-export for hooks
         'import/prefer-default-export': 'off',
-        
+
         // Allow longer lines in React components
         'max-len': [
           'error',
@@ -275,7 +269,7 @@ module.exports = {
         'import/no-unresolved': 'off', // Vite handles module resolution
         'import/order': 'off', // Allow flexible import ordering
         'no-use-before-define': 'off', // Allow function hoisting
-        'indent': 'off', // Let Prettier handle indentation
+        indent: 'off', // Let Prettier handle indentation
         'arrow-body-style': 'off', // Allow both arrow styles
         'object-shorthand': 'off', // Allow both shorthand and longhand
         'no-else-return': 'off', // Allow else after return

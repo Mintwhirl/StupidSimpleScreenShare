@@ -18,21 +18,21 @@ export function useChat(roomId, role, sender) {
 
     try {
       const data = await apiGetMessages(roomId, lastMessageTime);
-      
+
       if (data.messages && data.messages.length > 0) {
-        setMessages(prevMessages => {
+        setMessages((prevMessages) => {
           // Filter out duplicates and merge with existing messages
-          const existingIds = new Set(prevMessages.map(msg => msg.id));
-          const newMessages = data.messages.filter(msg => !existingIds.has(msg.id));
-          
+          const existingIds = new Set(prevMessages.map((msg) => msg.id));
+          const newMessages = data.messages.filter((msg) => !existingIds.has(msg.id));
+
           if (newMessages.length > 0) {
             // Update last message time
-            const latestTime = Math.max(...newMessages.map(msg => msg.timestamp));
+            const latestTime = Math.max(...newMessages.map((msg) => msg.timestamp));
             setLastMessageTime(latestTime);
-            
+
             return [...prevMessages, ...newMessages].sort((a, b) => a.timestamp - b.timestamp);
           }
-          
+
           return prevMessages;
         });
       }
@@ -40,12 +40,12 @@ export function useChat(roomId, role, sender) {
       console.error('Error polling messages:', err);
       setError('Failed to fetch messages');
       setIsConnected(false);
-      
+
       // Attempt to reconnect
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
-      
+
       reconnectTimeoutRef.current = setTimeout(() => {
         setIsConnected(true);
         setError(null);
@@ -92,41 +92,44 @@ export function useChat(roomId, role, sender) {
   }, [roomId, sender, startPolling, stopPolling]);
 
   // Send a message
-  const sendMessage = useCallback(async (message, messageSender = sender) => {
-    if (!roomId || !messageSender || !message.trim()) {
-      throw new Error('Room ID, sender, and message are required');
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      const data = await apiSendMessage(roomId, message, messageSender);
-      
-      if (data.ok) {
-        // Add the sent message to the local state immediately
-        const newMessage = {
-          id: data.message.id,
-          sender: messageSender,
-          message: message,
-          timestamp: data.message.timestamp,
-        };
-        
-        setMessages(prevMessages => [...prevMessages, newMessage].sort((a, b) => a.timestamp - b.timestamp));
-        setLastMessageTime(data.message.timestamp);
-        
-        return data.message;
-      } else {
-        throw new Error('Failed to send message');
+  const sendMessage = useCallback(
+    async (message, messageSender = sender) => {
+      if (!roomId || !messageSender || !message.trim()) {
+        throw new Error('Room ID, sender, and message are required');
       }
-    } catch (err) {
-      console.error('Error sending message:', err);
-      setError(`Failed to send message: ${err.message}`);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [roomId, sender, apiSendMessage]);
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const data = await apiSendMessage(roomId, message, messageSender);
+
+        if (data.ok) {
+          // Add the sent message to the local state immediately
+          const newMessage = {
+            id: data.message.id,
+            sender: messageSender,
+            message: message,
+            timestamp: data.message.timestamp,
+          };
+
+          setMessages((prevMessages) => [...prevMessages, newMessage].sort((a, b) => a.timestamp - b.timestamp));
+          setLastMessageTime(data.message.timestamp);
+
+          return data.message;
+        } else {
+          throw new Error('Failed to send message');
+        }
+      } catch (err) {
+        console.error('Error sending message:', err);
+        setError(`Failed to send message: ${err.message}`);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [roomId, sender, apiSendMessage]
+  );
 
   // Load initial messages
   const loadInitialMessages = useCallback(async () => {
@@ -137,12 +140,12 @@ export function useChat(roomId, role, sender) {
       setError(null);
 
       const data = await apiGetMessages(roomId, 0);
-      
+
       if (data.messages) {
         setMessages(data.messages.sort((a, b) => a.timestamp - b.timestamp));
-        
+
         if (data.messages.length > 0) {
-          const latestTime = Math.max(...data.messages.map(msg => msg.timestamp));
+          const latestTime = Math.max(...data.messages.map((msg) => msg.timestamp));
           setLastMessageTime(latestTime);
         }
       }
@@ -174,9 +177,12 @@ export function useChat(roomId, role, sender) {
   }, [messages]);
 
   // Get messages by sender
-  const getMessagesBySender = useCallback((senderName) => {
-    return messages.filter(msg => msg.sender === senderName);
-  }, [messages]);
+  const getMessagesBySender = useCallback(
+    (senderName) => {
+      return messages.filter((msg) => msg.sender === senderName);
+    },
+    [messages]
+  );
 
   // Get latest message
   const getLatestMessage = useCallback(() => {
@@ -184,28 +190,34 @@ export function useChat(roomId, role, sender) {
   }, [messages]);
 
   // Check if sender has sent messages
-  const hasSenderSentMessages = useCallback((senderName) => {
-    return messages.some(msg => msg.sender === senderName);
-  }, [messages]);
+  const hasSenderSentMessages = useCallback(
+    (senderName) => {
+      return messages.some((msg) => msg.sender === senderName);
+    },
+    [messages]
+  );
 
   // Get unique senders
   const getUniqueSenders = useCallback(() => {
-    const senders = new Set(messages.map(msg => msg.sender));
+    const senders = new Set(messages.map((msg) => msg.sender));
     return Array.from(senders);
   }, [messages]);
 
   // Format message for display
-  const formatMessage = useCallback((message) => {
-    return {
-      ...message,
-      formattedTime: new Date(message.timestamp).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-      formattedDate: new Date(message.timestamp).toLocaleDateString(),
-      isFromCurrentUser: message.sender === sender,
-    };
-  }, [sender]);
+  const formatMessage = useCallback(
+    (message) => {
+      return {
+        ...message,
+        formattedTime: new Date(message.timestamp).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+        formattedDate: new Date(message.timestamp).toLocaleDateString(),
+        isFromCurrentUser: message.sender === sender,
+      };
+    },
+    [sender]
+  );
 
   // Get formatted messages
   const getFormattedMessages = useCallback(() => {
@@ -229,12 +241,12 @@ export function useChat(roomId, role, sender) {
     error,
     isConnected,
     lastMessageTime,
-    
+
     // Actions
     sendMessage,
     clearMessages,
     loadInitialMessages,
-    
+
     // Getters
     getMessageCount,
     getMessagesBySender,

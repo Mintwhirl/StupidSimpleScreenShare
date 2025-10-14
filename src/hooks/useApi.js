@@ -12,13 +12,13 @@ export function useApi() {
       setError(null);
 
       const response = await fetch('/api/config');
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch config: ${response.status}`);
       }
 
       const data = await response.json();
-      
+
       if (data.success && data.config) {
         setConfig(data.config);
       } else {
@@ -62,38 +62,41 @@ export function useApi() {
   }, [config]);
 
   // Send chat message
-  const sendChatMessage = useCallback(async (roomId, message, sender) => {
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
-        },
-        body: JSON.stringify({
-          roomId,
-          message,
-          sender,
-        }),
-      });
+  const sendChatMessage = useCallback(
+    async (roomId, message, sender) => {
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
+          },
+          body: JSON.stringify({
+            roomId,
+            message,
+            sender,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`Failed to send message: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`Failed to send message: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (err) {
+        console.error('Error sending chat message:', err);
+        throw err;
       }
-
-      const data = await response.json();
-      return data;
-    } catch (err) {
-      console.error('Error sending chat message:', err);
-      throw err;
-    }
-  }, [config]);
+    },
+    [config]
+  );
 
   // Get chat messages
   const getChatMessages = useCallback(async (roomId, since = 0) => {
     try {
       const response = await fetch(`/api/chat?roomId=${roomId}&since=${since}`);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to get messages: ${response.status}`);
       }
@@ -107,37 +110,40 @@ export function useApi() {
   }, []);
 
   // Send WebRTC offer
-  const sendOffer = useCallback(async (roomId, offer) => {
-    try {
-      const response = await fetch('/api/offer', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
-        },
-        body: JSON.stringify({
-          roomId,
-          desc: offer,
-        }),
-      });
+  const sendOffer = useCallback(
+    async (roomId, offer) => {
+      try {
+        const response = await fetch('/api/offer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
+          },
+          body: JSON.stringify({
+            roomId,
+            desc: offer,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`Failed to send offer: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`Failed to send offer: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (err) {
+        console.error('Error sending offer:', err);
+        throw err;
       }
-
-      const data = await response.json();
-      return data;
-    } catch (err) {
-      console.error('Error sending offer:', err);
-      throw err;
-    }
-  }, [config]);
+    },
+    [config]
+  );
 
   // Get WebRTC offer
   const getOffer = useCallback(async (roomId) => {
     try {
       const response = await fetch(`/api/offer?roomId=${roomId}`);
-      
+
       if (!response.ok) {
         if (response.status === 404) {
           return null; // No offer available yet
@@ -154,37 +160,40 @@ export function useApi() {
   }, []);
 
   // Send WebRTC answer
-  const sendAnswer = useCallback(async (roomId, answer) => {
-    try {
-      const response = await fetch('/api/answer', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
-        },
-        body: JSON.stringify({
-          roomId,
-          desc: answer,
-        }),
-      });
+  const sendAnswer = useCallback(
+    async (roomId, answer) => {
+      try {
+        const response = await fetch('/api/answer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
+          },
+          body: JSON.stringify({
+            roomId,
+            desc: answer,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`Failed to send answer: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`Failed to send answer: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (err) {
+        console.error('Error sending answer:', err);
+        throw err;
       }
-
-      const data = await response.json();
-      return data;
-    } catch (err) {
-      console.error('Error sending answer:', err);
-      throw err;
-    }
-  }, [config]);
+    },
+    [config]
+  );
 
   // Get WebRTC answer
   const getAnswer = useCallback(async (roomId) => {
     try {
       const response = await fetch(`/api/answer?roomId=${roomId}`);
-      
+
       if (!response.ok) {
         if (response.status === 404) {
           return null; // No answer available yet
@@ -201,38 +210,41 @@ export function useApi() {
   }, []);
 
   // Send ICE candidate
-  const sendICECandidate = useCallback(async (roomId, role, candidate) => {
-    try {
-      const response = await fetch('/api/candidate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
-        },
-        body: JSON.stringify({
-          roomId,
-          role,
-          candidate,
-        }),
-      });
+  const sendICECandidate = useCallback(
+    async (roomId, role, candidate) => {
+      try {
+        const response = await fetch('/api/candidate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
+          },
+          body: JSON.stringify({
+            roomId,
+            role,
+            candidate,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`Failed to send ICE candidate: ${response.status}`);
+        if (!response.ok) {
+          throw new Error(`Failed to send ICE candidate: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (err) {
+        console.error('Error sending ICE candidate:', err);
+        throw err;
       }
-
-      const data = await response.json();
-      return data;
-    } catch (err) {
-      console.error('Error sending ICE candidate:', err);
-      throw err;
-    }
-  }, [config]);
+    },
+    [config]
+  );
 
   // Get ICE candidates
   const getICECandidates = useCallback(async (roomId, role) => {
     try {
       const response = await fetch(`/api/candidate?roomId=${roomId}&role=${role}`);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to get ICE candidates: ${response.status}`);
       }
@@ -249,7 +261,7 @@ export function useApi() {
   const getDiagnostics = useCallback(async (roomId, role) => {
     try {
       const response = await fetch(`/api/diagnostics?roomId=${roomId}&role=${role}`);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to get diagnostics: ${response.status}`);
       }
@@ -267,7 +279,7 @@ export function useApi() {
     config,
     loading,
     error,
-    
+
     // Actions
     fetchConfig,
     createRoom,

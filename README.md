@@ -5,6 +5,7 @@ A production-ready browser-based screen sharing application built with React, We
 ## 🚀 Features
 
 ### Core Functionality
+
 - **Browser-only P2P screen sharing** - No plugins, no downloads, no accounts required
 - **WebRTC with STUN/TURN support** - Direct peer-to-peer connections with relay fallback
 - **Ephemeral rooms** - Automatically expire after 30 minutes for privacy
@@ -12,6 +13,7 @@ A production-ready browser-based screen sharing application built with React, We
 - **Modern React architecture** - Component-based, hook-driven, maintainable codebase
 
 ### Advanced Features
+
 - **Screen recording** - Record your screen share with MediaRecorder API (VP9/VP8/WebM/MP4)
 - **Multi-viewer support** - Multiple viewers can watch a single host simultaneously
 - **Live viewer count** - See how many people are watching in real-time
@@ -24,6 +26,7 @@ A production-ready browser-based screen sharing application built with React, We
 - **URL-based reconnection** - Auto-reconnect after page refresh
 
 ### Security & Quality
+
 - **Comprehensive input validation** - All user inputs sanitized and validated
 - **Enterprise-grade error handling** - Graceful failures with user-friendly messages
 - **Security hardening** - XSS prevention, length limits, cryptographically secure IDs
@@ -52,6 +55,7 @@ A production-ready browser-based screen sharing application built with React, We
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 18+ and npm
 - Vercel account (free tier works)
 - Upstash Redis database (free tier works)
@@ -59,6 +63,7 @@ A production-ready browser-based screen sharing application built with React, We
 ### Local Development
 
 1. **Clone and install dependencies:**
+
    ```bash
    git clone <your-repo>
    cd stupid-simple-screen-share
@@ -66,6 +71,7 @@ A production-ready browser-based screen sharing application built with React, We
    ```
 
 2. **Set up environment variables:**
+
    ```bash
    # Create .env file
    UPSTASH_REDIS_REST_URL=your_redis_url
@@ -74,11 +80,13 @@ A production-ready browser-based screen sharing application built with React, We
    ```
 
 3. **Run development server:**
+
    ```bash
    npm run dev
    ```
 
 4. **Run tests:**
+
    ```bash
    npm test              # Run all tests
    npm run test:watch    # Watch mode
@@ -95,6 +103,7 @@ A production-ready browser-based screen sharing application built with React, We
 ### Production Deployment
 
 #### Option A: Deploy Button (Easiest)
+
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/YourUsername/YourRepo)
 
 #### Option B: Manual Deployment
@@ -242,6 +251,7 @@ tests/
 **TL;DR: $0/month for personal use**
 
 All services used are free tier:
+
 - **Vercel**: 100 GB bandwidth/month (API only, video is P2P)
 - **Upstash**: 10k commands/day (you'll use ~50-100 per session)
 - **Video traffic**: Peer-to-peer (doesn't hit servers at all)
@@ -313,6 +323,7 @@ Want to use commercially? Contact for licensing.
 ## 🙏 Acknowledgments
 
 Built with:
+
 - **React 19** - Modern UI framework
 - **Vite** - Fast build tool
 - **WebRTC** - Real-time communication

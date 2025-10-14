@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  
+
   // Build configuration
   build: {
     outDir: 'dist',
@@ -15,7 +15,7 @@ export default defineConfig({
       },
     },
   },
-  
+
   // Development server configuration
   server: {
     port: 3000,
@@ -28,30 +28,30 @@ export default defineConfig({
       },
     },
   },
-  
+
   // Preview server configuration (for production builds)
   preview: {
     port: 3000,
     host: true,
   },
-  
+
   // Path resolution
   resolve: {
     alias: {
       '@': '/src',
     },
   },
-  
+
   // Environment variables
   define: {
     'process.env': {},
   },
-  
+
   // Optimize dependencies
   optimizeDeps: {
     include: ['react', 'react-dom'],
   },
-  
+
   // Test configuration
   test: {
     globals: true,

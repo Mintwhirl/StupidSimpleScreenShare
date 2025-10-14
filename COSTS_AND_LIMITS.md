@@ -11,6 +11,7 @@ For a few hours per month of personal use: **$0/month (100% free)**
 ### Vercel (Hosting)
 
 **Free Hobby Plan:**
+
 - 100 GB bandwidth/month
 - 100 GB-hours compute/month
 - Unlimited API calls
@@ -18,11 +19,13 @@ For a few hours per month of personal use: **$0/month (100% free)**
 - Analytics included
 
 **What this means:**
+
 - API calls use minimal bandwidth (~1KB each)
 - Your signaling traffic is TINY (only WebRTC negotiation, not video!)
 - Video goes peer-to-peer (doesn't count against Vercel bandwidth)
 
 **Your usage for "a few hours/month":**
+
 - Creating rooms: ~0.001 GB
 - Signaling (offer/answer/candidates): ~0.01 GB
 - **Total: < 0.02 GB/month out of 100 GB**
@@ -30,11 +33,13 @@ For a few hours per month of personal use: **$0/month (100% free)**
 ### Upstash Redis (Database)
 
 **Free Plan:**
+
 - 10,000 commands/day
 - 256 MB storage
 - 1 GB bandwidth/month
 
 **What you use:**
+
 - Room creation: 2 commands
 - Offer/answer: 2 commands each
 - ICE candidates: ~5-10 commands per session
@@ -42,6 +47,7 @@ For a few hours per month of personal use: **$0/month (100% free)**
 - Viewer heartbeat: 1 command every 15 seconds
 
 **Your usage for "a few hours/month":**
+
 - Let's say 5 hours/month, 2 sessions
 - ~200 commands/session
 - **Total: ~400 commands/month out of 300,000/month**
@@ -49,6 +55,7 @@ For a few hours per month of personal use: **$0/month (100% free)**
 ### Upstash Rate Limiting
 
 **Included with Redis:**
+
 - Uses your existing Redis instance
 - Minimal additional commands (~1 per API call)
 - No extra cost
@@ -60,12 +67,14 @@ For a few hours per month of personal use: **$0/month (100% free)**
 **Key Point:** WebRTC is peer-to-peer. Your video stream goes DIRECTLY from your browser to the viewer's browser.
 
 **What hits Vercel/Upstash:**
+
 - Creating room: tiny JSON (~0.1 KB)
 - WebRTC signaling (SDP offer/answer): ~2-5 KB each
 - ICE candidates: ~100 bytes each, maybe 20 of them
 - Chat messages: ~500 bytes each
 
 **What does NOT hit servers:**
+
 - Video stream (goes P2P via WebRTC)
 - Screen content (goes P2P)
 - Recording (stored locally on your device)
@@ -75,30 +84,39 @@ For a few hours per month of personal use: **$0/month (100% free)**
 ## Realistic Usage Examples
 
 ### Example 1: Light Personal Use
+
 **Scenario:** 2 screen shares/month, 1 hour each, 1 viewer
+
 - Vercel bandwidth: < 0.01 GB
 - Redis commands: ~300
 - **Cost: $0**
 
 ### Example 2: Heavy Personal Use
+
 **Scenario:** 10 screen shares/month, 2 hours each, 3 viewers
+
 - Vercel bandwidth: < 0.05 GB
 - Redis commands: ~2,000
 - **Cost: $0**
 
 ### Example 3: Small Team
+
 **Scenario:** 50 sessions/month, 30 min average, 5 viewers each
+
 - Vercel bandwidth: ~0.3 GB
 - Redis commands: ~8,000
 - **Cost: $0**
 
 ### Example 4: When You'd Pay
+
 **Scenario:** 500+ sessions/month, many users, constant usage
+
 - Vercel bandwidth: ~3 GB
 - Redis commands: ~80,000
 - **Cost: Still $0** (under limits)
 
 **You'd only pay if you exceed:**
+
 - 100 GB Vercel bandwidth (signaling only, not video)
 - 300,000 Redis commands/month (10k/day)
 
@@ -107,12 +125,16 @@ For a few hours per month of personal use: **$0/month (100% free)**
 ## What If I Hit Limits?
 
 ### Vercel Limits
+
 **If you somehow hit 100 GB/month of API traffic:**
+
 1. Pro plan: $20/month (1 TB bandwidth)
 2. But realistically, you'd need 50,000+ sessions/month to hit this
 
 ### Upstash Limits
+
 **If you hit 10,000 commands/day:**
+
 1. Pay-as-you-go: $0.20 per 100k commands
 2. Pro plan: $10/month for 100k commands/day
 3. But realistically, you'd need 200+ sessions/day to hit this
@@ -122,6 +144,7 @@ For a few hours per month of personal use: **$0/month (100% free)**
 ## Security & Liability
 
 ### Current Protection (with AUTH_SECRET)
+
 - Rate limiting (50 rooms/hour per IP)
 - Optional auth secret (prevents random room creation)
 - 30-minute room expiration (ephemeral data)
@@ -148,17 +171,21 @@ For a few hours per month of personal use: **$0/month (100% free)**
 ### What if someone finds it anyway?
 
 **With AUTH_SECRET set:**
+
 - They can view shared rooms (if they have the room link)
 - They CANNOT create new rooms (no auth secret)
 - They're rate-limited (2000 API calls/min max)
 
 **Worst case scenario:**
+
 - Someone spams API calls → Rate limit blocks them
 - They somehow get your auth secret → Change it in Vercel (1 minute)
 - High bandwidth usage → Vercel will email you, you can shut it down
 
 ### Liability
+
 **You are NOT liable for user behavior because:**
+
 1. No content storage (ephemeral, 30 min max)
 2. No user accounts (anonymous)
 3. Clear terms: "Personal use only"
@@ -168,6 +195,7 @@ For a few hours per month of personal use: **$0/month (100% free)**
 
 **Add to your Vercel deployment:**
 Create `/public/terms.txt`:
+
 ```
 This service is provided for personal, non-commercial use only.
 By using this service, you agree:
@@ -184,19 +212,23 @@ For questions: [your-email]
 ## Monitoring Your Usage
 
 ### Vercel Dashboard
+
 - https://vercel.com/dashboard
 - See bandwidth, function invocations, analytics
 - Get email alerts if approaching limits
 
 ### Upstash Console
+
 - https://console.upstash.com/
 - See command count, storage used
 - Monitor in real-time
 
 ### Set Up Alerts (Optional)
+
 Both platforms can email you at 80% of quota usage.
 
 ### Automated Monitoring
+
 - **GitHub Actions** monitor build and test status
 - **Pre-commit hooks** ensure code quality
 - **Automated security audits** check for vulnerabilities
