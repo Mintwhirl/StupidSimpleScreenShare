@@ -223,4 +223,4 @@ When reporting issues, include:
 ### Contact Information
 
 - GitHub Issues: [Repository Issues](https://github.com/Mintwhirl/StupidSimpleScreenShare/issues)
-- Check [WebRTC Flow Audit](WEBRTC_FLOW_AUDIT.md) for technical details
+- Check [API Documentation](API.md) for technical details

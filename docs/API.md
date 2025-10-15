@@ -2,7 +2,7 @@
 
 ## Overview
 
-RESTful API for WebRTC screen sharing with Redis-based signaling and chat functionality.
+RESTful API for **one-to-one** WebRTC screen sharing with Redis-based signaling and chat functionality.
 
 ## Base URL
 
@@ -171,7 +171,7 @@ All endpoints return consistent error responses:
 - **Room ID**: 24-character hex string
 - **Messages**: Max 500 characters, sender max 50 characters
 - **TTL**: All data expires after 1 hour
-- **Viewer ID**: Optional unique identifier for multiple viewers
+- **Viewer ID**: Unique identifier for the single viewer per room
 
 ## Security
 

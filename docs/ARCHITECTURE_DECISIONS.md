@@ -19,7 +19,7 @@
 
 **Custom Hooks Created**:
 
-- `useAppState.js` - Manages application state and navigation
+- `RoomContext.jsx` - Centralized state management (replaced useAppState)
 - `useAnalytics.js` - Centralizes analytics and monitoring calls
 - `useRoomManagement.js` - Handles room creation and joining logic
 
@@ -182,7 +182,7 @@ src/
 **Naming Conventions**:
 
 - Components: PascalCase (e.g., `HomeView.jsx`)
-- Hooks: camelCase with 'use' prefix (e.g., `useAppState.js`)
+- Hooks: camelCase with 'use' prefix (e.g., `useWebRTC.js`)
 - Utilities: camelCase (e.g., `analytics.js`)
 - Tests: Same name with `.test.js` suffix
 

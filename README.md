@@ -1,12 +1,13 @@
 # Stupid Simple Screen Share
 
-A production-ready browser-based screen sharing application built with React, WebRTC, and a stunning synthwave design theme.
+A production-ready browser-based **one-to-one** screen sharing application built with React, WebRTC, and a stunning synthwave design theme.
 
 ## 🚀 Features
 
 ### Core Functionality
 
 - **Browser-only P2P screen sharing** - No plugins, no downloads, no accounts required
+- **One-to-one connections** - One host shares screen with one viewer (perfect for personal use)
 - **WebRTC with STUN/TURN support** - Direct peer-to-peer connections with relay fallback
 - **Ephemeral rooms** - Automatically expire after 1 hour for privacy
 - **Real-time connection quality monitoring** - Connection state indicators and diagnostics
@@ -14,7 +15,7 @@ A production-ready browser-based screen sharing application built with React, We
 
 ### User Experience
 
-- **Single viewer support** - One viewer can watch a single host per session
+- **Simple one-to-one sharing** - Perfect for personal screen sharing, tutoring, or tech support
 - **Connection status** - Real-time connection state monitoring
 - **Built-in text chat** - Communicate without needing external tools
 - **Network diagnostics** - Comprehensive testing tool for troubleshooting connections
@@ -40,7 +41,7 @@ A production-ready browser-based screen sharing application built with React, We
 ## 🏗️ Architecture
 
 ```
-[Host Browser]  <-- P2P WebRTC (encrypted SRTP) -->  [Viewer Browser(s)]
+[Host Browser]  <-- P2P WebRTC (encrypted SRTP) -->  [Viewer Browser]
        |                                                      |
        |                                                      |
        --- Signaling (HTTPS) --> [Vercel + Upstash] <--------
@@ -107,10 +108,10 @@ npm run format
 ### For Hosts (Screen Sharers)
 
 1. **Start Sharing**: Click "Start sharing my screen" to create a room
-2. **Share Room ID**: Copy the generated room ID and share it with viewers
+2. **Share Room ID**: Copy the generated room ID and share it with your viewer
 3. **Begin Screen Share**: Click "Start Sharing" and select your screen/application
-4. **Monitor Viewers**: See how many people are watching in real-time
-5. **Chat**: Use the built-in chat to communicate with viewers
+4. **Monitor Connection**: See connection status and viewer presence
+5. **Chat**: Use the built-in chat to communicate with your viewer
 6. **Stop Sharing**: Click "Stop Sharing" when finished
 
 ### For Viewers

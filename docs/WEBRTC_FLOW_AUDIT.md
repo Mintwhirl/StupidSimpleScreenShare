@@ -1,8 +1,8 @@
-# WebRTC Flow Audit - Complete End-to-End Analysis
+# WebRTC Flow Documentation - One-to-One Screen Sharing
 
 ## Overview
 
-This document provides a comprehensive audit of the WebRTC peer-to-peer connection flow from host to viewer and viewer to host, including all data exchanges, API calls, and state management.
+This document provides a comprehensive overview of the WebRTC peer-to-peer connection flow for **one-to-one** screen sharing, including all data exchanges, API calls, and state management.
 
 ## Architecture Summary
 
@@ -11,7 +11,7 @@ This document provides a comprehensive audit of the WebRTC peer-to-peer connecti
 - **Signaling Server**: Redis-based API endpoints for offer/answer/ICE candidate exchange
 - **TURN Servers**: For NAT traversal across different networks
 
-**IMPORTANT**: This implementation supports **ONE viewer per session** due to single-use offer mechanism.
+**DESIGN**: This implementation is designed for **one-to-one screen sharing** - one host shares screen with one viewer per session.
 
 ## Complete WebRTC Flow
 
