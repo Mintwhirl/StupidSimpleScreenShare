@@ -72,7 +72,7 @@ function HostView({ config, onGoHome }) {
     };
 
     registerHostSender();
-  }, [roomId, updateSenderSecret]);
+  }, [roomId]); // Remove updateSenderSecret from dependencies
 
   // Handle screen share start
   const handleStartSharing = async () => {
