@@ -5,7 +5,9 @@ import { useRoomContext } from '../contexts/RoomContext';
 import { API_ENDPOINTS } from '../constants';
 
 function HostView({ config, onGoHome }) {
+  console.log('HostView: Component is rendering');
   const { roomId, updateSenderSecret } = useRoomContext();
+  console.log('HostView: roomId =', roomId, 'updateSenderSecret =', typeof updateSenderSecret);
   const [isSharing, setIsSharing] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const [viewerCount, setViewerCount] = useState(0);
