@@ -18,6 +18,11 @@ async function handleCreateRoom(req, res, { redis }) {
   const authSecret = process.env.AUTH_SECRET;
   if (authSecret) {
     const providedSecret = req.headers['x-auth-secret'] || req.body?.authSecret;
+    console.log('Auth check:', {
+      envSecret: authSecret ? `${authSecret.substring(0, 10)}...` : 'undefined',
+      providedSecret: providedSecret ? `${providedSecret.substring(0, 10)}...` : 'undefined',
+      match: providedSecret === authSecret,
+    });
     if (providedSecret !== authSecret) {
       console.log('Auth mismatch - authentication failed');
       return sendError(res, 401, 'Unauthorized - Invalid or missing auth secret');
