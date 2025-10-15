@@ -126,9 +126,16 @@ async function handleChat(req, res, { redis }) {
     let messages = [];
 
     if (sinceTimestamp > 0) {
-      // Use a large number instead of +inf for better compatibility
-      const maxTimestamp = Date.now() + 86400000; // 24 hours from now
-      messages = (await redis.zrangebyscore(key, sinceTimestamp + 1, maxTimestamp)) || [];
+      // Get all messages and filter by timestamp (less efficient but compatible)
+      const allMessages = (await redis.zrange(key, 0, -1)) || [];
+      messages = allMessages.filter((msg) => {
+        try {
+          const parsed = typeof msg === 'string' ? JSON.parse(msg) : msg;
+          return parsed && parsed.timestamp > sinceTimestamp;
+        } catch (e) {
+          return false;
+        }
+      });
     } else {
       messages = (await redis.zrange(key, -MAX_MESSAGES, -1)) || [];
     }
