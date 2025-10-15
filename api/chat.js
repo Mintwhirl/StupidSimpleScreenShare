@@ -123,10 +123,15 @@ async function handleChat(req, res, { redis }) {
 
     // Get messages since timestamp using sorted set (much more efficient)
     const key = `room:${roomId}:chat`;
-    const messages =
-      sinceTimestamp > 0
-        ? (await redis.zrangebyscore(key, sinceTimestamp + 1, '+inf')) || []
-        : (await redis.zrange(key, -MAX_MESSAGES, -1)) || [];
+    let messages = [];
+
+    if (sinceTimestamp > 0) {
+      // Use a large number instead of +inf for better compatibility
+      const maxTimestamp = Date.now() + 86400000; // 24 hours from now
+      messages = (await redis.zrangebyscore(key, sinceTimestamp + 1, maxTimestamp)) || [];
+    } else {
+      messages = (await redis.zrange(key, -MAX_MESSAGES, -1)) || [];
+    }
 
     // Parse messages
     const parsed = messages
