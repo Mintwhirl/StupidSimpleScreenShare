@@ -77,6 +77,39 @@ function ViewerView({ config, onGoHome }) {
     }
   }, [remoteStream]);
 
+  // Register viewer as sender for chat when component mounts with valid roomId and viewerId
+  useEffect(() => {
+    const registerViewerSender = async () => {
+      console.log('ViewerView: Attempting to register viewer sender for room:', roomId, 'viewerId:', viewerId);
+      if (!roomId || !viewerId) {
+        console.log('ViewerView: No roomId or viewerId, skipping registration');
+        return;
+      }
+
+      try {
+        console.log('ViewerView: Making registration request to:', API_ENDPOINTS.REGISTER_SENDER);
+        const response = await fetch(API_ENDPOINTS.REGISTER_SENDER, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomId, senderId: viewerId }),
+        });
+
+        console.log('ViewerView: Registration response status:', response.status);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('ViewerView: Registration successful, secret received');
+          updateSenderSecret(data.secret);
+        } else {
+          console.warn('ViewerView: Failed to register viewer sender:', response.status);
+        }
+      } catch (err) {
+        console.warn('ViewerView: Failed to register viewer sender:', err);
+      }
+    };
+
+    registerViewerSender();
+  }, [roomId, viewerId, updateSenderSecret]);
+
   // Handle WebRTC errors and clear errors on success
   useEffect(() => {
     if (webrtcError) {
