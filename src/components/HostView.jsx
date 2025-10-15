@@ -2,9 +2,10 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import VideoPlayer from './VideoPlayer';
 import { useWebRTC } from '../hooks/useWebRTC';
 import { useRoomContext } from '../contexts/RoomContext';
+import { API_ENDPOINTS } from '../constants';
 
 function HostView({ config, onGoHome }) {
-  const { roomId } = useRoomContext();
+  const { roomId, updateSenderSecret } = useRoomContext();
   const [isSharing, setIsSharing] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const [viewerCount, setViewerCount] = useState(0);
@@ -37,6 +38,32 @@ function HostView({ config, onGoHome }) {
       setError(webrtcError);
     }
   }, [webrtcError]);
+
+  // Register host as sender for chat when component mounts
+  useEffect(() => {
+    const registerHostSender = async () => {
+      if (!roomId) return;
+
+      try {
+        const response = await fetch(API_ENDPOINTS.REGISTER_SENDER, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomId, senderId: 'host' }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          updateSenderSecret(data.secret);
+        } else {
+          console.warn('Failed to register host sender:', response.status);
+        }
+      } catch (err) {
+        console.warn('Failed to register host sender:', err);
+      }
+    };
+
+    registerHostSender();
+  }, [roomId, updateSenderSecret]);
 
   // Handle screen share start
   const handleStartSharing = async () => {
