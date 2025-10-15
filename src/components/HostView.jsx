@@ -42,23 +42,30 @@ function HostView({ config, onGoHome }) {
   // Register host as sender for chat when component mounts
   useEffect(() => {
     const registerHostSender = async () => {
-      if (!roomId) return;
+      console.log('HostView: Attempting to register host sender for room:', roomId);
+      if (!roomId) {
+        console.log('HostView: No roomId, skipping registration');
+        return;
+      }
 
       try {
+        console.log('HostView: Making registration request to:', API_ENDPOINTS.REGISTER_SENDER);
         const response = await fetch(API_ENDPOINTS.REGISTER_SENDER, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ roomId, senderId: 'host' }),
         });
 
+        console.log('HostView: Registration response status:', response.status);
         if (response.ok) {
           const data = await response.json();
+          console.log('HostView: Registration successful, secret received');
           updateSenderSecret(data.secret);
         } else {
-          console.warn('Failed to register host sender:', response.status);
+          console.warn('HostView: Failed to register host sender:', response.status);
         }
       } catch (err) {
-        console.warn('Failed to register host sender:', err);
+        console.warn('HostView: Failed to register host sender:', err);
       }
     };
 
