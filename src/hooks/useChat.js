@@ -75,8 +75,7 @@ export function useChat(roomId, role, sender, secret = null) {
     if (roomId && sender) {
       setIsConnected(true);
       setError(null);
-      setMessages([]);
-      setLastMessageTime(0);
+      // Don't clear messages here - let loadInitialMessages handle it
       startPolling();
     } else {
       setIsConnected(false);
@@ -159,10 +158,14 @@ export function useChat(roomId, role, sender, secret = null) {
 
   // Load initial messages when room changes
   useEffect(() => {
-    if (roomId) {
+    if (roomId && sender) {
+      // Clear existing messages when room changes
+      setMessages([]);
+      setLastMessageTime(0);
+      setError(null);
       loadInitialMessages();
     }
-  }, [roomId, loadInitialMessages]);
+  }, [roomId, sender, loadInitialMessages]);
 
   // Clear messages
   const clearMessages = useCallback(() => {
