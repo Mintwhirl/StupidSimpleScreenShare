@@ -56,22 +56,36 @@ async function handleChat(req, res, { redis }) {
       return sendError(res, 403, 'Unauthorized: Sender not registered for this room');
     }
 
+    let senderData;
     try {
-      const senderData = JSON.parse(authorizedSenderData);
-      // Primary authentication: secret must match
-      if (senderData.secret !== secret) {
-        return sendError(res, 403, 'Unauthorized: Invalid sender credentials');
-      }
-      // Secondary check: client ID should match, but allow some flexibility for browser fingerprinting issues
-      if (senderData.clientId !== clientId) {
-        console.warn(
-          `Client ID mismatch for sender ${sanitizedSender}: expected ${senderData.clientId}, got ${clientId}`
-        );
-        // For now, we'll allow this but log it for monitoring
-        // In production, you might want to implement a more sophisticated client validation
+      // Check if Upstash Redis has already parsed the JSON for us
+      senderData = typeof authorizedSenderData === 'string' ? JSON.parse(authorizedSenderData) : authorizedSenderData;
+
+      if (!senderData || typeof senderData !== 'object') {
+        throw new Error('Sender data is not a valid object.');
       }
     } catch (parseError) {
-      return sendError(res, 403, 'Unauthorized: Invalid sender data');
+      return sendError(res, 403, 'Unauthorized: Invalid sender data format in Redis');
+    }
+
+    // Now, perform the validation on the guaranteed senderData object
+    if (senderData.secret !== secret) {
+      // Add logging for easier debugging of mismatches
+      console.error('Chat Auth Failed: Secret mismatch.', {
+        expectedSecret: senderData.secret,
+        actualSecret: secret,
+        sender: sanitizedSender,
+      });
+      return sendError(res, 403, 'Unauthorized: Invalid sender credentials');
+    }
+
+    // Secondary check: client ID should match, but allow some flexibility for browser fingerprinting issues
+    if (senderData.clientId !== clientId) {
+      console.warn(
+        `Client ID mismatch for sender ${sanitizedSender}: expected ${senderData.clientId}, got ${clientId}`
+      );
+      // For now, we'll allow this but log it for monitoring
+      // In production, you might want to implement a more sophisticated client validation
     }
 
     // Rate limiting: 60 messages per minute per room+sender combo
