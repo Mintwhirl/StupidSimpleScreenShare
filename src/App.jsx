@@ -26,16 +26,7 @@ function AppContent() {
   }, []);
 
   // Get all state from context (eliminates prop drilling)
-  const {
-    currentView,
-    showChat,
-    showDiagnostics,
-    handleGoHome,
-    handleNavigateToHost,
-    handleNavigateToViewer,
-    toggleChat,
-    toggleDiagnostics,
-  } = useRoomContext();
+  const { currentView, showChat, showDiagnostics, handleGoHome, toggleChat, toggleDiagnostics } = useRoomContext();
 
   // Browser compatibility check
   if (!browserCompatible) {
@@ -74,7 +65,7 @@ function AppContent() {
       {/* Main App Content */}
       <div className='relative z-10 min-h-screen flex items-center justify-center p-4'>
         {currentView === 'home' ? (
-          <HomeView onNavigateToHost={handleNavigateToHost} onNavigateToViewer={handleNavigateToViewer} />
+          <HomeView />
         ) : (
           <div className='w-full max-w-7xl mx-auto'>
             {/* Header for non-home views */}

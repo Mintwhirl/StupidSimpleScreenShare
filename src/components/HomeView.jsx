@@ -7,8 +7,8 @@ import { useRoomContext } from '../contexts/RoomContext';
  * Renders the main home screen with room creation and joining functionality.
  * Extracted from App.jsx to improve component organization.
  */
-function HomeView({ onNavigateToHost, onNavigateToViewer }) {
-  const { roomId, updateRoomId, toggleDiagnostics } = useRoomContext();
+function HomeView() {
+  const { roomId, updateRoomId, toggleDiagnostics, handleNavigateToHost, handleNavigateToViewer } = useRoomContext();
   const { handleCreateRoom, handleJoinRoom } = useRoomManagement();
 
   // Handle room creation
@@ -16,7 +16,7 @@ function HomeView({ onNavigateToHost, onNavigateToViewer }) {
     try {
       const data = await handleCreateRoom();
       updateRoomId(data.roomId);
-      onNavigateToHost();
+      handleNavigateToHost();
     } catch (error) {
       console.error('Room creation error:', error);
       alert(`Failed to create room: ${error.message}. Please try again.`);
@@ -27,7 +27,7 @@ function HomeView({ onNavigateToHost, onNavigateToViewer }) {
   const handleJoinRoomClick = () => {
     try {
       const validRoomId = handleJoinRoom(roomId);
-      onNavigateToViewer(validRoomId);
+      handleNavigateToViewer(validRoomId);
     } catch (error) {
       alert(error.message);
     }
