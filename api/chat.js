@@ -48,27 +48,21 @@ async function handleChat(req, res, { redis }) {
     // Sanitize sender name to prevent Redis key pollution
     const sanitizedSender = sender.trim().replace(/[^a-zA-Z0-9_-]/g, '_');
 
-    // Special case: Allow host to send messages without registration
-    if (sanitizedSender === 'host') {
-      console.log('Chat: Allowing host to send message without registration - v2');
-      // Skip sender validation for host
-    } else {
-      // For other senders, require registration
-      const senderKey = `room:${roomId}:sender:${sanitizedSender}`;
-      const authorizedSenderData = await redis.get(senderKey);
+    // Validate sender is registered and authorized for this room
+    const senderKey = `room:${roomId}:sender:${sanitizedSender}`;
+    const authorizedSenderData = await redis.get(senderKey);
 
-      if (!authorizedSenderData) {
-        return sendError(res, 403, 'Unauthorized: Sender not registered for this room');
-      }
+    if (!authorizedSenderData) {
+      return sendError(res, 403, 'Unauthorized: Sender not registered for this room');
+    }
 
-      try {
-        const senderData = JSON.parse(authorizedSenderData);
-        if (senderData.clientId !== clientId || senderData.secret !== secret) {
-          return sendError(res, 403, 'Unauthorized: Invalid sender credentials');
-        }
-      } catch (parseError) {
-        return sendError(res, 403, 'Unauthorized: Invalid sender data');
+    try {
+      const senderData = JSON.parse(authorizedSenderData);
+      if (senderData.clientId !== clientId || senderData.secret !== secret) {
+        return sendError(res, 403, 'Unauthorized: Invalid sender credentials');
       }
+    } catch (parseError) {
+      return sendError(res, 403, 'Unauthorized: Invalid sender data');
     }
 
     // Rate limiting: 60 messages per minute per room+sender combo
