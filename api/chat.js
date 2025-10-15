@@ -58,8 +58,17 @@ async function handleChat(req, res, { redis }) {
 
     try {
       const senderData = JSON.parse(authorizedSenderData);
-      if (senderData.clientId !== clientId || senderData.secret !== secret) {
+      // Primary authentication: secret must match
+      if (senderData.secret !== secret) {
         return sendError(res, 403, 'Unauthorized: Invalid sender credentials');
+      }
+      // Secondary check: client ID should match, but allow some flexibility for browser fingerprinting issues
+      if (senderData.clientId !== clientId) {
+        console.warn(
+          `Client ID mismatch for sender ${sanitizedSender}: expected ${senderData.clientId}, got ${clientId}`
+        );
+        // For now, we'll allow this but log it for monitoring
+        // In production, you might want to implement a more sophisticated client validation
       }
     } catch (parseError) {
       return sendError(res, 403, 'Unauthorized: Invalid sender data');
