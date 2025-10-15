@@ -1,10 +1,10 @@
 # Project Status - Stupid Simple Screen Share
 
-## ✅ COMPLETED - Production Ready
+## COMPLETED - Production Ready
 
 **One-to-one screen sharing application is complete and production-ready.**
 
-### Core Features ✅
+### Core Features
 
 - **One-to-one screen sharing** - One host shares screen with one viewer
 - **WebRTC P2P connections** - Direct browser-to-browser communication
@@ -12,7 +12,7 @@
 - **Network diagnostics** - Connection quality monitoring
 - **Synthwave theme** - Beautiful retro-futuristic UI
 
-### Technical Architecture ✅
+### Technical Architecture
 
 - **React 19** with modern hooks and context
 - **Vercel serverless** API with Redis signaling

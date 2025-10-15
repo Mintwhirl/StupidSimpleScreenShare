@@ -87,7 +87,7 @@ async function handleChat(req, res, { redis }) {
     // Store in sorted set with timestamp as score (more efficient for polling)
     const key = `room:${roomId}:chat`;
     const score = chatMessage.timestamp;
-    await redis.zadd(key, score, JSON.stringify(chatMessage));
+    await redis.zadd(key, { score, member: JSON.stringify(chatMessage) });
 
     // Keep only the most recent messages and set expiration
     await redis.zremrangebyrank(key, 0, -(MAX_MESSAGES + 1));

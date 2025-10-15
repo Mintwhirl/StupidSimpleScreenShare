@@ -2,7 +2,7 @@
 
 A production-ready browser-based **one-to-one** screen sharing application built with React, WebRTC, and a stunning synthwave design theme.
 
-## 🚀 Features
+## Features
 
 ### Core Functionality
 
@@ -38,7 +38,7 @@ A production-ready browser-based **one-to-one** screen sharing application built
 - **Automated CI/CD** - GitHub Actions with pre-commit hooks
 - **Code quality** - ESLint, Prettier, and professional development practices
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 [Host Browser]  <-- P2P WebRTC (encrypted SRTP) -->  [Viewer Browser]
@@ -54,7 +54,7 @@ A production-ready browser-based **one-to-one** screen sharing application built
 - **Testing**: Vitest with comprehensive test coverage
 - **Deployment**: Vercel with automated CI/CD
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -87,7 +87,7 @@ npm run build
 vercel --prod
 ```
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run all tests
@@ -103,7 +103,7 @@ npm run lint
 npm run format
 ```
 
-## 📱 Usage
+## Usage
 
 ### For Hosts (Screen Sharers)
 
@@ -121,7 +121,7 @@ npm run format
 3. **Chat**: Use the built-in chat to communicate with the host
 4. **Reconnect**: If disconnected, refresh the page to reconnect
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -140,7 +140,7 @@ REDIS_TOKEN=your-redis-token
 2. **Set Environment Variables**: Add `AUTH_SECRET` and other required variables
 3. **Deploy**: Vercel will automatically deploy on every push to main
 
-## 🛠️ Development
+## Development
 
 ### Project Structure
 
@@ -183,7 +183,7 @@ REDIS_TOKEN=your-redis-token
 - **Vercel** - Serverless deployment platform
 - **Upstash** - Serverless Redis and rate limiting
 
-## 🔒 Security
+## Security
 
 ### Input Validation
 
@@ -205,7 +205,7 @@ REDIS_TOKEN=your-redis-token
 - **Chat Messages**: 60 messages per minute per IP
 - **API Calls**: 2000 calls per hour per IP
 
-## 🧪 Testing
+## Testing
 
 ### Test Coverage
 
@@ -227,7 +227,7 @@ npm run test:coverage
 npm run test:watch
 ```
 
-## 🚀 Deployment
+## Deployment
 
 ### Vercel (Recommended)
 
@@ -235,7 +235,7 @@ npm run test:watch
 2. **Set Environment Variables**: Add required environment variables
 3. **Deploy**: Vercel will automatically deploy on every push
 
-## 🤝 Contributing
+## Contributing
 
 1. **Fork the repository**
 2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
@@ -252,7 +252,7 @@ npm run test:watch
 - **Update documentation** - Keep README and comments up to date
 - **Use semantic commits** - Follow conventional commit format
 
-## 📄 License
+## License
 
 This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License - see the [LICENSE](LICENSE) file for details.
 
@@ -260,11 +260,11 @@ This project is licensed under the Creative Commons Attribution-NonCommercial-Sh
 
 Commercial use requires explicit written permission from the copyright holder.
 
-## 📞 Support
+## Support
 
 - **Issues**: [GitHub Issues](https://github.com/Mintwhirl/StupidSimpleScreenShare/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/Mintwhirl/StupidSimpleScreenShare/discussions)
 
 ---
 
-**Built with ❤️ and modern web technologies. Ready for production use!** 🚀
+**Built with modern web technologies. Ready for production use!**
