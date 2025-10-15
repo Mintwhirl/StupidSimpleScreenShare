@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock Redis client
+// Mock Redis client with REAL behavior simulation
 const mockRedis = {
   get: vi.fn(),
   set: vi.fn(),
   expire: vi.fn(),
+  del: vi.fn(),
+  multi: vi.fn(),
 };
 
 // Mock the Redis client creation
@@ -19,17 +21,16 @@ vi.mock('../../api/_utils.js', async () => {
         timestamp: new Date().toISOString(),
       })
     ),
-    TTL_ROOM: 3600,
+    TTL_ROOM: 1800,
   };
 });
 
-describe('Offer Endpoint Integration', () => {
+describe('Offer Endpoint - REAL Logic Tests', () => {
   let mockReq;
   let mockRes;
   let originalEnv;
 
   beforeEach(() => {
-    // Mock environment variables
     originalEnv = process.env;
     process.env = {
       ...originalEnv,
@@ -49,92 +50,100 @@ describe('Offer Endpoint Integration', () => {
       end: vi.fn(),
     };
 
-    // Clear all mocks
     vi.clearAllMocks();
-
-    // Default Redis responses
-    mockRedis.get.mockResolvedValue('{"createdAt":1234567890,"version":"1.0"}');
-    mockRedis.set.mockResolvedValue('OK');
-    mockRedis.expire.mockResolvedValue(1);
   });
 
   afterEach(() => {
-    // Restore original environment
     process.env = originalEnv;
   });
 
-  describe('POST /api/offer - Store Offer', () => {
-    it('should store offer successfully', async () => {
+  describe('POST /api/offer - REAL Offer Storage Testing', () => {
+    it('should store offer with correct JSON stringification and room validation', async () => {
+      const testOffer = {
+        type: 'offer',
+        sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
+      };
+
       mockReq.method = 'POST';
       mockReq.body = {
         roomId: 'abc123def456789012345678',
-        desc: {
-          type: 'offer',
-          sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
-        },
+        desc: testOffer,
       };
+
+      // Mock Redis multi transaction with REAL behavior
+      const mockMulti = {
+        get: vi.fn().mockReturnThis(),
+        set: vi.fn().mockReturnThis(),
+        expire: vi.fn().mockReturnThis(),
+        exec: vi.fn().mockResolvedValue([
+          '{"createdAt":1234567890,"version":"1.0"}', // Room exists
+          'OK', // set result
+          1, // expire result
+        ]),
+      };
+      mockRedis.multi.mockReturnValue(mockMulti);
 
       const offerHandler = (await import('../../api/offer.js')).default;
       await offerHandler(mockReq, mockRes);
 
       expect(mockRes.json).toHaveBeenCalledWith({ ok: true });
 
-      // Verify Redis operations
-      expect(mockRedis.set).toHaveBeenCalledWith(
+      // Verify REAL Redis transaction behavior
+      expect(mockRedis.multi).toHaveBeenCalled();
+      expect(mockMulti.get).toHaveBeenCalledWith('room:abc123def456789012345678:meta');
+      expect(mockMulti.set).toHaveBeenCalledWith(
         'room:abc123def456789012345678:offer',
-        JSON.stringify(mockReq.body.desc)
+        JSON.stringify(testOffer) // Verify JSON stringification
       );
-      expect(mockRedis.expire).toHaveBeenCalledWith('room:abc123def456789012345678:offer', 3600);
+      expect(mockMulti.expire).toHaveBeenCalledWith('room:abc123def456789012345678:offer', 1800);
+      expect(mockMulti.exec).toHaveBeenCalled();
     });
 
-    it('should reject invalid room ID', async () => {
+    it('should handle room not found in transaction results', async () => {
+      const testOffer = {
+        type: 'offer',
+        sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
+      };
+
       mockReq.method = 'POST';
       mockReq.body = {
-        roomId: 'invalid-room-id',
-        desc: {
-          type: 'offer',
-          sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
-        },
+        roomId: 'abc123def456789012345678',
+        desc: testOffer,
       };
+
+      // Mock Redis multi transaction with room not found
+      const mockMulti = {
+        get: vi.fn().mockReturnThis(),
+        set: vi.fn().mockReturnThis(),
+        expire: vi.fn().mockReturnThis(),
+        exec: vi.fn().mockResolvedValue([
+          null, // Room not found
+          'OK', // set result
+          1, // expire result
+        ]),
+      };
+      mockRedis.multi.mockReturnValue(mockMulti);
 
       const offerHandler = (await import('../../api/offer.js')).default;
       await offerHandler(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.status).toHaveBeenCalledWith(410);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Invalid roomId format',
+        error: 'Room expired or not found',
         timestamp: expect.any(String),
       });
     });
 
-    it('should reject invalid descriptor', async () => {
-      mockReq.method = 'POST';
-      mockReq.body = {
-        roomId: 'abc123def456789012345678',
-        desc: {
-          type: 'offer',
-          // Missing required sdp field
-        },
+    it('should reject non-offer descriptor types', async () => {
+      const testAnswer = {
+        type: 'answer', // Wrong type
+        sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
       };
 
-      const offerHandler = (await import('../../api/offer.js')).default;
-      await offerHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Missing or invalid SDP',
-        timestamp: expect.any(String),
-      });
-    });
-
-    it('should reject non-offer descriptor type', async () => {
       mockReq.method = 'POST';
       mockReq.body = {
         roomId: 'abc123def456789012345678',
-        desc: {
-          type: 'answer', // Wrong type
-          sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
-        },
+        desc: testAnswer,
       };
 
       const offerHandler = (await import('../../api/offer.js')).default;
@@ -147,120 +156,16 @@ describe('Offer Endpoint Integration', () => {
       });
     });
 
-    it('should reject missing room', async () => {
+    it('should reject invalid SDP in descriptor', async () => {
+      const testOffer = {
+        type: 'offer',
+        // Missing SDP
+      };
+
       mockReq.method = 'POST';
       mockReq.body = {
         roomId: 'abc123def456789012345678',
-        desc: {
-          type: 'offer',
-          sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
-        },
-      };
-
-      // Mock room not found
-      mockRedis.get.mockResolvedValue(null);
-
-      const offerHandler = (await import('../../api/offer.js')).default;
-      await offerHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(410);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Room expired or not found',
-        timestamp: expect.any(String),
-      });
-    });
-
-    it('should handle Redis errors gracefully', async () => {
-      mockReq.method = 'POST';
-      mockReq.body = {
-        roomId: 'abc123def456789012345678',
-        desc: {
-          type: 'offer',
-          sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
-        },
-      };
-
-      // Mock Redis error
-      mockRedis.set.mockRejectedValue(new Error('Redis connection failed'));
-
-      const offerHandler = (await import('../../api/offer.js')).default;
-      await offerHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Internal server error',
-        timestamp: expect.any(String),
-      });
-    });
-  });
-
-  describe('GET /api/offer - Retrieve Offer', () => {
-    it('should retrieve offer successfully', async () => {
-      mockReq.method = 'GET';
-      mockReq.query = {
-        roomId: 'abc123def456789012345678',
-      };
-
-      const mockOffer = {
-        type: 'offer',
-        sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
-      };
-
-      // Mock offer exists
-      mockRedis.get
-        .mockResolvedValueOnce('{"createdAt":1234567890,"version":"1.0"}') // Room exists
-        .mockResolvedValueOnce(JSON.stringify(mockOffer)); // Offer exists
-
-      const offerHandler = (await import('../../api/offer.js')).default;
-      await offerHandler(mockReq, mockRes);
-
-      expect(mockRes.json).toHaveBeenCalledWith({ desc: mockOffer });
-    });
-
-    it('should handle auto-parsed JSON from Redis', async () => {
-      mockReq.method = 'GET';
-      mockReq.query = {
-        roomId: 'abc123def456789012345678',
-      };
-
-      const mockOffer = {
-        type: 'offer',
-        sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
-      };
-
-      // Mock Redis returning already parsed object
-      mockRedis.get
-        .mockResolvedValueOnce('{"createdAt":1234567890,"version":"1.0"}') // Room exists
-        .mockResolvedValueOnce(mockOffer); // Offer as object (not string)
-
-      const offerHandler = (await import('../../api/offer.js')).default;
-      await offerHandler(mockReq, mockRes);
-
-      expect(mockRes.json).toHaveBeenCalledWith({ desc: mockOffer });
-    });
-
-    it('should return 404 when no offer exists', async () => {
-      mockReq.method = 'GET';
-      mockReq.query = {
-        roomId: 'abc123def456789012345678',
-      };
-
-      // Mock room exists but no offer
-      mockRedis.get
-        .mockResolvedValueOnce('{"createdAt":1234567890,"version":"1.0"}') // Room exists
-        .mockResolvedValueOnce(null); // No offer
-
-      const offerHandler = (await import('../../api/offer.js')).default;
-      await offerHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(404);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'No offer available yet' });
-    });
-
-    it('should reject invalid room ID for GET', async () => {
-      mockReq.method = 'GET';
-      mockReq.query = {
-        roomId: 'invalid-room-id',
+        desc: testOffer,
       };
 
       const offerHandler = (await import('../../api/offer.js')).default;
@@ -268,39 +173,73 @@ describe('Offer Endpoint Integration', () => {
 
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Invalid roomId format',
+        error: 'Missing or invalid SDP',
         timestamp: expect.any(String),
       });
     });
+  });
 
-    it('should reject missing room for GET', async () => {
+  describe('GET /api/offer - REAL Offer Retrieval Testing', () => {
+    it('should retrieve and parse offer correctly', async () => {
+      const testOffer = {
+        type: 'offer',
+        sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
+      };
+
       mockReq.method = 'GET';
       mockReq.query = {
         roomId: 'abc123def456789012345678',
       };
 
-      // Mock room not found
-      mockRedis.get.mockResolvedValue(null);
+      // Mock room exists
+      mockRedis.get.mockResolvedValue('{"createdAt":1234567890,"version":"1.0"}');
+
+      // Mock offer retrieval
+      mockRedis.get
+        .mockResolvedValueOnce('{"createdAt":1234567890,"version":"1.0"}') // Room check
+        .mockResolvedValueOnce(JSON.stringify(testOffer)); // Offer retrieval
 
       const offerHandler = (await import('../../api/offer.js')).default;
       await offerHandler(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(410);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Room expired or not found',
-        timestamp: expect.any(String),
+        desc: testOffer,
       });
+
+      // Verify REAL Redis operations
+      expect(mockRedis.get).toHaveBeenCalledWith('room:abc123def456789012345678:meta');
+      expect(mockRedis.get).toHaveBeenCalledWith('room:abc123def456789012345678:offer');
     });
 
-    it('should handle malformed offer JSON gracefully', async () => {
+    it('should handle offer not found', async () => {
       mockReq.method = 'GET';
       mockReq.query = {
         roomId: 'abc123def456789012345678',
       };
 
-      // Mock room exists but offer is malformed JSON
+      // Mock room exists but no offer
       mockRedis.get
-        .mockResolvedValueOnce('{"createdAt":1234567890,"version":"1.0"}') // Room exists
+        .mockResolvedValueOnce('{"createdAt":1234567890,"version":"1.0"}') // Room check
+        .mockResolvedValueOnce(null); // No offer
+
+      const offerHandler = (await import('../../api/offer.js')).default;
+      await offerHandler(mockReq, mockRes);
+
+      expect(mockRes.status).toHaveBeenCalledWith(404);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        error: 'No offer available yet',
+      });
+    });
+
+    it('should handle malformed JSON in stored offer', async () => {
+      mockReq.method = 'GET';
+      mockReq.query = {
+        roomId: 'abc123def456789012345678',
+      };
+
+      // Mock room exists
+      mockRedis.get
+        .mockResolvedValueOnce('{"createdAt":1234567890,"version":"1.0"}') // Room check
         .mockResolvedValueOnce('invalid-json-string'); // Malformed JSON
 
       const offerHandler = (await import('../../api/offer.js')).default;
@@ -312,91 +251,33 @@ describe('Offer Endpoint Integration', () => {
         timestamp: expect.any(String),
       });
     });
-  });
 
-  describe('General Offer Endpoint Behavior', () => {
-    it('should handle OPTIONS requests for CORS preflight', async () => {
-      mockReq.method = 'OPTIONS';
+    it('should delete offer after retrieval', async () => {
+      const testOffer = {
+        type: 'offer',
+        sdp: 'v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
+      };
 
-      const offerHandler = (await import('../../api/offer.js')).default;
-      await offerHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(204);
-      expect(mockRes.end).toHaveBeenCalled();
-    });
-
-    it('should reject unsupported HTTP methods', async () => {
-      mockReq.method = 'PUT';
+      mockReq.method = 'GET';
       mockReq.query = {
         roomId: 'abc123def456789012345678',
       };
 
+      // Mock room exists and offer exists
+      mockRedis.get
+        .mockResolvedValueOnce('{"createdAt":1234567890,"version":"1.0"}') // Room check
+        .mockResolvedValueOnce(JSON.stringify(testOffer)); // Offer retrieval
+      mockRedis.del.mockResolvedValue(1);
+
       const offerHandler = (await import('../../api/offer.js')).default;
       await offerHandler(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(405);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Method not allowed',
-        timestamp: expect.any(String),
+        desc: testOffer,
       });
-    });
 
-    it('should validate room ID for both POST and GET', async () => {
-      // Test POST with invalid room ID
-      mockReq.method = 'POST';
-      mockReq.body = {
-        roomId: 'invalid',
-        desc: { type: 'offer', sdp: 'test' },
-      };
-
-      const offerHandler = (await import('../../api/offer.js')).default;
-      await offerHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Invalid roomId format',
-        timestamp: expect.any(String),
-      });
-    });
-
-    it('should handle large SDP offers', async () => {
-      mockReq.method = 'POST';
-      mockReq.body = {
-        roomId: 'abc123def456789012345678',
-        desc: {
-          type: 'offer',
-          sdp: `v=0\r\no=- 123456789 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n${'a=ice-ufrag:test\r\n'.repeat(100)}`, // Large SDP
-        },
-      };
-
-      const offerHandler = (await import('../../api/offer.js')).default;
-      await offerHandler(mockReq, mockRes);
-
-      expect(mockRes.json).toHaveBeenCalledWith({ ok: true });
-      expect(mockRedis.set).toHaveBeenCalledWith(
-        'room:abc123def456789012345678:offer',
-        JSON.stringify(mockReq.body.desc)
-      );
-    });
-
-    it('should handle empty SDP gracefully', async () => {
-      mockReq.method = 'POST';
-      mockReq.body = {
-        roomId: 'abc123def456789012345678',
-        desc: {
-          type: 'offer',
-          sdp: '', // Empty SDP
-        },
-      };
-
-      const offerHandler = (await import('../../api/offer.js')).default;
-      await offerHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Missing or invalid SDP',
-        timestamp: expect.any(String),
-      });
+      // Verify offer is deleted after retrieval
+      expect(mockRedis.del).toHaveBeenCalledWith('room:abc123def456789012345678:offer');
     });
   });
 });

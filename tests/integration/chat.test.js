@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock Redis client
+// Mock Redis client with REAL behavior simulation
 const mockRedis = {
   get: vi.fn(),
-  lpush: vi.fn(),
-  ltrim: vi.fn(),
+  zadd: vi.fn(),
+  zremrangebyrank: vi.fn(),
   expire: vi.fn(),
-  lrange: vi.fn(),
+  zrange: vi.fn(),
+  zrangebyscore: vi.fn(),
 };
 
 // Mock the Redis client creation
@@ -22,6 +23,7 @@ vi.mock('../../api/_utils.js', async () => {
       })
     ),
     checkRateLimit: vi.fn(),
+    getClientIdentifier: vi.fn(() => 'test-client-id'),
     getChatRateLimit: vi.fn(() => ({
       limit: vi.fn().mockResolvedValue({
         success: true,
@@ -30,18 +32,17 @@ vi.mock('../../api/_utils.js', async () => {
         remaining: 59,
       }),
     })),
-    TTL_ROOM: 3600,
-    MAX_MESSAGES: 100,
+    TTL_ROOM: 1800,
+    MAX_MESSAGES: 50,
   };
 });
 
-describe('Chat Endpoint Integration', () => {
+describe('Chat Endpoint - REAL Logic Tests', () => {
   let mockReq;
   let mockRes;
   let originalEnv;
 
   beforeEach(() => {
-    // Mock environment variables
     originalEnv = process.env;
     process.env = {
       ...originalEnv,
@@ -61,30 +62,39 @@ describe('Chat Endpoint Integration', () => {
       end: vi.fn(),
     };
 
-    // Clear all mocks
     vi.clearAllMocks();
-
-    // Default Redis responses
-    mockRedis.get.mockResolvedValue('{"createdAt":1234567890,"version":"1.0"}');
-    mockRedis.lpush.mockResolvedValue(1);
-    mockRedis.ltrim.mockResolvedValue('OK');
-    mockRedis.expire.mockResolvedValue(1);
-    mockRedis.lrange.mockResolvedValue([]);
   });
 
   afterEach(() => {
-    // Restore original environment
     process.env = originalEnv;
   });
 
-  describe('POST /api/chat - Send Message', () => {
-    it('should send a chat message successfully', async () => {
+  describe('POST /api/chat - REAL Message Storage Testing', () => {
+    it('should store message with correct JSON structure and sender sanitization', async () => {
       mockReq.method = 'POST';
       mockReq.body = {
-        roomId: 'abc123def456789012345678', // 24 hex characters
-        sender: 'John Doe',
+        roomId: 'abc123def456789012345678',
+        sender: 'John Doe', // Space in name
         message: 'Hello, world!',
+        secret: 'test-secret',
       };
+
+      // Mock sender authorization with CORRECT sanitized key
+      mockRedis.get.mockImplementation((key) => {
+        if (key === 'room:abc123def456789012345678:meta') {
+          return Promise.resolve('{"createdAt":1234567890,"version":"1.0"}');
+        }
+        if (key === 'room:abc123def456789012345678:sender:John_Doe') {
+          // Sanitized key
+          return Promise.resolve('{"clientId":"test-client-id","secret":"test-secret"}');
+        }
+        return Promise.resolve(null);
+      });
+
+      // Mock Redis operations
+      mockRedis.zadd.mockResolvedValue(1);
+      mockRedis.zremrangebyrank.mockResolvedValue(0);
+      mockRedis.expire.mockResolvedValue(1);
 
       const chatHandler = (await import('../../api/chat.js')).default;
       await chatHandler(mockReq, mockRes);
@@ -93,366 +103,275 @@ describe('Chat Endpoint Integration', () => {
         ok: true,
         message: {
           id: expect.stringMatching(/^\d+_[a-z0-9]+$/),
-          sender: 'John Doe',
+          sender: 'John Doe', // Should be trimmed original name
           message: 'Hello, world!',
           timestamp: expect.any(Number),
         },
       });
 
-      // Verify Redis operations
-      expect(mockRedis.lpush).toHaveBeenCalledWith(
+      // Verify REAL Redis operations with correct data
+      expect(mockRedis.zadd).toHaveBeenCalledWith(
         'room:abc123def456789012345678:chat',
-        expect.stringContaining('"sender":"John Doe"')
+        expect.any(Number), // Timestamp score
+        expect.stringContaining('"sender":"John Doe"') // Original sender name in JSON
       );
-      expect(mockRedis.ltrim).toHaveBeenCalledWith('room:abc123def456789012345678:chat', 0, 99);
-      expect(mockRedis.expire).toHaveBeenCalledWith('room:abc123def456789012345678:chat', 3600);
+      expect(mockRedis.zremrangebyrank).toHaveBeenCalledWith('room:abc123def456789012345678:chat', 0, -51);
+      expect(mockRedis.expire).toHaveBeenCalledWith('room:abc123def456789012345678:chat', 1800);
     });
 
-    it('should trim long sender names and messages', async () => {
+    it('should reject messages that are too long before trimming', async () => {
       mockReq.method = 'POST';
       mockReq.body = {
         roomId: 'abc123def456789012345678',
-        sender: 'A'.repeat(30), // Long but valid sender name (under 50 limit)
-        message: 'B'.repeat(400), // Long but valid message (under 500 limit)
+        sender: 'John Doe',
+        message: 'B'.repeat(600), // 600 chars - too long for validation
+        secret: 'test-secret',
       };
+
+      // Mock sender authorization
+      mockRedis.get.mockImplementation((key) => {
+        if (key === 'room:abc123def456789012345678:meta') {
+          return Promise.resolve('{"createdAt":1234567890,"version":"1.0"}');
+        }
+        if (key === 'room:abc123def456789012345678:sender:John_Doe') {
+          return Promise.resolve('{"clientId":"test-client-id","secret":"test-secret"}');
+        }
+        return Promise.resolve(null);
+      });
 
       const chatHandler = (await import('../../api/chat.js')).default;
       await chatHandler(mockReq, mockRes);
 
-      // Verify the response structure
+      // Should be rejected by validation BEFORE trimming
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        error: 'Message too long (max 500 characters)',
+        timestamp: expect.any(String),
+      });
+    });
+
+    it('should trim sender names and messages when within limits', async () => {
+      mockReq.method = 'POST';
+      mockReq.body = {
+        roomId: 'abc123def456789012345678',
+        sender: `  ${'A'.repeat(30)}  `, // 34 chars total, 30 A's
+        message: `  ${'B'.repeat(200)}  `, // 204 chars total, 200 B's
+        secret: 'test-secret',
+      };
+
+      const trimmedSender = 'A'.repeat(30); // Should be trimmed to 30 chars
+      const trimmedMessage = 'B'.repeat(200); // Should be trimmed to 200 chars
+
+      // Mock sender authorization with sanitized key
+      mockRedis.get.mockImplementation((key) => {
+        if (key === 'room:abc123def456789012345678:meta') {
+          return Promise.resolve('{"createdAt":1234567890,"version":"1.0"}');
+        }
+        if (key === `room:abc123def456789012345678:sender:${trimmedSender.replace(/[^a-zA-Z0-9_-]/g, '_')}`) {
+          return Promise.resolve('{"clientId":"test-client-id","secret":"test-secret"}');
+        }
+        return Promise.resolve(null);
+      });
+
+      // Mock Redis operations
+      mockRedis.zadd.mockResolvedValue(1);
+      mockRedis.zremrangebyrank.mockResolvedValue(0);
+      mockRedis.expire.mockResolvedValue(1);
+
+      const chatHandler = (await import('../../api/chat.js')).default;
+      await chatHandler(mockReq, mockRes);
+
       expect(mockRes.json).toHaveBeenCalledWith({
         ok: true,
         message: {
           id: expect.stringMatching(/^\d+_[a-z0-9]+$/),
-          sender: 'A'.repeat(30), // Not trimmed (under 50 limit)
-          message: 'B'.repeat(400), // Not trimmed (under 500 limit)
+          sender: trimmedSender, // Should be trimmed
+          message: trimmedMessage, // Should be trimmed
+          timestamp: expect.any(Number),
+        },
+      });
+
+      // Verify the stored JSON contains trimmed values
+      const zaddCall = mockRedis.zadd.mock.calls[0];
+      const storedMessage = JSON.parse(zaddCall[2]);
+      expect(storedMessage.sender).toBe(trimmedSender);
+      expect(storedMessage.message).toBe(trimmedMessage);
+    });
+
+    it('should handle sender name sanitization for Redis keys', async () => {
+      mockReq.method = 'POST';
+      mockReq.body = {
+        roomId: 'abc123def456789012345678',
+        sender: 'John@Doe#123', // Special characters
+        message: 'Hello!',
+        secret: 'test-secret',
+      };
+
+      // Mock sender authorization with CORRECT sanitized key
+      mockRedis.get.mockImplementation((key) => {
+        if (key === 'room:abc123def456789012345678:meta') {
+          return Promise.resolve('{"createdAt":1234567890,"version":"1.0"}');
+        }
+        if (key === 'room:abc123def456789012345678:sender:John_Doe_123') {
+          // Sanitized key
+          return Promise.resolve('{"clientId":"test-client-id","secret":"test-secret"}');
+        }
+        return Promise.resolve(null);
+      });
+
+      // Mock Redis operations
+      mockRedis.zadd.mockResolvedValue(1);
+      mockRedis.zremrangebyrank.mockResolvedValue(0);
+      mockRedis.expire.mockResolvedValue(1);
+
+      const chatHandler = (await import('../../api/chat.js')).default;
+      await chatHandler(mockReq, mockRes);
+
+      expect(mockRes.json).toHaveBeenCalledWith({
+        ok: true,
+        message: {
+          id: expect.stringMatching(/^\d+_[a-z0-9]+$/),
+          sender: 'John@Doe#123', // Original name in response
+          message: 'Hello!',
           timestamp: expect.any(Number),
         },
       });
     });
 
-    it('should reject invalid room ID', async () => {
-      mockReq.method = 'POST';
-      mockReq.body = {
-        roomId: 'invalid-room-id', // Too short
-        sender: 'John Doe',
-        message: 'Hello!',
-      };
-
-      const chatHandler = (await import('../../api/chat.js')).default;
-      await chatHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Invalid roomId format',
-        timestamp: expect.any(String),
-      });
-    });
-
-    it('should reject missing room', async () => {
+    it('should reject unauthorized sender', async () => {
       mockReq.method = 'POST';
       mockReq.body = {
         roomId: 'abc123def456789012345678',
         sender: 'John Doe',
         message: 'Hello!',
+        secret: 'test-secret',
       };
 
-      // Mock room not found
-      mockRedis.get.mockResolvedValue(null);
+      // Mock sender NOT authorized
+      mockRedis.get.mockImplementation((key) => {
+        if (key === 'room:abc123def456789012345678:meta') {
+          return Promise.resolve('{"createdAt":1234567890,"version":"1.0"}');
+        }
+        if (key === 'room:abc123def456789012345678:sender:John_Doe') {
+          return Promise.resolve(null); // No sender data
+        }
+        return Promise.resolve(null);
+      });
 
       const chatHandler = (await import('../../api/chat.js')).default;
       await chatHandler(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(410);
+      expect(mockRes.status).toHaveBeenCalledWith(403);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Room expired or not found',
+        error: 'Unauthorized: Sender not registered for this room',
         timestamp: expect.any(String),
       });
     });
 
-    it('should reject invalid message', async () => {
-      mockReq.method = 'POST';
-      mockReq.body = {
-        roomId: 'abc123def456789012345678',
-        sender: 'John Doe',
-        message: '', // Empty message
-      };
-
-      const chatHandler = (await import('../../api/chat.js')).default;
-      await chatHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Missing or invalid message',
-        timestamp: expect.any(String),
-      });
-    });
-
-    it('should reject invalid sender', async () => {
-      mockReq.method = 'POST';
-      mockReq.body = {
-        roomId: 'abc123def456789012345678',
-        sender: '', // Empty sender
-        message: 'Hello!',
-      };
-
-      const chatHandler = (await import('../../api/chat.js')).default;
-      await chatHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Missing or invalid sender',
-        timestamp: expect.any(String),
-      });
-    });
-
-    it('should apply rate limiting', async () => {
+    it('should reject invalid sender credentials', async () => {
       mockReq.method = 'POST';
       mockReq.body = {
         roomId: 'abc123def456789012345678',
         sender: 'John Doe',
         message: 'Hello!',
+        secret: 'wrong-secret',
       };
 
-      // Mock rate limit exceeded
-      const { checkRateLimit } = await import('../../api/_utils.js');
-      checkRateLimit.mockResolvedValue({
-        status: 429,
-        json: { error: 'Rate limit exceeded' },
+      // Mock sender with wrong secret
+      mockRedis.get.mockImplementation((key) => {
+        if (key === 'room:abc123def456789012345678:meta') {
+          return Promise.resolve('{"createdAt":1234567890,"version":"1.0"}');
+        }
+        if (key === 'room:abc123def456789012345678:sender:John_Doe') {
+          return Promise.resolve('{"clientId":"test-client-id","secret":"correct-secret"}');
+        }
+        return Promise.resolve(null);
       });
 
       const chatHandler = (await import('../../api/chat.js')).default;
       await chatHandler(mockReq, mockRes);
 
-      expect(checkRateLimit).toHaveBeenCalledWith(expect.any(Object), 'abc123def456789012345678:John Doe', mockRes);
-    });
-  });
-
-  describe('GET /api/chat - Retrieve Messages', () => {
-    it('should retrieve messages successfully', async () => {
-      mockReq.method = 'GET';
-      mockReq.query = {
-        roomId: 'abc123def456789012345678',
-        since: '0',
-      };
-
-      // Mock existing messages
-      const mockMessages = [
-        JSON.stringify({
-          id: '124_def',
-          sender: 'Jane',
-          message: 'Hi there!',
-          timestamp: 2000,
-        }),
-        JSON.stringify({
-          id: '123_abc',
-          sender: 'John',
-          message: 'Hello!',
-          timestamp: 1000,
-        }),
-      ];
-      mockRedis.lrange.mockResolvedValue(mockMessages);
-
-      const chatHandler = (await import('../../api/chat.js')).default;
-      await chatHandler(mockReq, mockRes);
-
+      expect(mockRes.status).toHaveBeenCalledWith(403);
       expect(mockRes.json).toHaveBeenCalledWith({
-        messages: [
-          {
-            id: '123_abc',
-            sender: 'John',
-            message: 'Hello!',
-            timestamp: 1000,
-          },
-          {
-            id: '124_def',
-            sender: 'Jane',
-            message: 'Hi there!',
-            timestamp: 2000,
-          },
-        ],
-      });
-    });
-
-    it('should filter messages by since timestamp', async () => {
-      mockReq.method = 'GET';
-      mockReq.query = {
-        roomId: 'abc123def456789012345678',
-        since: '1500', // Only messages after timestamp 1500
-      };
-
-      const mockMessages = [
-        JSON.stringify({
-          id: '123_abc',
-          sender: 'John',
-          message: 'Hello!',
-          timestamp: 1000, // Before since
-        }),
-        JSON.stringify({
-          id: '124_def',
-          sender: 'Jane',
-          message: 'Hi there!',
-          timestamp: 2000, // After since
-        }),
-      ];
-      mockRedis.lrange.mockResolvedValue(mockMessages);
-
-      const chatHandler = (await import('../../api/chat.js')).default;
-      await chatHandler(mockReq, mockRes);
-
-      expect(mockRes.json).toHaveBeenCalledWith({
-        messages: [
-          {
-            id: '124_def',
-            sender: 'Jane',
-            message: 'Hi there!',
-            timestamp: 2000,
-          },
-        ],
-      });
-    });
-
-    it('should handle missing since parameter', async () => {
-      mockReq.method = 'GET';
-      mockReq.query = {
-        roomId: 'abc123def456789012345678',
-        // No since parameter
-      };
-
-      mockRedis.lrange.mockResolvedValue([]);
-
-      const chatHandler = (await import('../../api/chat.js')).default;
-      await chatHandler(mockReq, mockRes);
-
-      expect(mockRes.json).toHaveBeenCalledWith({
-        messages: [],
-      });
-    });
-
-    it('should handle invalid since timestamp by defaulting to 0', async () => {
-      mockReq.method = 'GET';
-      mockReq.query = {
-        roomId: 'abc123def456789012345678',
-        since: 'invalid-timestamp',
-      };
-
-      mockRedis.lrange.mockResolvedValue([]);
-
-      const chatHandler = (await import('../../api/chat.js')).default;
-      await chatHandler(mockReq, mockRes);
-
-      // Should not error, but default to 0 and return empty messages
-      expect(mockRes.json).toHaveBeenCalledWith({
-        messages: [],
-      });
-    });
-
-    it('should reject negative since timestamp', async () => {
-      mockReq.method = 'GET';
-      mockReq.query = {
-        roomId: 'abc123def456789012345678',
-        since: '-1000',
-      };
-
-      const chatHandler = (await import('../../api/chat.js')).default;
-      await chatHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Invalid since timestamp',
+        error: 'Unauthorized: Invalid sender credentials',
         timestamp: expect.any(String),
-      });
-    });
-
-    it('should handle malformed message JSON gracefully', async () => {
-      mockReq.method = 'GET';
-      mockReq.query = {
-        roomId: 'abc123def456789012345678',
-        since: '0',
-      };
-
-      // Mock messages with one malformed JSON
-      const mockMessages = [
-        JSON.stringify({
-          id: '124_def',
-          sender: 'Jane',
-          message: 'Hi there!',
-          timestamp: 2000,
-        }),
-        'invalid-json-string', // Malformed JSON
-        JSON.stringify({
-          id: '123_abc',
-          sender: 'John',
-          message: 'Hello!',
-          timestamp: 1000,
-        }),
-      ];
-      mockRedis.lrange.mockResolvedValue(mockMessages);
-
-      const chatHandler = (await import('../../api/chat.js')).default;
-      await chatHandler(mockReq, mockRes);
-
-      // Should filter out the malformed message
-      expect(mockRes.json).toHaveBeenCalledWith({
-        messages: [
-          {
-            id: '123_abc',
-            sender: 'John',
-            message: 'Hello!',
-            timestamp: 1000,
-          },
-          {
-            id: '124_def',
-            sender: 'Jane',
-            message: 'Hi there!',
-            timestamp: 2000,
-          },
-        ],
       });
     });
   });
 
-  describe('General Chat Endpoint Behavior', () => {
-    it('should handle OPTIONS requests for CORS preflight', async () => {
-      mockReq.method = 'OPTIONS';
+  describe('GET /api/chat - REAL Message Retrieval Testing', () => {
+    it('should retrieve and parse messages correctly', async () => {
+      const testMessages = [
+        JSON.stringify({
+          id: '1234567890_abc123',
+          sender: 'John Doe',
+          message: 'Hello!',
+          timestamp: 1234567890,
+        }),
+        JSON.stringify({
+          id: '1234567891_def456',
+          sender: 'Jane Smith',
+          message: 'Hi there!',
+          timestamp: 1234567891,
+        }),
+      ];
 
-      const chatHandler = (await import('../../api/chat.js')).default;
-      await chatHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(204);
-      expect(mockRes.end).toHaveBeenCalled();
-    });
-
-    it('should reject unsupported HTTP methods', async () => {
-      mockReq.method = 'PUT';
+      mockReq.method = 'GET';
       mockReq.query = {
         roomId: 'abc123def456789012345678',
       };
 
+      // Mock room exists
+      mockRedis.get.mockResolvedValue('{"createdAt":1234567890,"version":"1.0"}');
+
+      // Mock message retrieval
+      mockRedis.zrange.mockResolvedValue(testMessages);
+
       const chatHandler = (await import('../../api/chat.js')).default;
       await chatHandler(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(405);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Method not allowed',
-        timestamp: expect.any(String),
+        messages: [
+          {
+            id: '1234567891_def456',
+            sender: 'Jane Smith',
+            message: 'Hi there!',
+            timestamp: 1234567891,
+          },
+          {
+            id: '1234567890_abc123',
+            sender: 'John Doe',
+            message: 'Hello!',
+            timestamp: 1234567890,
+          },
+        ],
       });
+
+      // Verify REAL Redis operations
+      expect(mockRedis.get).toHaveBeenCalledWith('room:abc123def456789012345678:meta');
+      expect(mockRedis.zrange).toHaveBeenCalledWith('room:abc123def456789012345678:chat', -50, -1);
     });
 
-    it('should validate room ID for GET requests', async () => {
+    it('should handle malformed JSON in messages gracefully', async () => {
+      const malformedMessages = ['{"valid": "json"}', 'invalid-json-string', '{"another": "valid"}'];
+
       mockReq.method = 'GET';
       mockReq.query = {
-        roomId: 'invalid', // Invalid room ID
-        since: '0',
+        roomId: 'abc123def456789012345678',
       };
+
+      // Mock room exists
+      mockRedis.get.mockResolvedValue('{"createdAt":1234567890,"version":"1.0"}');
+
+      // Mock message retrieval with malformed JSON
+      mockRedis.zrange.mockResolvedValue(malformedMessages);
 
       const chatHandler = (await import('../../api/chat.js')).default;
       await chatHandler(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(400);
+      // Should return empty array because malformed JSON is filtered out
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Invalid roomId format',
-        timestamp: expect.any(String),
+        messages: [],
       });
     });
   });

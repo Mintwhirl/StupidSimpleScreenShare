@@ -30,7 +30,7 @@ vi.mock('../../api/_utils.js', async () => {
         remaining: 49,
       }),
     })),
-    TTL_ROOM: 3600,
+    TTL_ROOM: 1800,
   };
 });
 
@@ -79,7 +79,7 @@ describe('Create Room Endpoint Integration', () => {
       expect(mockRes.status).toHaveBeenCalledWith(201);
       expect(mockRes.json).toHaveBeenCalledWith({
         roomId: expect.stringMatching(/^[a-f0-9]{24}$/), // 24 hex characters
-        expiresIn: 3600,
+        expiresIn: 1800,
       });
 
       // Verify Redis operations
@@ -87,7 +87,7 @@ describe('Create Room Endpoint Integration', () => {
         expect.stringMatching(/^room:[a-f0-9]{24}:meta$/),
         expect.stringContaining('"createdAt"')
       );
-      expect(mockRedis.expire).toHaveBeenCalledWith(expect.stringMatching(/^room:[a-f0-9]{24}:meta$/), 3600);
+      expect(mockRedis.expire).toHaveBeenCalledWith(expect.stringMatching(/^room:[a-f0-9]{24}:meta$/), 1800);
     });
 
     it('should create a room successfully with valid auth secret in body', async () => {
@@ -99,7 +99,7 @@ describe('Create Room Endpoint Integration', () => {
       expect(mockRes.status).toHaveBeenCalledWith(201);
       expect(mockRes.json).toHaveBeenCalledWith({
         roomId: expect.stringMatching(/^[a-f0-9]{24}$/),
-        expiresIn: 3600,
+        expiresIn: 1800,
       });
     });
 
@@ -113,7 +113,7 @@ describe('Create Room Endpoint Integration', () => {
       expect(mockRes.status).toHaveBeenCalledWith(201);
       expect(mockRes.json).toHaveBeenCalledWith({
         roomId: expect.stringMatching(/^[a-f0-9]{24}$/),
-        expiresIn: 3600,
+        expiresIn: 1800,
       });
     });
 
@@ -195,7 +195,7 @@ describe('Create Room Endpoint Integration', () => {
       // Verify the first room was created successfully
       expect(mockRes.json).toHaveBeenCalledWith({
         roomId: expect.stringMatching(/^[a-f0-9]{24}$/),
-        expiresIn: 3600,
+        expiresIn: 1800,
       });
 
       const firstRoomId = mockRes.json.mock.calls[0][0].roomId;

@@ -30,6 +30,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
   const answerIntervalRef = useRef(null);
   const candidateIntervalRef = useRef(null);
   const isMountedRef = useRef(true);
+  const localStreamRef = useRef(null);
 
   // Initialize ICE servers
   useEffect(() => {
@@ -70,22 +71,62 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         }
       } catch (err) {
         logger.error('Error sending ICE candidate:', err);
-        setError(`Failed to send ICE candidate: ${err.message}`);
+        setGranularError(
+          'network',
+          'SEND_ICE_CANDIDATE_FAILED',
+          'Failed to send ICE candidate to server. Please check your connection and try again.',
+          err.message
+        );
+        // Don't throw for ICE candidate failures - they're not critical
+        // Just log the error and continue
       }
     },
-    [roomId, role, config, _viewerId] // Fixed: Added _viewerId to dependency array
+    [roomId, role, config, _viewerId, setGranularError] // Fixed: Added _viewerId and setGranularError to dependency array
   );
 
   // Create peer connection
   const createPeerConnection = useCallback(() => {
+    // Ensure iceServers is not empty
+    const servers = iceServers.length > 0 ? iceServers : getIceServers(true);
     const pc = new RTCPeerConnection({
-      iceServers,
+      iceServers: servers,
     });
 
     // Handle ICE candidates
     pc.onicecandidate = (event) => {
       if (event.candidate) {
-        sendICECandidate(event.candidate);
+        try {
+          // Validate candidate before sending
+          if (
+            event.candidate.candidate &&
+            event.candidate.sdpMid !== undefined &&
+            event.candidate.sdpMLineIndex !== undefined
+          ) {
+            sendICECandidate(event.candidate);
+          } else {
+            logger.warn('Invalid ICE candidate received, skipping:', event.candidate);
+          }
+        } catch (err) {
+          logger.error('Error handling ICE candidate:', err);
+          // Don't crash the connection for ICE candidate errors
+        }
+      }
+    };
+
+    // Handle ICE gathering state changes
+    pc.onicegatheringstatechange = () => {
+      logger.webrtc('ICE gathering state changed', { state: pc.iceGatheringState });
+
+      // Check if ICE gathering completed without generating candidates
+      if (pc.iceGatheringState === 'complete') {
+        // This could indicate a problem with NAT traversal or network connectivity
+        // Set an error to inform the user
+        setGranularError(
+          'webrtc',
+          'ICE_GATHERING_TIMEOUT',
+          'Failed to send offer - no ICE candidates generated for network connection',
+          'ICE gathering completed without generating any candidates'
+        );
       }
     };
 
@@ -93,6 +134,12 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     pc.onconnectionstatechange = () => {
       logger.webrtc('Connection state changed', { state: pc.connectionState });
       setConnectionState(pc.connectionState);
+
+      // Clear error state on successful connection
+      if (pc.connectionState === 'connected') {
+        setError(null);
+        setErrorState({ type: null, code: null, message: null, details: null });
+      }
 
       // Clear polling intervals when connected or failed
       if (pc.connectionState === 'connected' || pc.connectionState === 'failed') {
@@ -109,11 +156,49 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           candidateIntervalRef.current = null;
         }
       }
+
+      // Cleanup peer connection on disconnect or failure
+      if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+        // Use setTimeout to avoid cleanup during state change
+        setTimeout(() => {
+          if (peerConnectionRef.current === pc) {
+            try {
+              pc.close();
+              peerConnectionRef.current = null;
+            } catch (err) {
+              logger.error('Error during peer connection cleanup:', err);
+            }
+          }
+        }, 0);
+      }
     };
 
     // Handle ICE connection state changes
     pc.oniceconnectionstatechange = () => {
       logger.webrtc('ICE connection state changed', { state: pc.iceConnectionState });
+
+      // Handle ICE connection failures
+      if (pc.iceConnectionState === 'failed') {
+        setConnectionState('failed');
+        setGranularError(
+          'webrtc',
+          'ICE_CONNECTION_FAILED',
+          'Connection failed - unable to establish network connection',
+          `ICE connection state: ${pc.iceConnectionState}`
+        );
+
+        // Cleanup peer connection on ICE failure
+        setTimeout(() => {
+          if (peerConnectionRef.current === pc) {
+            try {
+              pc.close();
+              peerConnectionRef.current = null;
+            } catch (err) {
+              logger.error('Error during peer connection cleanup on ICE failure:', err);
+            }
+          }
+        }, 0);
+      }
     };
 
     // Handle remote stream
@@ -162,10 +247,16 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         }
       } catch (err) {
         logger.error('Error sending offer:', err);
-        setError(`Failed to send offer: ${err.message}`);
+        setGranularError(
+          'network',
+          'SEND_OFFER_FAILED',
+          'Failed to send offer to server. Please check your connection and try again.',
+          err.message
+        );
+        throw err; // Re-throw the error so startScreenShare can handle it
       }
     },
-    [roomId, config]
+    [roomId, config, setGranularError]
   );
 
   // Send answer
@@ -191,11 +282,95 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         }
       } catch (err) {
         logger.error('Error sending answer:', err);
-        setError(`Failed to send answer: ${err.message}`);
+        setGranularError(
+          'network',
+          'SEND_ANSWER_FAILED',
+          'Failed to send answer to server. Please check your connection and try again.',
+          err.message
+        );
+        throw err; // Re-throw the error so the caller can handle it
       }
     },
-    [roomId, config]
+    [roomId, config, setGranularError]
   );
+
+  // Start polling for ICE candidates with exponential backoff
+  const startCandidatePolling = useCallback(async () => {
+    if (candidateIntervalRef.current) {
+      clearInterval(candidateIntervalRef.current);
+    }
+
+    const pollFn = async () => {
+      try {
+        const response = await fetch(
+          `/api/candidate?roomId=${roomId}&role=${role}${_viewerId ? `&viewerId=${_viewerId}` : ''}`
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.candidates && data.candidates.length > 0) {
+            const pc = peerConnectionRef.current;
+            if (pc) {
+              for (const candidate of data.candidates) {
+                try {
+                  // Validate candidate before adding
+                  if (
+                    candidate &&
+                    typeof candidate === 'object' &&
+                    candidate.candidate &&
+                    candidate.sdpMid !== undefined &&
+                    candidate.sdpMLineIndex !== undefined
+                  ) {
+                    await pc.addIceCandidate(candidate);
+                    logger.webrtc('Added ICE candidate', { candidate });
+                  } else {
+                    logger.warn('Invalid ICE candidate received, skipping:', candidate);
+                  }
+                } catch (err) {
+                  logger.error('Error adding ICE candidate:', err);
+                  // Continue with other candidates
+                }
+              }
+            }
+            return true; // Success, stop polling
+          }
+        } else if (response.status === 404) {
+          // No candidates yet, continue polling
+          return false;
+        } else {
+          logger.error('Error polling for ICE candidates:', response.status);
+          return true; // Error, stop polling
+        }
+        return false;
+      } catch (err) {
+        // Handle network errors gracefully - don't crash the connection
+        logger.error('Network error polling for ICE candidates:', err);
+        return false; // Continue polling despite error
+      }
+    };
+
+    const polling = createExponentialBackoffPolling(pollFn, {
+      initialInterval: 1000,
+      maxInterval: 5000,
+      maxPolls: 30, // 30 seconds timeout for ICE candidates
+    });
+
+    try {
+      await polling();
+    } catch (err) {
+      logger.error('ICE candidate polling timeout:', err);
+      if (isMountedRef.current) {
+        setGranularError(
+          'timeout',
+          'ICE_CANDIDATE_POLLING_TIMEOUT',
+          'ICE candidate polling timeout - connection may be unstable',
+          err.message
+        );
+      }
+      // Don't throw the error - ICE candidate polling timeout is not critical
+      // The connection can still work without ICE candidates
+    }
+  }, [roomId, role, _viewerId]);
 
   // Start polling for offers (viewer)
   const startOfferPolling = useCallback(async () => {
@@ -216,7 +391,12 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           clearInterval(offerIntervalRef.current);
           offerIntervalRef.current = null;
           if (isMountedRef.current) {
-            setError('Connection timeout: No offer received from host. Make sure the host has started sharing.');
+            setGranularError(
+              'timeout',
+              'OFFER_POLLING_TIMEOUT',
+              'Connection timeout: No offer received from host. Make sure the host has started sharing.',
+              `Polled ${maxPolls} times without receiving offer`
+            );
             setConnectionState('failed');
           }
           return;
@@ -260,17 +440,27 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           clearInterval(offerIntervalRef.current);
           offerIntervalRef.current = null;
           if (isMountedRef.current) {
-            setError(`Server error: ${response.status}`);
+            setGranularError(
+              'network',
+              'SERVER_ERROR',
+              `Server error while polling for offers: ${response.status}`,
+              `HTTP ${response.status}`
+            );
             setConnectionState('failed');
           }
         }
       } catch (err) {
         logger.error('Error polling for offers:', err);
-        clearInterval(offerIntervalRef.current);
-        offerIntervalRef.current = null;
+        // Don't stop polling on network errors - continue trying
+        // The connection can recover when network is restored
         if (isMountedRef.current) {
-          setError(`Network error: ${err.message}`);
-          setConnectionState('failed');
+          setGranularError(
+            'network',
+            'NETWORK_ERROR',
+            'Network error while polling for offers. Please check your connection.',
+            err.message
+          );
+          // Don't set connection state to 'failed' - keep trying
         }
       }
     };
@@ -297,7 +487,12 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           clearInterval(answerIntervalRef.current);
           answerIntervalRef.current = null;
           if (isMountedRef.current) {
-            setError('Connection timeout: No answer received from viewer. Make sure the viewer has connected.');
+            setGranularError(
+              'timeout',
+              'ANSWER_POLLING_TIMEOUT',
+              'Connection timeout: No answer received from viewer. Make sure the viewer has connected.',
+              `Polled ${maxPolls} times without receiving answer`
+            );
             setConnectionState('failed');
           }
           return;
@@ -332,73 +527,38 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           clearInterval(answerIntervalRef.current);
           answerIntervalRef.current = null;
           if (isMountedRef.current) {
-            setError(`Server error: ${response.status}`);
+            setGranularError(
+              'network',
+              'SERVER_ERROR',
+              `Server error while polling for answers: ${response.status}`,
+              `HTTP ${response.status}`
+            );
             setConnectionState('failed');
           }
         }
       } catch (err) {
         logger.error('Error polling for answers:', err);
-        clearInterval(answerIntervalRef.current);
-        answerIntervalRef.current = null;
+        // Don't stop polling on network errors - continue trying
+        // The connection can recover when network is restored
         if (isMountedRef.current) {
-          setError(`Network error: ${err.message}`);
-          setConnectionState('failed');
+          setGranularError(
+            'network',
+            'NETWORK_ERROR',
+            'Network error while polling for answers. Please check your connection.',
+            err.message
+          );
+          // Don't set connection state to 'failed' - keep trying
         }
       }
     };
 
     answerIntervalRef.current = setInterval(pollForAnswer, pollInterval);
+
+    // Return a promise that resolves immediately
+    return Promise.resolve();
   }, [roomId]);
 
-  // Start polling for ICE candidates with exponential backoff
-  const startCandidatePolling = useCallback(async () => {
-    if (candidateIntervalRef.current) {
-      clearInterval(candidateIntervalRef.current);
-    }
-
-    const pollFn = async () => {
-      const response = await fetch(
-        `/api/candidate?roomId=${roomId}&role=${role}${_viewerId ? `&viewerId=${_viewerId}` : ''}`
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.candidates && data.candidates.length > 0) {
-          const pc = peerConnectionRef.current;
-          if (pc) {
-            for (const candidate of data.candidates) {
-              try {
-                await pc.addIceCandidate(candidate);
-              } catch (candidateErr) {
-                logger.warn('Failed to add ICE candidate:', candidateErr);
-              }
-            }
-          }
-          return true; // Found candidates
-        }
-      } else if (response.status !== 404) {
-        // 404 is expected when no candidates, but other errors are concerning
-        logger.error('Error polling for ICE candidates:', response.status);
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      return false; // No candidates found
-    };
-
-    const pollingFunction = createExponentialBackoffPolling(pollFn, {
-      initialInterval: 1000,
-      maxInterval: 10000, // 10 seconds max
-      backoffFactor: 1.5,
-      maxPolls: 120, // 2 minutes timeout
-      backoffAfter: 10, // Start backoff after 10 polls
-    });
-
-    try {
-      await pollingFunction();
-    } catch (error) {
-      logger.warn('ICE candidate polling timeout - connection may be stuck');
-    }
-  }, [roomId, role, _viewerId]); // Fixed: Added _viewerId to dependency array
+  // Fixed: Added _viewerId to dependency array
 
   // Start screen sharing (host)
   const startScreenShare = useCallback(async () => {
@@ -436,6 +596,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       }
 
       setLocalStream(stream);
+      localStreamRef.current = stream;
 
       // Create peer connection
       const pc = createPeerConnection();
@@ -458,17 +619,73 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       await pc.setLocalDescription(offer);
       await sendOffer(offer);
 
-      // Start polling for answers
-      startAnswerPolling();
+      // Keep connection state as 'connecting' after successful offer sending
+      // The connection state will be updated by the peer connection event handlers
 
-      // Start polling for ICE candidates
-      startCandidatePolling();
+      // Start polling for answers (don't await - let it run in background)
+      startAnswerPolling().catch((err) => {
+        logger.error('Answer polling failed:', err);
+      });
+
+      // Start polling for ICE candidates (don't await - let it run in background)
+      startCandidatePolling().catch((err) => {
+        logger.error('ICE candidate polling failed:', err);
+      });
 
       return stream;
     } catch (err) {
       logger.error('Error starting screen share:', err);
-      setError(`Failed to start screen sharing: ${err.message}`);
-      setConnectionState('disconnected');
+      setConnectionState('failed');
+
+      // Cleanup any resources that were created
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach((track) => track.stop());
+        localStreamRef.current = null;
+        setLocalStream(null);
+      }
+
+      if (peerConnectionRef.current) {
+        try {
+          peerConnectionRef.current.close();
+          peerConnectionRef.current = null;
+        } catch (cleanupErr) {
+          logger.error('Error during peer connection cleanup:', cleanupErr);
+        }
+      }
+
+      // Set granular error based on error type
+      if (err.message.includes('Permission denied') || err.message.includes('NotAllowedError')) {
+        setGranularError(
+          'permission',
+          'PERMISSION_DENIED',
+          'Screen sharing permission denied. Please allow screen sharing and try again.',
+          err.message
+        );
+      } else if (err.message.includes('createOffer')) {
+        setGranularError(
+          'webrtc',
+          'CREATE_OFFER_FAILED',
+          'Failed to create WebRTC offer. Please try again.',
+          err.message
+        );
+      } else if (err.message.includes('setLocalDescription')) {
+        setGranularError(
+          'webrtc',
+          'SET_LOCAL_DESCRIPTION_FAILED',
+          'Failed to set local description. Please try again.',
+          err.message
+        );
+      } else if (err.message.includes('Failed to send offer')) {
+        setGranularError(
+          'network',
+          'SEND_OFFER_FAILED',
+          'Failed to send offer to server. Please check your connection and try again.',
+          err.message
+        );
+      } else {
+        setGranularError('unknown', 'UNKNOWN_ERROR', 'An unexpected error occurred. Please try again.', err.message);
+      }
+
       throw err;
     }
   }, [role, createPeerConnection, sendOffer, startAnswerPolling, startCandidatePolling, setGranularError]);
@@ -488,8 +705,37 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       startOfferPolling();
     } catch (err) {
       logger.error('Error connecting to host:', err);
-      setError(`Failed to connect to host: ${err.message}`);
-      setConnectionState('disconnected');
+      setConnectionState('failed');
+
+      // Cleanup any resources that were created
+      if (peerConnectionRef.current) {
+        try {
+          peerConnectionRef.current.close();
+          peerConnectionRef.current = null;
+        } catch (cleanupErr) {
+          logger.error('Error during peer connection cleanup:', cleanupErr);
+        }
+      }
+
+      // Set granular error based on error type
+      if (err.message.includes('Network error') || err.message.includes('fetch')) {
+        setGranularError(
+          'network',
+          'NETWORK_ERROR',
+          'Network connection failed. Please check your connection and try again.',
+          err.message
+        );
+      } else if (err.message.includes('Room not found') || err.message.includes('404')) {
+        setGranularError(
+          'network',
+          'ROOM_NOT_FOUND',
+          'Room not found. Please check the room ID and try again.',
+          err.message
+        );
+      } else {
+        setGranularError('unknown', 'UNKNOWN_ERROR', 'An unexpected error occurred. Please try again.', err.message);
+      }
+
       throw err;
     }
   }, [role, startOfferPolling]);
@@ -501,12 +747,23 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       if (localStream) {
         localStream.getTracks().forEach((track) => track.stop());
         setLocalStream(null);
+        localStreamRef.current = null;
+      }
+
+      // Stop remote stream tracks if they exist
+      if (remoteStream) {
+        remoteStream.getTracks().forEach((track) => track.stop());
+        setRemoteStream(null);
       }
 
       // Close peer connection
       if (peerConnectionRef.current) {
-        peerConnectionRef.current.close();
-        peerConnectionRef.current = null;
+        try {
+          peerConnectionRef.current.close();
+          peerConnectionRef.current = null;
+        } catch (err) {
+          logger.error('Error closing peer connection:', err);
+        }
       }
 
       // Clear intervals
@@ -527,11 +784,13 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
 
       setConnectionState('disconnected');
       setRemoteStream(null);
+      setError(null);
+      setErrorState({ type: null, code: null, message: null, details: null });
     } catch (err) {
       logger.error('Error stopping screen share:', err);
       setError(`Failed to stop screen sharing: ${err.message}`);
     }
-  }, [localStream]);
+  }, [localStream, remoteStream]);
 
   // Disconnect
   const disconnect = useCallback(async () => {
@@ -547,21 +806,43 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
 
       if (offerIntervalRef.current) {
         clearInterval(offerIntervalRef.current);
+        offerIntervalRef.current = null;
       }
       if (answerIntervalRef.current) {
         clearInterval(answerIntervalRef.current);
+        answerIntervalRef.current = null;
       }
       if (candidateIntervalRef.current) {
         clearInterval(candidateIntervalRef.current);
+        candidateIntervalRef.current = null;
       }
       if (peerConnectionRef.current) {
-        peerConnectionRef.current.close();
+        try {
+          peerConnectionRef.current.close();
+          peerConnectionRef.current = null;
+        } catch (err) {
+          logger.error('Error during peer connection cleanup on unmount:', err);
+        }
       }
-      if (localStream) {
-        localStream.getTracks().forEach((track) => track.stop());
+
+      // Stop local stream tracks on unmount
+      const stream = localStreamRef.current;
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+        localStreamRef.current = null;
       }
+
+      // Stop remote stream tracks on unmount
+      if (remoteStream) {
+        remoteStream.getTracks().forEach((track) => track.stop());
+      }
+
+      // Clear error states on unmount
+      setError(null);
+      setErrorState({ type: null, code: null, message: null, details: null });
+      setConnectionState('disconnected');
     };
-  }, [localStream]);
+  }, [remoteStream]); // Include remoteStream in dependency array
 
   return {
     // State

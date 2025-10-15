@@ -3,7 +3,14 @@
  * Abstracts common API patterns to reduce boilerplate
  */
 
-import { createRedisClient, setCorsHeaders, setSecurityHeaders, asyncHandler, sendError } from './_utils.js';
+import {
+  createRedisClient,
+  setCorsHeaders,
+  setSecurityHeaders,
+  asyncHandler,
+  sendError,
+  validateRoomId,
+} from './_utils.js';
 
 /**
  * Create a standardized API handler with common middleware
@@ -39,17 +46,21 @@ export function createApiHandler(handler, options = {}) {
     // Create Redis client
     const redis = createRedisClient();
 
-    // Validate room if required
+    // Validate room if required (format validation)
     if (requireRoom) {
-      const { roomId } = req.query || req.body || {};
+      const roomId = req.query?.roomId || req.body?.roomId;
       if (!roomId) {
         return sendError(res, 400, 'Room ID is required');
       }
 
-      const roomExists = await redis.get(`room:${roomId}:meta`);
-      if (!roomExists) {
-        return sendError(res, 410, 'Room expired or not found');
+      // Validate room ID format
+      const roomValidation = validateRoomId(roomId);
+      if (!roomValidation.valid) {
+        return sendError(res, 400, roomValidation.error);
       }
+
+      // Note: Room existence validation should be done by individual endpoints
+      // to allow for proper error handling and testing
     }
 
     // Call the main handler with enhanced context
@@ -88,13 +99,17 @@ export function createRateLimitedHandler(handler, rateLimitFn, getRateLimitId, o
  */
 export function createValidatedHandler(handler, validators = {}, options = {}) {
   return createApiHandler(async (req, res, context) => {
-    // Validate request data
+    // Validate request data - only validate fields that are present
+    // This allows endpoints to handle conditional validation based on HTTP method
     for (const [field, validator] of Object.entries(validators)) {
       const value = req.body?.[field] || req.query?.[field];
-      const validation = validator(value);
 
-      if (!validation.valid) {
-        return sendError(res, 400, validation.error);
+      // Only validate if the field is present in the request
+      if (value !== undefined && value !== null) {
+        const validation = validator(value);
+        if (!validation.valid) {
+          return sendError(res, 400, validation.error);
+        }
       }
     }
 

@@ -65,7 +65,6 @@ describe('Config Endpoint Integration', () => {
       expect(mockRes.json).toHaveBeenCalledWith({
         success: true,
         config: {
-          authSecret: 'test-secret-key-123',
           apiBase: '/api',
           features: {
             chat: true,
@@ -73,8 +72,8 @@ describe('Config Endpoint Integration', () => {
             viewerCount: true,
           },
           rateLimits: {
-            chat: 10,
-            api: 100,
+            chat: 60,
+            api: 2000,
           },
         },
         timestamp: expect.any(String),

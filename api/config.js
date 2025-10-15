@@ -18,7 +18,6 @@ async function handleConfig(req, res, { redis: _redis }) {
 
     // Return client configuration
     const config = {
-      authSecret,
       // Add other client configuration here as needed
       apiBase: process.env.API_BASE || '/api',
       // Add feature flags or other config
@@ -29,8 +28,8 @@ async function handleConfig(req, res, { redis: _redis }) {
       },
       // Add rate limiting info for client
       rateLimits: {
-        chat: 10, // messages per minute
-        api: 100, // requests per minute
+        chat: 60, // messages per minute
+        api: 2000, // requests per minute
       },
     };
 

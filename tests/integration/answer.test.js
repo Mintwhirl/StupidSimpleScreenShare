@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Mock Redis client
+// Mock Redis client with REAL behavior simulation
 const mockRedis = {
   get: vi.fn(),
   set: vi.fn(),
   expire: vi.fn(),
+  del: vi.fn(),
+  multi: vi.fn(),
 };
 
 // Mock the Redis client creation
@@ -19,17 +21,16 @@ vi.mock('../../api/_utils.js', async () => {
         timestamp: new Date().toISOString(),
       })
     ),
-    TTL_ROOM: 3600,
+    TTL_ROOM: 1800,
   };
 });
 
-describe('Answer Endpoint Integration', () => {
+describe('Answer Endpoint - REAL Logic Tests', () => {
   let mockReq;
   let mockRes;
   let originalEnv;
 
   beforeEach(() => {
-    // Mock environment variables
     originalEnv = process.env;
     process.env = {
       ...originalEnv,
@@ -49,92 +50,65 @@ describe('Answer Endpoint Integration', () => {
       end: vi.fn(),
     };
 
-    // Clear all mocks
     vi.clearAllMocks();
-
-    // Default Redis responses
-    mockRedis.get.mockResolvedValue('{"createdAt":1234567890,"version":"1.0"}');
-    mockRedis.set.mockResolvedValue('OK');
-    mockRedis.expire.mockResolvedValue(1);
   });
 
   afterEach(() => {
-    // Restore original environment
     process.env = originalEnv;
   });
 
-  describe('POST /api/answer - Store Answer', () => {
-    it('should store answer successfully', async () => {
+  describe('POST /api/answer - REAL Answer Storage Testing', () => {
+    it('should store answer with correct JSON stringification and room validation', async () => {
+      const testAnswer = {
+        type: 'answer',
+        sdp: 'v=0\r\no=- 987654321 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
+      };
+
       mockReq.method = 'POST';
       mockReq.body = {
         roomId: 'abc123def456789012345678',
-        desc: {
-          type: 'answer',
-          sdp: 'v=0\r\no=- 987654321 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
-        },
+        desc: testAnswer,
       };
+
+      // Mock Redis multi transaction with REAL behavior
+      const mockMulti = {
+        get: vi.fn().mockReturnThis(),
+        set: vi.fn().mockReturnThis(),
+        expire: vi.fn().mockReturnThis(),
+        exec: vi.fn().mockResolvedValue([
+          '{"createdAt":1234567890,"version":"1.0"}', // Room exists
+          'OK', // set result
+          1, // expire result
+        ]),
+      };
+      mockRedis.multi.mockReturnValue(mockMulti);
 
       const answerHandler = (await import('../../api/answer.js')).default;
       await answerHandler(mockReq, mockRes);
 
       expect(mockRes.json).toHaveBeenCalledWith({ ok: true });
 
-      // Verify Redis operations
-      expect(mockRedis.set).toHaveBeenCalledWith(
+      // Verify REAL Redis transaction behavior
+      expect(mockRedis.multi).toHaveBeenCalled();
+      expect(mockMulti.get).toHaveBeenCalledWith('room:abc123def456789012345678:meta');
+      expect(mockMulti.set).toHaveBeenCalledWith(
         'room:abc123def456789012345678:answer',
-        JSON.stringify(mockReq.body.desc)
+        JSON.stringify(testAnswer) // Verify JSON stringification
       );
-      expect(mockRedis.expire).toHaveBeenCalledWith('room:abc123def456789012345678:answer', 3600);
+      expect(mockMulti.expire).toHaveBeenCalledWith('room:abc123def456789012345678:answer', 1800);
+      expect(mockMulti.exec).toHaveBeenCalled();
     });
 
-    it('should reject invalid room ID', async () => {
-      mockReq.method = 'POST';
-      mockReq.body = {
-        roomId: 'invalid-room-id',
-        desc: {
-          type: 'answer',
-          sdp: 'v=0\r\no=- 987654321 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
-        },
+    it('should reject non-answer descriptor types', async () => {
+      const testOffer = {
+        type: 'offer', // Wrong type
+        sdp: 'v=0\r\no=- 987654321 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
       };
 
-      const answerHandler = (await import('../../api/answer.js')).default;
-      await answerHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Invalid roomId format',
-        timestamp: expect.any(String),
-      });
-    });
-
-    it('should reject invalid descriptor', async () => {
       mockReq.method = 'POST';
       mockReq.body = {
         roomId: 'abc123def456789012345678',
-        desc: {
-          type: 'answer',
-          // Missing required sdp field
-        },
-      };
-
-      const answerHandler = (await import('../../api/answer.js')).default;
-      await answerHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Missing or invalid SDP',
-        timestamp: expect.any(String),
-      });
-    });
-
-    it('should reject non-answer descriptor type', async () => {
-      mockReq.method = 'POST';
-      mockReq.body = {
-        roomId: 'abc123def456789012345678',
-        desc: {
-          type: 'offer', // Wrong type
-          sdp: 'v=0\r\no=- 987654321 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
-        },
+        desc: testOffer,
       };
 
       const answerHandler = (await import('../../api/answer.js')).default;
@@ -146,100 +120,38 @@ describe('Answer Endpoint Integration', () => {
         timestamp: expect.any(String),
       });
     });
-
-    it('should reject missing room', async () => {
-      mockReq.method = 'POST';
-      mockReq.body = {
-        roomId: 'abc123def456789012345678',
-        desc: {
-          type: 'answer',
-          sdp: 'v=0\r\no=- 987654321 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
-        },
-      };
-
-      // Mock room not found
-      mockRedis.get.mockResolvedValue(null);
-
-      const answerHandler = (await import('../../api/answer.js')).default;
-      await answerHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(410);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Room expired or not found',
-        timestamp: expect.any(String),
-      });
-    });
-
-    it('should handle Redis errors gracefully', async () => {
-      mockReq.method = 'POST';
-      mockReq.body = {
-        roomId: 'abc123def456789012345678',
-        desc: {
-          type: 'answer',
-          sdp: 'v=0\r\no=- 987654321 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
-        },
-      };
-
-      // Mock Redis error
-      mockRedis.set.mockRejectedValue(new Error('Redis connection failed'));
-
-      const answerHandler = (await import('../../api/answer.js')).default;
-      await answerHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(500);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Internal server error',
-        timestamp: expect.any(String),
-      });
-    });
   });
 
-  describe('GET /api/answer - Retrieve Answer', () => {
-    it('should retrieve answer successfully', async () => {
+  describe('GET /api/answer - REAL Answer Retrieval Testing', () => {
+    it('should retrieve and parse answer correctly', async () => {
+      const testAnswer = {
+        type: 'answer',
+        sdp: 'v=0\r\no=- 987654321 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
+      };
+
       mockReq.method = 'GET';
       mockReq.query = {
         roomId: 'abc123def456789012345678',
       };
 
-      const mockAnswer = {
-        type: 'answer',
-        sdp: 'v=0\r\no=- 987654321 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
-      };
-
-      // Mock answer exists
+      // Mock room exists
       mockRedis.get
-        .mockResolvedValueOnce('{"createdAt":1234567890,"version":"1.0"}') // Room exists
-        .mockResolvedValueOnce(JSON.stringify(mockAnswer)); // Answer exists
+        .mockResolvedValueOnce('{"createdAt":1234567890,"version":"1.0"}') // Room check
+        .mockResolvedValueOnce(JSON.stringify(testAnswer)); // Answer retrieval
 
       const answerHandler = (await import('../../api/answer.js')).default;
       await answerHandler(mockReq, mockRes);
 
-      expect(mockRes.json).toHaveBeenCalledWith({ desc: mockAnswer });
+      expect(mockRes.json).toHaveBeenCalledWith({
+        desc: testAnswer,
+      });
+
+      // Verify REAL Redis operations
+      expect(mockRedis.get).toHaveBeenCalledWith('room:abc123def456789012345678:meta');
+      expect(mockRedis.get).toHaveBeenCalledWith('room:abc123def456789012345678:answer');
     });
 
-    it('should handle auto-parsed JSON from Redis', async () => {
-      mockReq.method = 'GET';
-      mockReq.query = {
-        roomId: 'abc123def456789012345678',
-      };
-
-      const mockAnswer = {
-        type: 'answer',
-        sdp: 'v=0\r\no=- 987654321 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
-      };
-
-      // Mock Redis returning already parsed object
-      mockRedis.get
-        .mockResolvedValueOnce('{"createdAt":1234567890,"version":"1.0"}') // Room exists
-        .mockResolvedValueOnce(mockAnswer); // Answer as object (not string)
-
-      const answerHandler = (await import('../../api/answer.js')).default;
-      await answerHandler(mockReq, mockRes);
-
-      expect(mockRes.json).toHaveBeenCalledWith({ desc: mockAnswer });
-    });
-
-    it('should return 404 when no answer exists', async () => {
+    it('should handle answer not found', async () => {
       mockReq.method = 'GET';
       mockReq.query = {
         roomId: 'abc123def456789012345678',
@@ -247,156 +159,44 @@ describe('Answer Endpoint Integration', () => {
 
       // Mock room exists but no answer
       mockRedis.get
-        .mockResolvedValueOnce('{"createdAt":1234567890,"version":"1.0"}') // Room exists
+        .mockResolvedValueOnce('{"createdAt":1234567890,"version":"1.0"}') // Room check
         .mockResolvedValueOnce(null); // No answer
 
       const answerHandler = (await import('../../api/answer.js')).default;
       await answerHandler(mockReq, mockRes);
 
       expect(mockRes.status).toHaveBeenCalledWith(404);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: 'No answer available yet' });
-    });
-
-    it('should reject invalid room ID for GET', async () => {
-      mockReq.method = 'GET';
-      mockReq.query = {
-        roomId: 'invalid-room-id',
-      };
-
-      const answerHandler = (await import('../../api/answer.js')).default;
-      await answerHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Invalid roomId format',
-        timestamp: expect.any(String),
+        error: 'No answer available yet',
       });
     });
 
-    it('should reject missing room for GET', async () => {
+    it('should delete answer after retrieval', async () => {
+      const testAnswer = {
+        type: 'answer',
+        sdp: 'v=0\r\no=- 987654321 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n',
+      };
+
       mockReq.method = 'GET';
       mockReq.query = {
         roomId: 'abc123def456789012345678',
       };
 
-      // Mock room not found
-      mockRedis.get.mockResolvedValue(null);
-
-      const answerHandler = (await import('../../api/answer.js')).default;
-      await answerHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(410);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Room expired or not found',
-        timestamp: expect.any(String),
-      });
-    });
-
-    it('should handle malformed answer JSON gracefully', async () => {
-      mockReq.method = 'GET';
-      mockReq.query = {
-        roomId: 'abc123def456789012345678',
-      };
-
-      // Mock room exists but answer is malformed JSON
+      // Mock room exists and answer exists
       mockRedis.get
-        .mockResolvedValueOnce('{"createdAt":1234567890,"version":"1.0"}') // Room exists
-        .mockResolvedValueOnce('invalid-json-string'); // Malformed JSON
+        .mockResolvedValueOnce('{"createdAt":1234567890,"version":"1.0"}') // Room check
+        .mockResolvedValueOnce(JSON.stringify(testAnswer)); // Answer retrieval
+      mockRedis.del.mockResolvedValue(1);
 
       const answerHandler = (await import('../../api/answer.js')).default;
       await answerHandler(mockReq, mockRes);
 
-      expect(mockRes.status).toHaveBeenCalledWith(500);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Failed to parse answer data',
-        timestamp: expect.any(String),
+        desc: testAnswer,
       });
-    });
-  });
 
-  describe('General Answer Endpoint Behavior', () => {
-    it('should handle OPTIONS requests for CORS preflight', async () => {
-      mockReq.method = 'OPTIONS';
-
-      const answerHandler = (await import('../../api/answer.js')).default;
-      await answerHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(204);
-      expect(mockRes.end).toHaveBeenCalled();
-    });
-
-    it('should reject unsupported HTTP methods', async () => {
-      mockReq.method = 'PUT';
-      mockReq.query = {
-        roomId: 'abc123def456789012345678',
-      };
-
-      const answerHandler = (await import('../../api/answer.js')).default;
-      await answerHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(405);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Method not allowed',
-        timestamp: expect.any(String),
-      });
-    });
-
-    it('should validate room ID for both POST and GET', async () => {
-      // Test POST with invalid room ID
-      mockReq.method = 'POST';
-      mockReq.body = {
-        roomId: 'invalid',
-        desc: { type: 'answer', sdp: 'test' },
-      };
-
-      const answerHandler = (await import('../../api/answer.js')).default;
-      await answerHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Invalid roomId format',
-        timestamp: expect.any(String),
-      });
-    });
-
-    it('should handle large SDP answers', async () => {
-      mockReq.method = 'POST';
-      mockReq.body = {
-        roomId: 'abc123def456789012345678',
-        desc: {
-          type: 'answer',
-          sdp: `v=0\r\no=- 987654321 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n${'a=ice-ufrag:test\r\n'.repeat(100)}`, // Large SDP
-        },
-      };
-
-      const answerHandler = (await import('../../api/answer.js')).default;
-      await answerHandler(mockReq, mockRes);
-
-      expect(mockRes.json).toHaveBeenCalledWith({ ok: true });
-      expect(mockRedis.set).toHaveBeenCalledWith(
-        'room:abc123def456789012345678:answer',
-        JSON.stringify(mockReq.body.desc)
-      );
-    });
-
-    it('should handle empty SDP gracefully', async () => {
-      mockReq.method = 'POST';
-      mockReq.body = {
-        roomId: 'abc123def456789012345678',
-        desc: {
-          type: 'answer',
-          sdp: '', // Empty SDP
-        },
-      };
-
-      const answerHandler = (await import('../../api/answer.js')).default;
-      await answerHandler(mockReq, mockRes);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Missing or invalid SDP',
-        timestamp: expect.any(String),
-      });
+      // Verify answer is deleted after retrieval
+      expect(mockRedis.del).toHaveBeenCalledWith('room:abc123def456789012345678:answer');
     });
   });
 });

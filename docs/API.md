@@ -19,7 +19,7 @@ x-auth-secret: your-auth-secret-here
 
 ## Rate Limiting
 
-- **API calls**: 2000 requests per hour per IP
+- **API calls**: 2000 requests per minute per IP
 - **Chat messages**: 60 messages per minute per room+sender
 - **Room creation**: 50 rooms per hour per IP
 
@@ -41,7 +41,7 @@ Creates a new screen sharing room.
 ```json
 {
   "roomId": "abc123def456789012345678",
-  "expiresIn": 3600
+  "expiresIn": 1800
 }
 ```
 

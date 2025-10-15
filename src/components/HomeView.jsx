@@ -37,7 +37,7 @@ function HomeView() {
   const handleStopSharing = () => {
     // This will be implemented when we have the WebRTC connection
     // For now, just go back to home
-    onNavigateToHost('');
+    updateRoomId('');
   };
 
   // Handle start recording

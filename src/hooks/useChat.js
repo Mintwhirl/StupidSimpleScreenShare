@@ -128,7 +128,7 @@ export function useChat(roomId, role, sender, secret = null) {
         setLoading(false);
       }
     },
-    [roomId, sender, apiSendMessage]
+    [roomId, sender, secret, apiSendMessage]
   );
 
   // Load initial messages

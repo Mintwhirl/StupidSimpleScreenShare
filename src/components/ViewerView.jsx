@@ -106,7 +106,6 @@ function ViewerView({ config, onGoHome }) {
   const handleConnect = useCallback(async () => {
     // Clear previous errors
     setError(null);
-    setRoomIdError(null);
     setViewerIdError(null);
 
     // Validate inputs

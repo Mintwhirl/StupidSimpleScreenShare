@@ -299,7 +299,7 @@ useEffect(() => {
 
 - **Room Creation**: 50 rooms per hour per IP
 - **Chat Messages**: 60 messages per minute per room+sender
-- **API Calls**: 2000 calls per hour per IP
+- **API Calls**: 2000 calls per minute per IP
 
 ### Authentication
 

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 
-import { getClientIdentifier } from '../../api/_utils.js';
+import { getClientIP } from '../../api/_utils.js';
 
-describe('getClientIdentifier', () => {
+describe('getClientIP', () => {
   describe('x-forwarded-for header', () => {
     it('should return first IP from x-forwarded-for header', () => {
       const req = {
@@ -11,7 +11,7 @@ describe('getClientIdentifier', () => {
         },
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('192.168.1.100');
     });
@@ -23,7 +23,7 @@ describe('getClientIdentifier', () => {
         },
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('192.168.1.100');
     });
@@ -35,9 +35,9 @@ describe('getClientIdentifier', () => {
         },
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
-      expect(result).toBe(' 192.168.1.100 ');
+      expect(result).toBe('192.168.1.100');
     });
 
     it('should handle empty x-forwarded-for header', () => {
@@ -47,7 +47,7 @@ describe('getClientIdentifier', () => {
         },
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('unknown');
     });
@@ -61,7 +61,7 @@ describe('getClientIdentifier', () => {
         },
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('203.0.113.1');
     });
@@ -74,7 +74,7 @@ describe('getClientIdentifier', () => {
         },
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('203.0.113.1');
     });
@@ -86,7 +86,7 @@ describe('getClientIdentifier', () => {
         },
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('203.0.113.1');
     });
@@ -101,7 +101,7 @@ describe('getClientIdentifier', () => {
         },
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('127.0.0.1');
     });
@@ -117,7 +117,7 @@ describe('getClientIdentifier', () => {
         },
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('127.0.0.1');
     });
@@ -129,7 +129,8 @@ describe('getClientIdentifier', () => {
         },
       };
 
-      expect(() => getClientIdentifier(req)).toThrow();
+      const result = getClientIP(req);
+      expect(result).toBe('127.0.0.1');
     });
   });
 
@@ -139,7 +140,7 @@ describe('getClientIdentifier', () => {
         headers: {},
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('unknown');
     });
@@ -149,7 +150,7 @@ describe('getClientIdentifier', () => {
         headers: {},
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('unknown');
     });
@@ -160,7 +161,7 @@ describe('getClientIdentifier', () => {
         connection: null,
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('unknown');
     });
@@ -173,7 +174,7 @@ describe('getClientIdentifier', () => {
         },
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('unknown');
     });
@@ -184,7 +185,7 @@ describe('getClientIdentifier', () => {
         connection: {},
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('unknown');
     });
@@ -202,7 +203,7 @@ describe('getClientIdentifier', () => {
         },
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('192.168.1.100');
     });
@@ -217,7 +218,7 @@ describe('getClientIdentifier', () => {
         },
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('203.0.113.1');
     });
@@ -230,7 +231,7 @@ describe('getClientIdentifier', () => {
         },
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('127.0.0.1');
     });
@@ -244,7 +245,7 @@ describe('getClientIdentifier', () => {
         },
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('2001:db8::1');
     });
@@ -256,7 +257,7 @@ describe('getClientIdentifier', () => {
         },
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('2001:db8::1');
     });
@@ -268,17 +269,19 @@ describe('getClientIdentifier', () => {
         },
       };
 
-      const result = getClientIdentifier(req);
+      const result = getClientIP(req);
 
       expect(result).toBe('not-an-ip');
     });
 
     it('should handle null req', () => {
-      expect(() => getClientIdentifier(null)).toThrow();
+      const result = getClientIP(null);
+      expect(result).toBe('unknown');
     });
 
     it('should handle undefined req', () => {
-      expect(() => getClientIdentifier(undefined)).toThrow();
+      const result = getClientIP(undefined);
+      expect(result).toBe('unknown');
     });
   });
 });

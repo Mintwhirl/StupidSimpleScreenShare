@@ -31,7 +31,16 @@ const TURN_SERVERS = [
     credential: 'openrelayproject',
   },
   // Production TURN servers (if configured)
-  ...(process.env.TURN_SERVERS ? JSON.parse(process.env.TURN_SERVERS) : []),
+  ...(process.env.TURN_SERVERS
+    ? (() => {
+        try {
+          return JSON.parse(process.env.TURN_SERVERS);
+        } catch (error) {
+          console.error('Invalid TURN_SERVERS JSON:', error);
+          return [];
+        }
+      })()
+    : []),
 ];
 
 /**
