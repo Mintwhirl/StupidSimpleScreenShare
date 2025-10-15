@@ -11,6 +11,12 @@ async function handleConfig(req, res, { redis: _redis }) {
     // Get AUTH_SECRET from environment variables
     const authSecret = process.env.AUTH_SECRET;
 
+    console.log('Config endpoint - AUTH_SECRET check:', {
+      hasAuthSecret: !!authSecret,
+      authSecretLength: authSecret ? authSecret.length : 0,
+      authSecretPreview: authSecret ? `${authSecret.substring(0, 20)}...` : 'undefined',
+    });
+
     if (!authSecret) {
       console.error('AUTH_SECRET environment variable is not set');
       return sendError(res, 500, 'Server configuration error');

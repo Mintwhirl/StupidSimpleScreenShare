@@ -19,9 +19,11 @@ async function handleCreateRoom(req, res, { redis }) {
   if (authSecret) {
     const providedSecret = req.headers['x-auth-secret'] || req.body?.authSecret;
     console.log('Auth check:', {
-      envSecret: authSecret ? `${authSecret.substring(0, 10)}...` : 'undefined',
-      providedSecret: providedSecret ? `${providedSecret.substring(0, 10)}...` : 'undefined',
+      envSecret: authSecret ? `${authSecret.substring(0, 20)}...` : 'undefined',
+      providedSecret: providedSecret ? `${providedSecret.substring(0, 20)}...` : 'undefined',
       match: providedSecret === authSecret,
+      envSecretLength: authSecret ? authSecret.length : 0,
+      providedSecretLength: providedSecret ? providedSecret.length : 0,
     });
     if (providedSecret !== authSecret) {
       console.log('Auth mismatch - authentication failed');
