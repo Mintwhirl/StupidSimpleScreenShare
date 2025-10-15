@@ -17,17 +17,10 @@ async function handleConfig(req, res, { redis: _redis }) {
       authSecretPreview: authSecret ? `${authSecret.substring(0, 20)}...` : 'undefined',
     });
 
-    if (!authSecret) {
-      console.error('AUTH_SECRET environment variable is not set');
-      return sendError(res, 500, 'Server configuration error');
-    }
-
     // Return client configuration
     const config = {
       // Add other client configuration here as needed
       apiBase: process.env.API_BASE || '/api',
-      // Include auth secret for client authentication
-      authSecret,
       // Add feature flags or other config
       features: {
         chat: true,
@@ -40,6 +33,11 @@ async function handleConfig(req, res, { redis: _redis }) {
         api: 2000, // requests per minute
       },
     };
+
+    // Include auth secret only if it's set (for client authentication)
+    if (authSecret) {
+      config.authSecret = authSecret;
+    }
 
     res.status(200).json({
       success: true,
