@@ -1,9 +1,22 @@
 import { createCompleteHandler } from './_middleware.js';
-import { validateRoomId, validateRTCDescriptor, TTL_ROOM, sendError } from './_utils.js';
+import {
+  validateRoomId,
+  validateRTCDescriptor,
+  TTL_ROOM,
+  sendError,
+  checkRateLimit,
+  getApiRateLimit,
+  getClientIdentifier,
+} from './_utils.js';
 
 async function handleAnswer(req, res, { redis }) {
   if (req.method === 'POST') {
     const { roomId, desc } = req.body || {};
+
+    // Rate limiting: 2000 requests per minute per IP
+    const clientId = getClientIdentifier(req);
+    const rateLimitError = await checkRateLimit(getApiRateLimit(), clientId, res);
+    if (rateLimitError) return rateLimitError;
 
     const roomValidation = validateRoomId(roomId);
     if (!roomValidation.valid) {

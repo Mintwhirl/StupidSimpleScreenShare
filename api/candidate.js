@@ -1,9 +1,23 @@
 import { createCompleteHandler } from './_middleware.js';
-import { sendError, validateRoomId, validateRole, validateICECandidate, TTL_ROOM } from './_utils.js';
+import {
+  sendError,
+  validateRoomId,
+  validateRole,
+  validateICECandidate,
+  TTL_ROOM,
+  checkRateLimit,
+  getApiRateLimit,
+  getClientIdentifier,
+} from './_utils.js';
 
 async function handleCandidate(req, res, { redis }) {
   if (req.method === 'POST') {
     const { roomId, role, viewerId, candidate } = req.body || {};
+
+    // Rate limiting: 2000 requests per minute per IP
+    const clientId = getClientIdentifier(req);
+    const rateLimitError = await checkRateLimit(getApiRateLimit(), clientId, res);
+    if (rateLimitError) return rateLimitError;
 
     // Validation is now handled by middleware
 
