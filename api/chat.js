@@ -50,7 +50,7 @@ async function handleChat(req, res, { redis }) {
 
     // Special case: Allow host to send messages without registration
     if (sanitizedSender === 'host') {
-      console.log('Chat: Allowing host to send message without registration');
+      console.log('Chat: Allowing host to send message without registration - v2');
       // Skip sender validation for host
     } else {
       // For other senders, require registration
