@@ -20,6 +20,8 @@ async function handleConfig(req, res, { redis: _redis }) {
     const config = {
       // Add other client configuration here as needed
       apiBase: process.env.API_BASE || '/api',
+      // Include auth secret for client authentication
+      authSecret,
       // Add feature flags or other config
       features: {
         chat: true,
