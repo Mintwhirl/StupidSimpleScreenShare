@@ -149,18 +149,8 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     // Handle ICE gathering state changes
     pc.onicegatheringstatechange = () => {
       logger.webrtc('ICE gathering state changed', { state: pc.iceGatheringState });
-
-      // Check if ICE gathering completed without generating candidates
-      if (pc.iceGatheringState === 'complete') {
-        // This could indicate a problem with NAT traversal or network connectivity
-        // Set an error to inform the user
-        setGranularError(
-          'webrtc',
-          'ICE_GATHERING_TIMEOUT',
-          'Failed to send offer - no ICE candidates generated for network connection',
-          'ICE gathering completed without generating any candidates'
-        );
-      }
+      // ICE gathering completing is normal - don't set an error
+      // Candidates are sent via onicecandidate as they're generated
     };
 
     // Handle connection state changes

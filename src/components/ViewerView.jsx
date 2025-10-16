@@ -123,14 +123,22 @@ function ViewerView({ config, onGoHome }) {
   // Validate room exists
   const validateRoom = useCallback(async (roomId) => {
     try {
+      console.log('[ViewerView] Validating room:', roomId);
       const response = await fetch(`${API_ENDPOINTS.DIAGNOSTICS}?roomId=${roomId}`);
+      console.log('[ViewerView] Diagnostics response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
-        return data.room?.exists === true;
+        console.log('[ViewerView] Diagnostics data:', data);
+        const exists = data.room?.exists === true;
+        console.log('[ViewerView] Room exists:', exists);
+        return exists;
       }
+
+      console.error('[ViewerView] Diagnostics request failed:', response.status, response.statusText);
       return false;
     } catch (err) {
-      console.error('Error validating room:', err);
+      console.error('[ViewerView] Error validating room:', err);
       return false;
     }
   }, []);
@@ -316,13 +324,13 @@ function ViewerView({ config, onGoHome }) {
         <div className='flex items-center justify-between'>
           <div>
             <h2 className='text-2xl font-bold text-gray-900 mb-2'>👀 Viewing Room</h2>
-            <p className='text-gray-600'>
-              Connected to room: <span className='font-mono font-medium'>{roomId}</span>
+            <p className='text-gray-900'>
+              Room ID: <span className='font-mono font-semibold bg-gray-100 px-2 py-1 rounded'>{roomId}</span>
             </p>
           </div>
           <div className='text-right'>
-            <div className={`text-sm font-medium ${getStatusColor()}`}>Connection: {getStatusText()}</div>
-            <div className={`text-sm font-medium ${getHostStatusColor()}`}>{getHostStatusText()}</div>
+            <div className={`text-sm font-semibold ${getStatusColor()}`}>Connection: {getStatusText()}</div>
+            <div className={`text-sm font-semibold ${getHostStatusColor()}`}>{getHostStatusText()}</div>
           </div>
         </div>
       </div>
