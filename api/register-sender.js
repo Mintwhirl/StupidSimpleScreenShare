@@ -1,3 +1,5 @@
+import { randomBytes } from 'crypto';
+
 import { createCompleteHandler } from './_middleware.js';
 import { sendError, validateRoomId, validateSender, getClientIdentifier, TTL_ROOM } from './_utils.js';
 
@@ -34,7 +36,7 @@ async function handleRegisterSender(req, res, { redis }) {
     const senderKey = `room:${roomId}:sender:${senderId.trim()}`;
 
     // Generate a unique secret for this sender
-    const senderSecret = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const senderSecret = randomBytes(16).toString('hex'); // 32 hex chars (128 bits)
 
     // Store both client ID and secret
     const senderData = {

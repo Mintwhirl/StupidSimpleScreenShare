@@ -98,13 +98,27 @@ export function getCandidateRateLimit() {
 }
 
 // CORS headers helper
-export function setCorsHeaders(res) {
-  // Get allowed origin from environment or default to production domain
-  const allowedOrigin = process.env.ALLOWED_ORIGIN || 'https://stupid-simple-screen-share.vercel.app';
+export function setCorsHeaders(req, res) {
+  const requestOrigin = req.headers.origin;
 
-  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,x-auth-secret,x-sender-secret');
+  // Allow all Vercel preview deployments + production + localhost (dev/testing)
+  const allowedOrigins = [
+    'https://stupid-simple-screen-share.vercel.app', // Production
+    /^https:\/\/stupid-simple-screen-share-[a-z0-9]+\.vercel\.app$/, // Preview deployments
+    'http://localhost:5173', // Vite dev
+    'http://localhost:3000', // Alternative dev
+  ];
+
+  const isAllowed = allowedOrigins.some((origin) => {
+    if (typeof origin === 'string') return origin === requestOrigin;
+    return origin.test(requestOrigin);
+  });
+
+  const origin = isAllowed ? requestOrigin : 'https://stupid-simple-screen-share.vercel.app';
+
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,x-auth-secret,x-sender-secret,Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 }
 
