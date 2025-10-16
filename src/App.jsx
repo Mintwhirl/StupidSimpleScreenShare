@@ -18,15 +18,18 @@ function AppContent() {
   const [browserCompatible, setBrowserCompatible] = useState(true);
   const [browserIssues, setBrowserIssues] = useState([]);
 
-  // Check browser compatibility on mount
-  useEffect(() => {
-    const compatibility = checkBrowserCompatibility();
-    setBrowserCompatible(compatibility.compatible);
-    setBrowserIssues(compatibility.issues);
-  }, []);
-
   // Get all state from context (eliminates prop drilling)
   const { currentView, showChat, showDiagnostics, handleGoHome, toggleChat, toggleDiagnostics } = useRoomContext();
+
+  // Check browser compatibility when view changes (pass currentView as role)
+  useEffect(() => {
+    // Only do strict browser checks when user has selected a role
+    // For home view, just check basic WebRTC support
+    const role = currentView === 'home' ? null : currentView;
+    const compatibility = checkBrowserCompatibility(role);
+    setBrowserCompatible(compatibility.compatible);
+    setBrowserIssues(compatibility.issues);
+  }, [currentView]);
 
   // Browser compatibility check
   if (!browserCompatible) {

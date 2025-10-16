@@ -43,21 +43,26 @@ export function getBrowserCompatibility() {
 
 /**
  * Check if browser meets minimum requirements
+ * @param {string} role - User role: 'host', 'viewer', or null (pre-role selection)
  * @returns {Object} Compatibility check result
  */
-export function checkBrowserCompatibility() {
+export function checkBrowserCompatibility(role = null) {
   const compatibility = getBrowserCompatibility();
 
   const issues = [];
+
+  // WebRTC is required for both host and viewer
   if (!compatibility.webrtc) {
     issues.push('WebRTC is not supported');
   }
-  if (!compatibility.screenShare) {
-    issues.push('Screen sharing is not supported');
+
+  // Screen sharing is ONLY required for hosts (not viewers)
+  if (role === 'host' && !compatibility.screenShare) {
+    issues.push('Screen sharing is not supported - hosting requires a desktop browser');
   }
-  if (!compatibility.clipboard) {
-    issues.push('Clipboard API is not supported');
-  }
+
+  // Clipboard is optional (nice to have but not required)
+  // Don't block users if clipboard API is missing
 
   return {
     compatible: issues.length === 0,

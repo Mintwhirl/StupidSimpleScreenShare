@@ -1,0 +1,17 @@
+Vercel CLI 48.1.6
+Retrieving project…
+Deploying kevin-stewarts-projects-28099358/stupid-simple-screen-share
+Uploading [--------------------] (0.0B/2.1MB)
+Uploading [=====---------------] (558.1KB/2.1MB)
+Uploading [==========----------] (1.1MB/2.1MB)
+Uploading [===============-----] (1.6MB/2.1MB)
+Uploading [====================] (2.1MB/2.1MB)
+Inspect: https://vercel.com/kevin-stewarts-projects-28099358/stupid-simple-screen-share/EGWEQ3dbEQ2H5T8ApbnbwywETTUD [4s]
+Production: https://stupid-simple-screen-share-4ghdrb3a0.vercel.app [4s]
+https://stupid-simple-screen-share-4ghdrb3a0.vercel.appQueued
+Building
+Completing
+
+Common next commands:
+- `vercel inspect stupid-simple-screen-share-4ghdrb3a0.vercel.app --logs`
+- `vercel redeploy stupid-simple-screen-share-4ghdrb3a0.vercel.app`
