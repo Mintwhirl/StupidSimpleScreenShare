@@ -120,83 +120,33 @@ function ViewerView({ config, onGoHome }) {
     }
   }, [webrtcError, connectionState]);
 
-  // Validate room exists
-  const validateRoom = useCallback(async (roomId) => {
-    try {
-      console.log('[ViewerView] Validating room:', roomId);
-      const response = await fetch(`${API_ENDPOINTS.DIAGNOSTICS}?roomId=${roomId}`);
-      console.log('[ViewerView] Diagnostics response status:', response.status);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('[ViewerView] Diagnostics data:', data);
-        const exists = data.room?.exists === true;
-        console.log('[ViewerView] Room exists:', exists);
-        return exists;
-      }
-
-      console.error('[ViewerView] Diagnostics request failed:', response.status, response.statusText);
-      return false;
-    } catch (err) {
-      console.error('[ViewerView] Error validating room:', err);
-      return false;
-    }
-  }, []);
-
   // Handle connection to host
   const handleConnect = useCallback(async () => {
     // Clear previous errors
     setError(null);
     setViewerIdError(null);
 
-    // Validate inputs
-    // RoomId comes from context, no need to validate here
-    const isViewerIdValid = validateViewerIdInput(viewerId);
-
-    if (!isViewerIdValid) {
+    // Validate viewer ID if provided
+    if (viewerId && !validateViewerIdInput(viewerId)) {
       return; // Validation errors are already set by validation functions
     }
 
     try {
       setError(null);
-      // State will be managed by WebRTC hook
-
-      // Validate room exists first
-      const roomExists = await validateRoom(roomId);
-      if (!roomExists) {
-        setError(ERROR_MESSAGES.ROOM_NOT_FOUND);
-        return;
-      }
-
       dispatch({ type: 'CONNECT_REQUESTED' });
+
+      // Connect to host - let WebRTC handle room validation via offer polling
+      // If room doesn't exist, offer polling will timeout with appropriate error
       await connectToHost();
+
       dispatch({ type: 'CONNECT_SUCCESS' });
-
-      // Register sender ID for chat if viewerId is provided
-      if (viewerId && viewerId.trim()) {
-        try {
-          const response = await fetch(API_ENDPOINTS.REGISTER_SENDER, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roomId, senderId: viewerId.trim() }),
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            updateSenderSecret(data.secret); // Store the secret in context
-          }
-        } catch (err) {
-          console.warn('Failed to register sender ID:', err);
-        }
-      }
-
-      // Don't set hostStatus to 'connected' here - let the WebRTC connection state handle it
     } catch (err) {
-      console.error('Error connecting to host:', err);
-      setError(ERROR_MESSAGES.CONNECTION_FAILED);
+      console.error('[ViewerView] Error connecting to host:', err);
+      // Use the error from WebRTC if available, otherwise show generic error
+      setError(err.message || ERROR_MESSAGES.CONNECTION_FAILED);
       dispatch({ type: 'CONNECT_FAILED', error: err.message });
     }
-  }, [roomId, connectToHost, validateRoom, viewerId, validateViewerIdInput, updateSenderSecret]);
+  }, [roomId, connectToHost, viewerId, validateViewerIdInput]);
 
   // Removed auto-connect logic - user must manually click "Connect to Host"
 
@@ -413,22 +363,30 @@ function ViewerView({ config, onGoHome }) {
         )}
       </div>
 
-      {/* Error Display */}
+      {/* Error Display - Mobile Friendly */}
       {error && (
-        <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-          <div className='flex items-center'>
-            <div className='text-red-600 mr-2'>⚠️</div>
-            <div>
-              <h4 className='text-red-800 font-medium'>Connection Error</h4>
-              <p className='text-red-700 text-sm mt-1'>{error}</p>
+        <div className='bg-red-50 border-2 border-red-400 rounded-lg p-5 shadow-lg'>
+          <div className='flex items-start'>
+            <div className='text-red-600 text-2xl mr-3'>⚠️</div>
+            <div className='flex-1'>
+              <h4 className='text-red-800 font-bold text-lg mb-2'>Connection Error</h4>
+              <p className='text-red-900 text-base leading-relaxed'>{error}</p>
+              <div className='mt-4 space-y-2'>
+                <p className='text-red-700 text-sm font-medium'>Common fixes:</p>
+                <ul className='text-red-700 text-sm list-disc list-inside space-y-1'>
+                  <li>Make sure the host has started sharing</li>
+                  <li>Check the room ID is correct</li>
+                  <li>Try refreshing the page</li>
+                </ul>
+              </div>
             </div>
           </div>
-          <div className='mt-3'>
+          <div className='mt-4 flex justify-center'>
             <button
               onClick={handleReconnect}
-              className='text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors'
+              className='text-base bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium shadow-md'
             >
-              Try Again
+              🔄 Try Connecting Again
             </button>
           </div>
         </div>
