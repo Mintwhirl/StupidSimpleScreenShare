@@ -5,18 +5,29 @@ import {
   TTL_ROOM,
   sendError,
   checkRateLimit,
-  getApiRateLimit,
+  getSignalingRateLimit,
   getClientIdentifier,
+  validateSenderSecret,
+  extractSenderSecret,
 } from './_utils.js';
 
 async function handleOffer(req, res, { redis }) {
   if (req.method === 'POST') {
-    const { roomId, desc } = req.body || {};
+    const { roomId, desc, role } = req.body || {};
 
-    // Rate limiting: 2000 requests per minute per IP
+    // Rate limiting: 100 requests per minute per IP for signaling
     const clientId = getClientIdentifier(req);
-    const rateLimitError = await checkRateLimit(getApiRateLimit(), clientId, res);
+    const rateLimitError = await checkRateLimit(getSignalingRateLimit(), clientId, res);
     if (rateLimitError) return rateLimitError;
+
+    // Authentication: Validate sender secret
+    const senderSecret = extractSenderSecret(req);
+    if (senderSecret) {
+      const authValidation = await validateSenderSecret(redis, roomId, role || 'host', senderSecret);
+      if (!authValidation.valid) {
+        return sendError(res, 403, authValidation.error);
+      }
+    }
 
     // Validate input
     const roomValidation = validateRoomId(roomId);

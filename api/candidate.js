@@ -6,18 +6,30 @@ import {
   validateICECandidate,
   TTL_ROOM,
   checkRateLimit,
-  getApiRateLimit,
+  getCandidateRateLimit,
   getClientIdentifier,
+  validateSenderSecret,
+  extractSenderSecret,
 } from './_utils.js';
 
 async function handleCandidate(req, res, { redis }) {
   if (req.method === 'POST') {
     const { roomId, role, viewerId, candidate } = req.body || {};
 
-    // Rate limiting: 2000 requests per minute per IP
+    // Rate limiting: 500 requests per minute per IP for ICE candidates (more lenient)
     const clientId = getClientIdentifier(req);
-    const rateLimitError = await checkRateLimit(getApiRateLimit(), clientId, res);
+    const rateLimitError = await checkRateLimit(getCandidateRateLimit(), clientId, res);
     if (rateLimitError) return rateLimitError;
+
+    // Authentication: Validate sender secret
+    const senderSecret = extractSenderSecret(req);
+    if (senderSecret) {
+      const senderId = role === 'viewer' && viewerId ? viewerId : role;
+      const authValidation = await validateSenderSecret(redis, roomId, senderId, senderSecret);
+      if (!authValidation.valid) {
+        return sendError(res, 403, authValidation.error);
+      }
+    }
 
     // Validation is now handled by middleware
 

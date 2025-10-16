@@ -24,6 +24,8 @@ export function createRedisClient() {
 let _roomCreationRateLimit = null;
 let _chatRateLimit = null;
 let _apiRateLimit = null;
+let _signalingRateLimit = null;
+let _candidateRateLimit = null;
 
 // Rate limiter for room creation (50 per hour per IP - more generous for testing)
 export function getRoomCreationRateLimit() {
@@ -67,6 +69,34 @@ export function getApiRateLimit() {
   return _apiRateLimit;
 }
 
+// Rate limiter for signaling endpoints (offer/answer) - 100 per minute per IP
+export function getSignalingRateLimit() {
+  if (!_signalingRateLimit) {
+    const redis = createRedisClient();
+    _signalingRateLimit = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(100, '1 m'),
+      analytics: true,
+      prefix: '@upstash/ratelimit/signaling',
+    });
+  }
+  return _signalingRateLimit;
+}
+
+// Rate limiter for ICE candidates - 500 per minute per IP (more lenient)
+export function getCandidateRateLimit() {
+  if (!_candidateRateLimit) {
+    const redis = createRedisClient();
+    _candidateRateLimit = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(500, '1 m'),
+      analytics: true,
+      prefix: '@upstash/ratelimit/candidates',
+    });
+  }
+  return _candidateRateLimit;
+}
+
 // CORS headers helper
 export function setCorsHeaders(res) {
   // Get allowed origin from environment or default to production domain
@@ -74,7 +104,7 @@ export function setCorsHeaders(res) {
 
   res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,x-auth-secret');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,x-auth-secret,x-sender-secret');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 }
 
@@ -292,6 +322,48 @@ export function asyncHandler(handler) {
       }
     }
   };
+}
+
+// Sender authentication utilities
+export async function validateSenderSecret(redis, roomId, senderId, providedSecret) {
+  if (!roomId || !senderId || !providedSecret) {
+    return { valid: false, error: 'Missing authentication parameters' };
+  }
+
+  try {
+    // Get the stored secret for this sender in this room
+    const storedSecret = await redis.get(`room:${roomId}:sender:${senderId}`);
+
+    if (!storedSecret) {
+      return { valid: false, error: 'Sender not registered in this room' };
+    }
+
+    if (storedSecret !== providedSecret) {
+      return { valid: false, error: 'Invalid sender secret' };
+    }
+
+    return { valid: true };
+  } catch (error) {
+    console.error('Error validating sender secret:', error);
+    return { valid: false, error: 'Authentication validation failed' };
+  }
+}
+
+// Extract sender secret from request (header or body)
+export function extractSenderSecret(req) {
+  // Try header first (more secure)
+  const headerSecret = req.headers['x-sender-secret'];
+  if (headerSecret) {
+    return headerSecret;
+  }
+
+  // Fallback to body (for backward compatibility)
+  const bodySecret = req.body?.senderSecret;
+  if (bodySecret) {
+    return bodySecret;
+  }
+
+  return null;
 }
 
 // Constants

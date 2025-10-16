@@ -10,6 +10,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
   const [localStream, setLocalStream] = useState(null);
   const [error, setError] = useState(null);
   const [iceServers, setIceServers] = useState([]);
+  const [senderSecret, setSenderSecret] = useState(null);
 
   // Multi-viewer support: Map of viewerId to peer connections
   const [peerConnections, _setPeerConnections] = useState(new Map());
@@ -46,6 +47,37 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     logger.error(`WebRTC Error [${type}]: ${message}`, { code, details });
   }, []);
 
+  // Register sender and get secret for authentication
+  const registerSender = useCallback(async () => {
+    if (!roomId || !role) return null;
+
+    try {
+      const senderId = role === 'viewer' && _viewerId ? _viewerId : role;
+      const response = await fetch('/api/register-sender', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
+        },
+        body: JSON.stringify({
+          roomId,
+          senderId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to register sender: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.secret;
+    } catch (err) {
+      logger.error('Error registering sender:', err);
+      // Don't throw - this is optional authentication
+      return null;
+    }
+  }, [roomId, role, _viewerId, config]);
+
   // Send ICE candidate
   const sendICECandidate = useCallback(
     async (candidate) => {
@@ -57,6 +89,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           headers: {
             'Content-Type': 'application/json',
             ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
+            ...(senderSecret && { 'x-sender-secret': senderSecret }),
           },
           body: JSON.stringify({
             roomId,
@@ -81,7 +114,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         // Just log the error and continue
       }
     },
-    [roomId, role, config, _viewerId, setGranularError] // Fixed: Added _viewerId and setGranularError to dependency array
+    [roomId, role, config, _viewerId, setGranularError, senderSecret] // Added senderSecret to dependency array
   );
 
   // Create peer connection
@@ -222,7 +255,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     };
 
     return pc;
-  }, [iceServers, sendICECandidate]);
+  }, [iceServers, sendICECandidate, setGranularError]);
 
   // Send offer
   const sendOffer = useCallback(
@@ -235,10 +268,12 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           headers: {
             'Content-Type': 'application/json',
             ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
+            ...(senderSecret && { 'x-sender-secret': senderSecret }),
           },
           body: JSON.stringify({
             roomId,
             desc: offer,
+            role, // Include role for authentication
           }),
         });
 
@@ -256,7 +291,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         throw err; // Re-throw the error so startScreenShare can handle it
       }
     },
-    [roomId, config, setGranularError]
+    [roomId, config, setGranularError, senderSecret, role]
   );
 
   // Send answer
@@ -270,10 +305,12 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           headers: {
             'Content-Type': 'application/json',
             ...(config?.authSecret && { 'x-auth-secret': config.authSecret }),
+            ...(senderSecret && { 'x-sender-secret': senderSecret }),
           },
           body: JSON.stringify({
             roomId,
             desc: answer,
+            role, // Include role for authentication
           }),
         });
 
@@ -291,7 +328,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         throw err; // Re-throw the error so the caller can handle it
       }
     },
-    [roomId, config, setGranularError]
+    [roomId, config, setGranularError, senderSecret, role]
   );
 
   // Start polling for ICE candidates with exponential backoff
@@ -370,193 +407,115 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       // Don't throw the error - ICE candidate polling timeout is not critical
       // The connection can still work without ICE candidates
     }
-  }, [roomId, role, _viewerId]);
+  }, [roomId, role, _viewerId, setGranularError]);
 
   // Start polling for offers (viewer)
   const startOfferPolling = useCallback(async () => {
+    // Clear any existing interval
     if (offerIntervalRef.current) {
       clearInterval(offerIntervalRef.current);
+      offerIntervalRef.current = null;
     }
 
-    let pollCount = 0;
-    let pollInterval = 1000; // Start with 1 second
-    const maxPolls = 60; // 60 seconds timeout
-
-    const pollForOffer = async () => {
+    // The polling function that will be repeatedly called
+    const pollFn = async () => {
       try {
-        pollCount++;
-
-        // Timeout after maxPolls attempts
-        if (pollCount > maxPolls) {
-          clearInterval(offerIntervalRef.current);
-          offerIntervalRef.current = null;
-          if (isMountedRef.current) {
-            setGranularError(
-              'timeout',
-              'OFFER_POLLING_TIMEOUT',
-              'Connection timeout: No offer received from host. Make sure the host has started sharing.',
-              `Polled ${maxPolls} times without receiving offer`
-            );
-            setConnectionState('failed');
-          }
-          return;
-        }
-
         const response = await fetch(`/api/offer?roomId=${roomId}`);
 
         if (response.ok) {
           const data = await response.json();
           if (data.desc) {
-            // Clear interval once we get an offer
-            clearInterval(offerIntervalRef.current);
-            offerIntervalRef.current = null;
-
-            // Create peer connection when we receive an offer
+            // SUCCESS: We got the offer
             const pc = createPeerConnection();
             peerConnectionRef.current = pc;
 
-            // Handle the offer
             await pc.setRemoteDescription(data.desc);
-
-            // Create and send answer
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             await sendAnswer(answer);
 
-            // Start ICE candidate polling now that we have a peer connection
-            startCandidatePolling();
-          }
-        } else if (response.status === 404) {
-          // Expected 404 - no offer yet, but reduce polling frequency after initial attempts
-          if (pollCount > 10) {
-            // After 10 seconds, reduce to polling every 5 seconds
-            clearInterval(offerIntervalRef.current);
-            pollInterval = 5000;
-            offerIntervalRef.current = setInterval(pollForOffer, pollInterval);
-          }
-        } else {
-          // Unexpected error
-          logger.error('Unexpected error polling for offers:', response.status);
-          clearInterval(offerIntervalRef.current);
-          offerIntervalRef.current = null;
-          if (isMountedRef.current) {
-            setGranularError(
-              'network',
-              'SERVER_ERROR',
-              `Server error while polling for offers: ${response.status}`,
-              `HTTP ${response.status}`
-            );
-            setConnectionState('failed');
+            startCandidatePolling(); // Start polling for candidates now
+            return true; // Signal to the poller to stop
           }
         }
+        // If response is 404 or not OK, we continue polling
+        return false; // Signal to the poller to continue
       } catch (err) {
-        logger.error('Error polling for offers:', err);
-        // Don't stop polling on network errors - continue trying
-        // The connection can recover when network is restored
-        if (isMountedRef.current) {
-          setGranularError(
-            'network',
-            'NETWORK_ERROR',
-            'Network error while polling for offers. Please check your connection.',
-            err.message
-          );
-          // Don't set connection state to 'failed' - keep trying
-        }
+        logger.error('Network error while polling for offer:', err);
+        return false; // Signal to continue polling even on network errors
       }
     };
 
-    offerIntervalRef.current = setInterval(pollForOffer, pollInterval);
-  }, [roomId, sendAnswer, createPeerConnection, startCandidatePolling]);
+    // Create and run the poller
+    const polling = createExponentialBackoffPolling(pollFn, {
+      maxPolls: 15, // ~60 seconds total timeout with backoff
+    });
+
+    try {
+      await polling();
+    } catch (err) {
+      // This block runs only if the polling times out completely
+      logger.error('Offer polling timed out.', err);
+      if (isMountedRef.current) {
+        setGranularError(
+          'timeout',
+          'OFFER_POLLING_TIMEOUT',
+          'Connection timeout: No offer received from host. Make sure the host has started sharing.',
+          err.message
+        );
+        setConnectionState('failed');
+      }
+    }
+  }, [roomId, sendAnswer, createPeerConnection, startCandidatePolling, setGranularError]);
 
   // Start polling for answers (host)
   const startAnswerPolling = useCallback(async () => {
+    // Clear any existing interval
     if (answerIntervalRef.current) {
       clearInterval(answerIntervalRef.current);
+      answerIntervalRef.current = null;
     }
 
-    let pollCount = 0;
-    let pollInterval = 1000; // Start with 1 second
-    const maxPolls = 60; // 60 seconds timeout
-
-    const pollForAnswer = async () => {
+    const pollFn = async () => {
       try {
-        pollCount++;
-
-        // Timeout after maxPolls attempts
-        if (pollCount > maxPolls) {
-          clearInterval(answerIntervalRef.current);
-          answerIntervalRef.current = null;
-          if (isMountedRef.current) {
-            setGranularError(
-              'timeout',
-              'ANSWER_POLLING_TIMEOUT',
-              'Connection timeout: No answer received from viewer. Make sure the viewer has connected.',
-              `Polled ${maxPolls} times without receiving answer`
-            );
-            setConnectionState('failed');
-          }
-          return;
-        }
-
         const response = await fetch(`/api/answer?roomId=${roomId}`);
-
         if (response.ok) {
           const data = await response.json();
           if (data.desc) {
-            // Clear interval once we get an answer
-            clearInterval(answerIntervalRef.current);
-            answerIntervalRef.current = null;
-
-            // Handle the answer
+            // SUCCESS: We got the answer
             const pc = peerConnectionRef.current;
             if (pc) {
               await pc.setRemoteDescription(data.desc);
             }
-          }
-        } else if (response.status === 404) {
-          // Expected 404 - no answer yet, but reduce polling frequency after initial attempts
-          if (pollCount > 10) {
-            // After 10 seconds, reduce to polling every 5 seconds
-            clearInterval(answerIntervalRef.current);
-            pollInterval = 5000;
-            answerIntervalRef.current = setInterval(pollForAnswer, pollInterval);
-          }
-        } else {
-          // Unexpected error
-          logger.error('Unexpected error polling for answers:', response.status);
-          clearInterval(answerIntervalRef.current);
-          answerIntervalRef.current = null;
-          if (isMountedRef.current) {
-            setGranularError(
-              'network',
-              'SERVER_ERROR',
-              `Server error while polling for answers: ${response.status}`,
-              `HTTP ${response.status}`
-            );
-            setConnectionState('failed');
+            return true; // Stop polling
           }
         }
+        return false; // Continue polling
       } catch (err) {
-        logger.error('Error polling for answers:', err);
-        // Don't stop polling on network errors - continue trying
-        // The connection can recover when network is restored
-        if (isMountedRef.current) {
-          setGranularError(
-            'network',
-            'NETWORK_ERROR',
-            'Network error while polling for answers. Please check your connection.',
-            err.message
-          );
-          // Don't set connection state to 'failed' - keep trying
-        }
+        logger.error('Network error while polling for answer:', err);
+        return false; // Continue polling
       }
     };
 
-    answerIntervalRef.current = setInterval(pollForAnswer, pollInterval);
+    const polling = createExponentialBackoffPolling(pollFn, {
+      maxPolls: 15,
+    });
 
-    // Return a promise that resolves immediately
-    return Promise.resolve();
-  }, [roomId]);
+    try {
+      await polling();
+    } catch (err) {
+      logger.error('Answer polling timed out.', err);
+      if (isMountedRef.current) {
+        setGranularError(
+          'timeout',
+          'ANSWER_POLLING_TIMEOUT',
+          'Connection timeout: No answer received from viewer. Make sure the viewer has connected.',
+          err.message
+        );
+        setConnectionState('failed');
+      }
+    }
+  }, [roomId, setGranularError]);
 
   // Fixed: Added _viewerId to dependency array
 
@@ -569,6 +528,12 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     try {
       setError(null);
       setConnectionState('connecting');
+
+      // Register sender and get secret for authentication
+      const secret = await registerSender();
+      if (secret) {
+        setSenderSecret(secret);
+      }
 
       // Get screen share stream
       const stream = await navigator.mediaDevices.getDisplayMedia({
@@ -654,11 +619,25 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       }
 
       // Set granular error based on error type
-      if (err.message.includes('Permission denied') || err.message.includes('NotAllowedError')) {
+      if (err.name === 'NotAllowedError' || err.message.includes('Permission denied')) {
         setGranularError(
           'permission',
           'PERMISSION_DENIED',
-          'Screen sharing permission denied. Please allow screen sharing and try again.',
+          'Screen sharing permission was denied. Please allow permission and try again.',
+          err.message
+        );
+      } else if (err.name === 'NotFoundError') {
+        setGranularError(
+          'permission',
+          'NO_DISPLAY_AVAILABLE',
+          'No display available for screen sharing. Please ensure you have a screen to share.',
+          err.message
+        );
+      } else if (err.name === 'AbortError') {
+        setGranularError(
+          'permission',
+          'SHARING_CANCELLED',
+          'Screen sharing was cancelled. Please try again.',
           err.message
         );
       } else if (err.message.includes('createOffer')) {
@@ -688,7 +667,16 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
 
       throw err;
     }
-  }, [role, createPeerConnection, sendOffer, startAnswerPolling, startCandidatePolling, setGranularError]);
+  }, [
+    role,
+    createPeerConnection,
+    sendOffer,
+    startAnswerPolling,
+    startCandidatePolling,
+    setGranularError,
+    localStreamRef,
+    registerSender,
+  ]);
 
   // Connect to host (viewer)
   const connectToHost = useCallback(async () => {
@@ -699,6 +687,12 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     try {
       setError(null);
       setConnectionState('connecting');
+
+      // Register sender and get secret for authentication
+      const secret = await registerSender();
+      if (secret) {
+        setSenderSecret(secret);
+      }
 
       // Don't create peer connection yet - wait for offer from host
       // Start polling for offers (ICE candidate polling will start when peer connection is created)
@@ -738,7 +732,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
 
       throw err;
     }
-  }, [role, startOfferPolling]);
+  }, [role, startOfferPolling, setGranularError, registerSender]);
 
   // Stop screen sharing
   const stopScreenShare = useCallback(async () => {
