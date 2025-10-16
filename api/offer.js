@@ -82,7 +82,8 @@ async function handleOffer(req, res, { redis }) {
       // Upstash Redis auto-parses JSON, so check if it's already an object
       const desc = typeof raw === 'string' ? JSON.parse(raw) : raw;
 
-      // DO NOT DELETE - allow multiple viewers to retrieve the same offer
+      // Delete the offer after retrieving it to prevent multiple viewers from getting the same offer
+      await redis.del(`room:${roomId}:offer`);
 
       return res.json({ desc });
     } catch (error) {

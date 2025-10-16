@@ -81,7 +81,8 @@ async function handleAnswer(req, res, { redis }) {
       // Upstash Redis auto-parses JSON, so check if it's already an object
       const desc = typeof raw === 'string' ? JSON.parse(raw) : raw;
 
-      // DO NOT DELETE - allow multiple viewers to retrieve the same answer
+      // Delete the answer after retrieving it to prevent multiple hosts from getting the same answer
+      await redis.del(`room:${roomId}:answer`);
 
       return res.json({ desc });
     } catch (error) {
