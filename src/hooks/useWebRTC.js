@@ -338,6 +338,12 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           if (data.candidates && data.candidates.length > 0) {
             const pc = peerConnectionRef.current;
             if (pc) {
+              // Check if remote description is set before adding candidates
+              if (!pc.remoteDescription) {
+                logger.warn('Cannot add ICE candidates yet - remote description not set. Will retry.');
+                return false; // Continue polling until remote description is set
+              }
+
               for (const candidate of data.candidates) {
                 try {
                   // Validate candidate before adding
@@ -385,17 +391,10 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     try {
       await polling();
     } catch (err) {
-      logger.error('ICE candidate polling timeout:', err);
-      if (isMountedRef.current) {
-        setGranularError(
-          'timeout',
-          'ICE_CANDIDATE_POLLING_TIMEOUT',
-          'ICE candidate polling timeout - connection may be unstable',
-          err.message
-        );
-      }
-      // Don't throw the error - ICE candidate polling timeout is not critical
-      // The connection can still work without ICE candidates
+      // ICE candidate timeout is expected if no remote peer connects
+      logger.warn('ICE candidate polling timeout - no remote peer connected yet', err);
+      // Don't set error state - this is expected when starting without a viewer
+      // The connection will retry when a viewer actually connects
     }
   }, [roomId, role, _viewerId, setGranularError]);
 
@@ -494,16 +493,10 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     try {
       await polling();
     } catch (err) {
-      logger.error('Answer polling timed out.', err);
-      if (isMountedRef.current) {
-        setGranularError(
-          'timeout',
-          'ANSWER_POLLING_TIMEOUT',
-          'Connection timeout: No answer received from viewer. Make sure the viewer has connected.',
-          err.message
-        );
-        setConnectionState('failed');
-      }
+      // Answer timeout is expected if no viewer connects - don't show as error
+      logger.warn('Answer polling timed out - no viewer connected yet', err);
+      // Don't set error state or change connection state
+      // The host can continue sharing and wait for viewers
     }
   }, [roomId, setGranularError]);
 
