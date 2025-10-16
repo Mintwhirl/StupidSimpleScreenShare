@@ -1,0 +1,45 @@
+From: Claude Code <noreply@anthropic.com>
+Date: Thu, 16 Oct 2025 01:45:00 +0000
+Subject: [PATCH] fix: enable multi-viewer support by not deleting offers/answers
+
+Remove offer/answer deletion after retrieval to allow multiple viewers
+to connect to the same room. Fixes beta testing blocker where only 1
+viewer could connect.
+
+BREAKING: If single-viewer mode was intentional, this changes behavior.
+
+---
+ api/answer.js | 3 +--
+ api/offer.js  | 3 +--
+ 2 files changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/api/offer.js b/api/offer.js
+index abc1234..def5678 100644
+--- a/api/offer.js
++++ b/api/offer.js
+@@ -82,8 +82,7 @@ async function handleOffer(req, res, { redis }) {
+       // Upstash Redis auto-parses JSON, so check if it's already an object
+       const desc = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+-      // Delete the offer after retrieving it to prevent multiple viewers from getting the same offer
+-      await redis.del(`room:${roomId}:offer`);
++      // DO NOT DELETE - allow multiple viewers to retrieve the same offer
+
+       return res.json({ desc });
+     } catch (error) {
+diff --git a/api/answer.js b/api/answer.js
+index abc1234..def5678 100644
+--- a/api/answer.js
++++ b/api/answer.js
+@@ -81,8 +81,7 @@ async function handleAnswer(req, res, { redis }) {
+       // Upstash Redis auto-parses JSON, so check if it's already an object
+       const desc = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+-      // Delete the answer after retrieving it to prevent multiple hosts from getting the same answer
+-      await redis.del(`room:${roomId}:answer`);
++      // DO NOT DELETE - allow multiple viewers to retrieve the same answer
+
+       return res.json({ desc });
+     } catch (error) {
+--
+2.51.0

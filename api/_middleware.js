@@ -31,7 +31,7 @@ export function createApiHandler(handler, options = {}) {
   return asyncHandler(async (req, res) => {
     // Set security headers
     setSecurityHeaders(res);
-    setCorsHeaders(res);
+    setCorsHeaders(req, res);
 
     // Handle OPTIONS request
     if (req.method === 'OPTIONS') {
