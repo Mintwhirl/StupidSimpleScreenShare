@@ -9,6 +9,8 @@ import {
   getClientIdentifier,
   validateSenderSecret,
   extractSenderSecret,
+  getRoomMetaKey,
+  getOfferKey,
 } from './_utils.js';
 
 async function handleOffer(req, res, { redis }) {
@@ -45,10 +47,11 @@ async function handleOffer(req, res, { redis }) {
     }
 
     // Use atomic transaction to check room exists and store offer
+    const offerKey = getOfferKey(roomId);
     const multi = redis.multi();
-    multi.get(`room:${roomId}:meta`);
-    multi.set(`room:${roomId}:offer`, JSON.stringify(desc));
-    multi.expire(`room:${roomId}:offer`, TTL_ROOM);
+    multi.get(getRoomMetaKey(roomId));
+    multi.set(offerKey, JSON.stringify(desc));
+    multi.expire(offerKey, TTL_ROOM);
 
     const results = await multi.exec();
     const roomExists = results[0];
@@ -68,12 +71,13 @@ async function handleOffer(req, res, { redis }) {
       return sendError(res, 400, roomValidation.error);
     }
 
-    const roomExists = await redis.get(`room:${roomId}:meta`);
+    const roomExists = await redis.get(getRoomMetaKey(roomId));
     if (!roomExists) {
       return sendError(res, 410, 'Room expired or not found');
     }
 
-    const raw = await redis.get(`room:${roomId}:offer`);
+    const offerKey = getOfferKey(roomId);
+    const raw = await redis.get(offerKey);
     if (!raw) {
       return res.status(404).json({ error: 'No offer available yet' });
     }
@@ -83,7 +87,7 @@ async function handleOffer(req, res, { redis }) {
       const desc = typeof raw === 'string' ? JSON.parse(raw) : raw;
 
       // Delete the offer after retrieving it to prevent multiple viewers from getting the same offer
-      await redis.del(`room:${roomId}:offer`);
+      await redis.del(offerKey);
 
       return res.json({ desc });
     } catch (error) {

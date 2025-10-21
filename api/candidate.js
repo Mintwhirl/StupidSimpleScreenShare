@@ -10,6 +10,9 @@ import {
   getClientIdentifier,
   validateSenderSecret,
   extractSenderSecret,
+  getRoomMetaKey,
+  getCandidateKey,
+  resolveSenderId,
 } from './_utils.js';
 
 async function handleCandidate(req, res, { redis }) {
@@ -24,7 +27,7 @@ async function handleCandidate(req, res, { redis }) {
     // Authentication: Validate sender secret
     const senderSecret = extractSenderSecret(req);
     if (senderSecret) {
-      const senderId = role === 'viewer' && viewerId ? viewerId : role;
+      const senderId = resolveSenderId(role, viewerId);
       const authValidation = await validateSenderSecret(redis, roomId, senderId, senderSecret);
       if (!authValidation.valid) {
         return sendError(res, 403, authValidation.error);
@@ -34,13 +37,10 @@ async function handleCandidate(req, res, { redis }) {
     // Validation is now handled by middleware
 
     // Use atomic transaction to check room exists and store candidate
-    const key =
-      role === 'viewer' && viewerId
-        ? `room:${roomId}:${role}:${viewerId}:candidates`
-        : `room:${roomId}:${role}:candidates`;
+    const key = getCandidateKey(roomId, role, viewerId);
 
     const multi = redis.multi();
-    multi.get(`room:${roomId}:meta`);
+    multi.get(getRoomMetaKey(roomId));
     multi.rpush(key, JSON.stringify(candidate)); // Store RTCIceCandidate directly
     multi.expire(key, TTL_ROOM);
 
@@ -67,16 +67,13 @@ async function handleCandidate(req, res, { redis }) {
       return sendError(res, 400, roleValidation.error);
     }
 
-    const roomExists = await redis.get(`room:${roomId}:meta`);
+    const roomExists = await redis.get(getRoomMetaKey(roomId));
     if (!roomExists) {
       return sendError(res, 410, 'Room expired or not found');
     }
 
     // Use viewerId for viewers to distinguish between multiple viewers
-    const key =
-      role === 'viewer' && viewerId
-        ? `room:${roomId}:${role}:${viewerId}:candidates`
-        : `room:${roomId}:${role}:candidates`;
+    const key = getCandidateKey(roomId, role, viewerId);
 
     // Use Redis transaction to atomically read and delete candidates
     const multi = redis.multi();

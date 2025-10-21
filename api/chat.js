@@ -9,6 +9,9 @@ import {
   getClientIdentifier,
   TTL_ROOM,
   MAX_MESSAGES,
+  getRoomMetaKey,
+  getSenderKey,
+  getChatKey,
 } from './_utils.js';
 
 /**
@@ -25,7 +28,7 @@ async function handleChat(req, res, { redis }) {
   }
 
   // Validate room exists
-  const roomExists = await redis.get(`room:${roomId}:meta`);
+  const roomExists = await redis.get(getRoomMetaKey(roomId));
   if (!roomExists) {
     return sendError(res, 410, 'Room expired or not found');
   }
@@ -49,7 +52,7 @@ async function handleChat(req, res, { redis }) {
     const sanitizedSender = sender.trim().replace(/[^a-zA-Z0-9_-]/g, '_');
 
     // Validate sender is registered and authorized for this room
-    const senderKey = `room:${roomId}:sender:${sanitizedSender}`;
+    const senderKey = getSenderKey(roomId, sanitizedSender);
     const authorizedSenderData = await redis.get(senderKey);
 
     if (!authorizedSenderData) {
@@ -102,7 +105,7 @@ async function handleChat(req, res, { redis }) {
     };
 
     // Store in sorted set with timestamp as score (more efficient for polling)
-    const key = `room:${roomId}:chat`;
+    const key = getChatKey(roomId);
     const score = chatMessage.timestamp;
     await redis.zadd(key, { score, member: JSON.stringify(chatMessage) });
 

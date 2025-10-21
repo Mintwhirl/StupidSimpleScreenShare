@@ -1,3 +1,12 @@
+import {
+  getRoomMetaKey,
+  getOfferKey,
+  getAnswerKey,
+  getCandidateKey,
+  getChatKey,
+  getSenderKey,
+} from '../../shared/signaling/keys.js';
+
 /**
  * Application Constants
  * Centralized constants to prevent magic strings and improve maintainability
@@ -110,15 +119,12 @@ export const UI_DELAYS = {
 
 // Redis Keys
 export const REDIS_KEYS = {
-  ROOM_META: (roomId) => `room:${roomId}:meta`,
-  ROOM_OFFER: (roomId) => `room:${roomId}:offer`,
-  ROOM_ANSWER: (roomId) => `room:${roomId}:answer`,
-  ROOM_CANDIDATES: (roomId, role, viewerId) =>
-    role === ROLES.VIEWER && viewerId
-      ? `room:${roomId}:${role}:${viewerId}:candidates`
-      : `room:${roomId}:${role}:candidates`,
-  ROOM_CHAT: (roomId) => `room:${roomId}:chat`,
-  ROOM_SENDER: (roomId, senderId) => `room:${roomId}:sender:${senderId}`,
+  ROOM_META: getRoomMetaKey,
+  ROOM_OFFER: getOfferKey,
+  ROOM_ANSWER: getAnswerKey,
+  ROOM_CANDIDATES: getCandidateKey,
+  ROOM_CHAT: getChatKey,
+  ROOM_SENDER: getSenderKey,
 };
 
 // API Endpoints

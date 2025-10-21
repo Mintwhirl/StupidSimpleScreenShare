@@ -9,6 +9,8 @@ import {
   getClientIdentifier,
   validateSenderSecret,
   extractSenderSecret,
+  getRoomMetaKey,
+  getAnswerKey,
 } from './_utils.js';
 
 async function handleAnswer(req, res, { redis }) {
@@ -44,10 +46,11 @@ async function handleAnswer(req, res, { redis }) {
     }
 
     // Use atomic transaction to check room exists and store answer
+    const answerKey = getAnswerKey(roomId);
     const multi = redis.multi();
-    multi.get(`room:${roomId}:meta`);
-    multi.set(`room:${roomId}:answer`, JSON.stringify(desc));
-    multi.expire(`room:${roomId}:answer`, TTL_ROOM);
+    multi.get(getRoomMetaKey(roomId));
+    multi.set(answerKey, JSON.stringify(desc));
+    multi.expire(answerKey, TTL_ROOM);
 
     const results = await multi.exec();
     const roomExists = results[0];
@@ -67,12 +70,13 @@ async function handleAnswer(req, res, { redis }) {
       return sendError(res, 400, roomValidation.error);
     }
 
-    const roomExists = await redis.get(`room:${roomId}:meta`);
+    const roomExists = await redis.get(getRoomMetaKey(roomId));
     if (!roomExists) {
       return sendError(res, 410, 'Room expired or not found');
     }
 
-    const raw = await redis.get(`room:${roomId}:answer`);
+    const answerKey = getAnswerKey(roomId);
+    const raw = await redis.get(answerKey);
     if (!raw) {
       return res.status(404).json({ error: 'No answer available yet' });
     }
@@ -82,7 +86,7 @@ async function handleAnswer(req, res, { redis }) {
       const desc = typeof raw === 'string' ? JSON.parse(raw) : raw;
 
       // Delete the answer after retrieving it to prevent multiple hosts from getting the same answer
-      await redis.del(`room:${roomId}:answer`);
+      await redis.del(answerKey);
 
       return res.json({ desc });
     } catch (error) {

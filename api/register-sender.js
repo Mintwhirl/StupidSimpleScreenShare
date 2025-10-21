@@ -1,7 +1,15 @@
 import { randomBytes } from 'crypto';
 
 import { createCompleteHandler } from './_middleware.js';
-import { sendError, validateRoomId, validateSender, getClientIdentifier, TTL_ROOM } from './_utils.js';
+import {
+  sendError,
+  validateRoomId,
+  validateSender,
+  getClientIdentifier,
+  TTL_ROOM,
+  getRoomMetaKey,
+  getSenderKey,
+} from './_utils.js';
 
 /**
  * API endpoint for registering a sender ID for chat
@@ -26,14 +34,14 @@ async function handleRegisterSender(req, res, { redis }) {
   }
 
   // Check room exists
-  const roomExists = await redis.get(`room:${roomId}:meta`);
+  const roomExists = await redis.get(getRoomMetaKey(roomId));
   if (!roomExists) {
     return sendError(res, 410, 'Room expired or not found');
   }
 
   try {
     const clientId = getClientIdentifier(req);
-    const senderKey = `room:${roomId}:sender:${senderId.trim()}`;
+    const senderKey = getSenderKey(roomId, senderId.trim());
 
     // Generate a unique secret for this sender
     const senderSecret = randomBytes(16).toString('hex'); // 32 hex chars (128 bits)

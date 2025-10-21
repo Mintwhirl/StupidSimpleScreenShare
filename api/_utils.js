@@ -1,6 +1,18 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 
+import { validateSenderSecret as validateSenderSecretFromShared } from '../shared/signaling/auth.js';
+import {
+  getRoomMetaKey,
+  getOfferKey,
+  getAnswerKey,
+  getDescriptorKey,
+  getCandidateKey,
+  getSenderKey,
+  getChatKey,
+  resolveSenderId,
+} from '../shared/signaling/keys.js';
+
 // Initialize Redis connection with validation
 export function createRedisClient() {
   const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
@@ -338,31 +350,6 @@ export function asyncHandler(handler) {
   };
 }
 
-// Sender authentication utilities
-export async function validateSenderSecret(redis, roomId, senderId, providedSecret) {
-  if (!roomId || !senderId || !providedSecret) {
-    return { valid: false, error: 'Missing authentication parameters' };
-  }
-
-  try {
-    // Get the stored secret for this sender in this room
-    const storedSecret = await redis.get(`room:${roomId}:sender:${senderId}`);
-
-    if (!storedSecret) {
-      return { valid: false, error: 'Sender not registered in this room' };
-    }
-
-    if (storedSecret !== providedSecret) {
-      return { valid: false, error: 'Invalid sender secret' };
-    }
-
-    return { valid: true };
-  } catch (error) {
-    console.error('Error validating sender secret:', error);
-    return { valid: false, error: 'Authentication validation failed' };
-  }
-}
-
 // Extract sender secret from request (header or body)
 export function extractSenderSecret(req) {
   // Try header first (more secure)
@@ -384,3 +371,16 @@ export function extractSenderSecret(req) {
 export const TTL_ROOM = 60 * 30; // 30 minutes
 export const TTL_HEARTBEAT = 30; // 30 seconds
 export const MAX_MESSAGES = 50; // Max chat messages to keep
+
+export const validateSenderSecret = validateSenderSecretFromShared;
+
+export {
+  getRoomMetaKey,
+  getOfferKey,
+  getAnswerKey,
+  getDescriptorKey,
+  getCandidateKey,
+  getSenderKey,
+  getChatKey,
+  resolveSenderId,
+};
