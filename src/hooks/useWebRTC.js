@@ -2,8 +2,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { getIceServers } from '../config/turn.js';
 import logger from '../utils/logger';
 import { createExponentialBackoffPolling } from '../utils/polling';
+import { HOST_CONNECTION_STATUS, VIEWER_CONNECTION_STATUS, VIEWER_PEER_STATUS } from '../constants';
 
-export function useWebRTC(roomId, role, config, _viewerId = null) {
+export function useWebRTC(roomId, role, config, _viewerId = null, options = {}) {
+  const { onSenderSecret } = options || {};
   // State
   const [connectionState, setConnectionState] = useState('disconnected');
   const [remoteStream, setRemoteStream] = useState(null);
@@ -11,10 +13,14 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
   const [error, setError] = useState(null);
   const [iceServers, setIceServers] = useState([]);
   const [senderSecret, setSenderSecret] = useState(null);
+  const [lifecycleStatus, setLifecycleStatus] = useState(
+    role === 'host' ? HOST_CONNECTION_STATUS.IDLE : VIEWER_CONNECTION_STATUS.READY
+  );
 
   // Multi-viewer support: Map of viewerId to peer connections
-  const [peerConnections, _setPeerConnections] = useState(new Map());
-  const [viewerCount, _setViewerCount] = useState(0);
+  const [peerConnections, setPeerConnections] = useState(new Map());
+  const [viewerCount, setViewerCount] = useState(0);
+  const [hasTurnServer, setHasTurnServer] = useState(false);
 
   // Granular error state for better user feedback
   const [errorState, setErrorState] = useState({
@@ -33,12 +39,46 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
   const isMountedRef = useRef(true);
   const localStreamRef = useRef(null);
 
-  // Initialize ICE servers
+  const PRIMARY_VIEWER_KEY = 'viewer-primary';
+  const HOST_PEER_KEY = 'host-peer';
+
+  // Initialize ICE servers and detect TURN support
   useEffect(() => {
-    // Use TURN server configuration by default for better connectivity
-    const servers = getIceServers(config?.useTurn !== false); // Default to true unless explicitly disabled
+    const includeTurn = config?.useTurn !== false;
+    const servers = getIceServers(includeTurn); // Default to true unless explicitly disabled
     setIceServers(servers);
+
+    const hasTurn = servers.some((server) => {
+      const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
+      return urls.some((url) => typeof url === 'string' && url.startsWith('turn:'));
+    });
+
+    setHasTurnServer(hasTurn);
   }, [config]);
+
+  useEffect(() => {
+    setViewerCount(peerConnections.size);
+  }, [peerConnections]);
+
+  const updatePeerConnection = useCallback((id, updates) => {
+    if (!id) return;
+    setPeerConnections((prev) => {
+      const next = new Map(prev);
+      const existing = next.get(id) || { id };
+      next.set(id, { ...existing, ...updates, id, updatedAt: Date.now() });
+      return next;
+    });
+  }, []);
+
+  const removePeerConnection = useCallback((id) => {
+    if (!id) return;
+    setPeerConnections((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Map(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
 
   // Helper function to set granular error state
   const setGranularError = useCallback((type, code, message, details = null) => {
@@ -50,6 +90,10 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
   // Register sender and get secret for authentication
   const registerSender = useCallback(async () => {
     if (!roomId || !role) return null;
+
+    if (senderSecret) {
+      return senderSecret;
+    }
 
     try {
       const senderId = role === 'viewer' && _viewerId ? _viewerId : role;
@@ -65,18 +109,28 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         }),
       });
 
+      if (!response || typeof response.ok !== 'boolean') {
+        throw new Error('Failed to register sender: invalid response');
+      }
+
       if (!response.ok) {
         throw new Error(`Failed to register sender: ${response.status}`);
       }
 
       const data = await response.json();
+      if (data.secret) {
+        setSenderSecret(data.secret);
+        if (typeof onSenderSecret === 'function') {
+          onSenderSecret(data.secret);
+        }
+      }
       return data.secret;
     } catch (err) {
       logger.error('Error registering sender:', err);
       // Don't throw - this is optional authentication
       return null;
     }
-  }, [roomId, role, _viewerId, config]);
+  }, [roomId, role, _viewerId, config, senderSecret, onSenderSecret]);
 
   // Send ICE candidate
   const sendICECandidate = useCallback(
@@ -98,6 +152,10 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
             candidate: candidate, // Send RTCIceCandidate directly
           }),
         });
+
+        if (!response || typeof response.ok !== 'boolean') {
+          throw new Error('Failed to send ICE candidate: invalid response');
+        }
 
         if (!response.ok) {
           throw new Error(`Failed to send ICE candidate: ${response.status}`);
@@ -124,9 +182,26 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     const pc = new RTCPeerConnection({
       iceServers: servers,
     });
+    const listenerEntries = [];
+
+    const attachListener = (eventName, handler) => {
+      if (typeof pc.addEventListener === 'function') {
+        try {
+          pc.addEventListener(eventName, handler);
+          listenerEntries.push([eventName, handler]);
+        } catch (err) {
+          logger.warn(`Failed to attach ${eventName} listener via addEventListener`, err);
+        }
+      }
+
+      const propName = `on${eventName}`;
+      if (propName in pc) {
+        pc[propName] = handler;
+      }
+    };
 
     // Handle ICE candidates
-    pc.onicecandidate = (event) => {
+    attachListener('icecandidate', (event) => {
       if (event.candidate) {
         try {
           // Validate candidate before sending
@@ -144,19 +219,71 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           // Don't crash the connection for ICE candidate errors
         }
       }
-    };
+    });
 
     // Handle ICE gathering state changes
-    pc.onicegatheringstatechange = () => {
+    attachListener('icegatheringstatechange', () => {
       logger.webrtc('ICE gathering state changed', { state: pc.iceGatheringState });
       // ICE gathering completing is normal - don't set an error
       // Candidates are sent via onicecandidate as they're generated
-    };
+    });
 
     // Handle connection state changes
-    pc.onconnectionstatechange = () => {
+    attachListener('connectionstatechange', () => {
       logger.webrtc('Connection state changed', { state: pc.connectionState });
       setConnectionState(pc.connectionState);
+
+      if (role === 'host') {
+        switch (pc.connectionState) {
+          case 'connecting':
+            updatePeerConnection(PRIMARY_VIEWER_KEY, { status: VIEWER_PEER_STATUS.CONNECTING });
+            setLifecycleStatus(HOST_CONNECTION_STATUS.WAITING_FOR_VIEWER);
+            break;
+          case 'connected':
+            updatePeerConnection(PRIMARY_VIEWER_KEY, { status: VIEWER_PEER_STATUS.CONNECTED });
+            setLifecycleStatus(HOST_CONNECTION_STATUS.CONNECTED);
+            break;
+          case 'disconnected':
+            updatePeerConnection(PRIMARY_VIEWER_KEY, { status: VIEWER_PEER_STATUS.DISCONNECTED });
+            setLifecycleStatus(HOST_CONNECTION_STATUS.DISCONNECTED);
+            break;
+          case 'failed':
+            updatePeerConnection(PRIMARY_VIEWER_KEY, { status: VIEWER_PEER_STATUS.FAILED });
+            setLifecycleStatus(HOST_CONNECTION_STATUS.ERROR);
+            break;
+          case 'closed':
+            removePeerConnection(PRIMARY_VIEWER_KEY);
+            setLifecycleStatus(HOST_CONNECTION_STATUS.DISCONNECTED);
+            break;
+          default:
+            break;
+        }
+      } else if (role === 'viewer') {
+        switch (pc.connectionState) {
+          case 'connecting':
+            updatePeerConnection(HOST_PEER_KEY, { status: VIEWER_PEER_STATUS.CONNECTING });
+            setLifecycleStatus(VIEWER_CONNECTION_STATUS.ANSWERING);
+            break;
+          case 'connected':
+            updatePeerConnection(HOST_PEER_KEY, { status: VIEWER_PEER_STATUS.CONNECTED });
+            setLifecycleStatus(VIEWER_CONNECTION_STATUS.CONNECTED);
+            break;
+          case 'disconnected':
+            updatePeerConnection(HOST_PEER_KEY, { status: VIEWER_PEER_STATUS.DISCONNECTED });
+            setLifecycleStatus(VIEWER_CONNECTION_STATUS.DISCONNECTED);
+            break;
+          case 'failed':
+            updatePeerConnection(HOST_PEER_KEY, { status: VIEWER_PEER_STATUS.FAILED });
+            setLifecycleStatus(VIEWER_CONNECTION_STATUS.ERROR);
+            break;
+          case 'closed':
+            removePeerConnection(HOST_PEER_KEY);
+            setLifecycleStatus(VIEWER_CONNECTION_STATUS.DISCONNECTED);
+            break;
+          default:
+            break;
+        }
+      }
 
       // Clear error state on successful connection
       if (pc.connectionState === 'connected') {
@@ -186,6 +313,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         setTimeout(() => {
           if (peerConnectionRef.current === pc) {
             try {
+              pc.__listenerCleanup?.();
               pc.close();
               peerConnectionRef.current = null;
             } catch (err) {
@@ -194,10 +322,10 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           }
         }, 0);
       }
-    };
+    });
 
     // Handle ICE connection state changes
-    pc.oniceconnectionstatechange = () => {
+    attachListener('iceconnectionstatechange', () => {
       logger.webrtc('ICE connection state changed', { state: pc.iceConnectionState });
 
       // Handle ICE connection failures
@@ -214,6 +342,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         setTimeout(() => {
           if (peerConnectionRef.current === pc) {
             try {
+              pc.__listenerCleanup?.();
               pc.close();
               peerConnectionRef.current = null;
             } catch (err) {
@@ -222,16 +351,16 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           }
         }, 0);
       }
-    };
+    });
 
     // Handle remote stream
-    pc.ontrack = (event) => {
+    attachListener('track', (event) => {
       logger.webrtc('Received remote stream', { stream: event.streams[0] });
       setRemoteStream(event.streams[0]);
-    };
+    });
 
     // Handle data channel
-    pc.ondatachannel = (event) => {
+    attachListener('datachannel', (event) => {
       const channel = event.channel;
       dataChannelRef.current = channel;
 
@@ -242,6 +371,20 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       channel.onmessage = (event) => {
         logger.webrtc('Received data channel message', { data: event.data });
       };
+    });
+
+    pc.__listenerCleanup = () => {
+      if (typeof pc.removeEventListener !== 'function') {
+        return;
+      }
+      while (listenerEntries.length > 0) {
+        const [eventName, handler] = listenerEntries.pop();
+        try {
+          pc.removeEventListener(eventName, handler);
+        } catch (err) {
+          logger.warn(`Failed to remove ${eventName} listener during cleanup`, err);
+        }
+      }
     };
 
     return pc;
@@ -266,6 +409,10 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
             role, // Include role for authentication
           }),
         });
+
+        if (!response || typeof response.ok !== 'boolean') {
+          throw new Error('Failed to send offer: invalid response');
+        }
 
         if (!response.ok) {
           throw new Error(`Failed to send offer: ${response.status}`);
@@ -304,6 +451,10 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           }),
         });
 
+        if (!response || typeof response.ok !== 'boolean') {
+          throw new Error('Failed to send answer: invalid response');
+        }
+
         if (!response.ok) {
           throw new Error(`Failed to send answer: ${response.status}`);
         }
@@ -332,6 +483,11 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
         const response = await fetch(
           `/api/candidate?roomId=${roomId}&role=${role}${_viewerId ? `&viewerId=${_viewerId}` : ''}`
         );
+
+        if (!response || typeof response.ok !== 'boolean') {
+          logger.error('Invalid response polling for ICE candidates');
+          return false;
+        }
 
         if (response.ok) {
           const data = await response.json();
@@ -411,12 +567,22 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       try {
         const response = await fetch(`/api/offer?roomId=${roomId}`);
 
+        if (!response || typeof response.ok !== 'boolean') {
+          logger.error('Invalid response polling for offer');
+          return false;
+        }
+
         if (response.ok) {
           const data = await response.json();
           if (data.desc) {
             // SUCCESS: We got the offer
             const pc = createPeerConnection();
             peerConnectionRef.current = pc;
+
+            setLifecycleStatus(VIEWER_CONNECTION_STATUS.ANSWERING);
+            updatePeerConnection(HOST_PEER_KEY, {
+              status: VIEWER_PEER_STATUS.ANSWERING,
+            });
 
             await pc.setRemoteDescription(data.desc);
             const answer = await pc.createAnswer();
@@ -453,9 +619,11 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
           err.message
         );
         setConnectionState('failed');
+        setLifecycleStatus(VIEWER_CONNECTION_STATUS.ERROR);
+        updatePeerConnection(HOST_PEER_KEY, { status: VIEWER_PEER_STATUS.FAILED });
       }
     }
-  }, [roomId, sendAnswer, createPeerConnection, startCandidatePolling, setGranularError]);
+  }, [roomId, sendAnswer, createPeerConnection, startCandidatePolling, setGranularError, updatePeerConnection]);
 
   // Start polling for answers (host)
   const startAnswerPolling = useCallback(async () => {
@@ -468,6 +636,11 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     const pollFn = async () => {
       try {
         const response = await fetch(`/api/answer?roomId=${roomId}`);
+        if (!response || typeof response.ok !== 'boolean') {
+          logger.error('Invalid response polling for answer');
+          return false;
+        }
+
         if (response.ok) {
           const data = await response.json();
           if (data.desc) {
@@ -476,6 +649,10 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
             if (pc) {
               await pc.setRemoteDescription(data.desc);
             }
+            updatePeerConnection(PRIMARY_VIEWER_KEY, {
+              status: VIEWER_PEER_STATUS.ANSWER_RECEIVED,
+            });
+            setLifecycleStatus(HOST_CONNECTION_STATUS.ANSWER_RECEIVED);
             return true; // Stop polling
           }
         }
@@ -498,7 +675,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       // Don't set error state or change connection state
       // The host can continue sharing and wait for viewers
     }
-  }, [roomId, setGranularError]);
+  }, [roomId, updatePeerConnection]);
 
   // Fixed: Added _viewerId to dependency array
 
@@ -511,12 +688,15 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     try {
       setError(null);
       setConnectionState('connecting');
+      setLifecycleStatus(HOST_CONNECTION_STATUS.REGISTERING);
 
       // Register sender and get secret for authentication
       const secret = await registerSender();
-      if (secret) {
-        setSenderSecret(secret);
+      if (!secret) {
+        logger.warn('Host sender registration did not return a secret');
       }
+
+      setLifecycleStatus(HOST_CONNECTION_STATUS.ACQUIRING_MEDIA);
 
       // Get screen share stream
       const stream = await navigator.mediaDevices.getDisplayMedia({
@@ -550,6 +730,12 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       const pc = createPeerConnection();
       peerConnectionRef.current = pc;
 
+      // Track viewer placeholder until answer arrives
+      updatePeerConnection(PRIMARY_VIEWER_KEY, {
+        label: 'Viewer 1',
+        status: VIEWER_PEER_STATUS.WAITING_FOR_ANSWER,
+      });
+
       // Add transceivers to peer connection (modern WebRTC approach)
       stream.getTracks().forEach((track) => {
         pc.addTransceiver(track, {
@@ -569,6 +755,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
 
       // Keep connection state as 'connecting' after successful offer sending
       // The connection state will be updated by the peer connection event handlers
+      setLifecycleStatus(HOST_CONNECTION_STATUS.WAITING_FOR_VIEWER);
 
       // Start polling for answers (don't await - let it run in background)
       startAnswerPolling().catch((err) => {
@@ -584,6 +771,8 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     } catch (err) {
       logger.error('Error starting screen share:', err);
       setConnectionState('failed');
+      setLifecycleStatus(HOST_CONNECTION_STATUS.ERROR);
+      updatePeerConnection(PRIMARY_VIEWER_KEY, { status: VIEWER_PEER_STATUS.FAILED });
 
       // Cleanup any resources that were created
       if (localStreamRef.current) {
@@ -594,7 +783,9 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
 
       if (peerConnectionRef.current) {
         try {
-          peerConnectionRef.current.close();
+          const pc = peerConnectionRef.current;
+          pc.__listenerCleanup?.();
+          pc.close();
           peerConnectionRef.current = null;
         } catch (cleanupErr) {
           logger.error('Error during peer connection cleanup:', cleanupErr);
@@ -659,6 +850,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     setGranularError,
     localStreamRef,
     registerSender,
+    updatePeerConnection,
   ]);
 
   // Connect to host (viewer)
@@ -670,12 +862,19 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     try {
       setError(null);
       setConnectionState('connecting');
+      setLifecycleStatus(VIEWER_CONNECTION_STATUS.REGISTERING);
 
       // Register sender and get secret for authentication
       const secret = await registerSender();
-      if (secret) {
-        setSenderSecret(secret);
+      if (!secret) {
+        logger.warn('Viewer sender registration did not return a secret');
       }
+
+      setLifecycleStatus(VIEWER_CONNECTION_STATUS.WAITING_FOR_OFFER);
+      updatePeerConnection(HOST_PEER_KEY, {
+        label: 'Host',
+        status: VIEWER_PEER_STATUS.WAITING_FOR_OFFER,
+      });
 
       // Don't create peer connection yet - wait for offer from host
       // Start polling for offers (ICE candidate polling will start when peer connection is created)
@@ -683,11 +882,15 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     } catch (err) {
       logger.error('Error connecting to host:', err);
       setConnectionState('failed');
+      setLifecycleStatus(VIEWER_CONNECTION_STATUS.ERROR);
+      updatePeerConnection(HOST_PEER_KEY, { status: VIEWER_PEER_STATUS.FAILED });
 
       // Cleanup any resources that were created
       if (peerConnectionRef.current) {
         try {
-          peerConnectionRef.current.close();
+          const pc = peerConnectionRef.current;
+          pc.__listenerCleanup?.();
+          pc.close();
           peerConnectionRef.current = null;
         } catch (cleanupErr) {
           logger.error('Error during peer connection cleanup:', cleanupErr);
@@ -736,7 +939,9 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       // Close peer connection
       if (peerConnectionRef.current) {
         try {
-          peerConnectionRef.current.close();
+          const pc = peerConnectionRef.current;
+          pc.__listenerCleanup?.();
+          pc.close();
           peerConnectionRef.current = null;
         } catch (err) {
           logger.error('Error closing peer connection:', err);
@@ -763,11 +968,19 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       setRemoteStream(null);
       setError(null);
       setErrorState({ type: null, code: null, message: null, details: null });
+      if (role === 'host') {
+        removePeerConnection(PRIMARY_VIEWER_KEY);
+        setLifecycleStatus(HOST_CONNECTION_STATUS.DISCONNECTED);
+      } else {
+        removePeerConnection(HOST_PEER_KEY);
+        setLifecycleStatus(VIEWER_CONNECTION_STATUS.DISCONNECTED);
+      }
     } catch (err) {
       logger.error('Error stopping screen share:', err);
       setError(`Failed to stop screen sharing: ${err.message}`);
+      setLifecycleStatus(role === 'host' ? HOST_CONNECTION_STATUS.ERROR : VIEWER_CONNECTION_STATUS.ERROR);
     }
-  }, [localStream, remoteStream]);
+  }, [localStream, remoteStream, role, removePeerConnection]);
 
   // Disconnect
   const disconnect = useCallback(async () => {
@@ -795,7 +1008,9 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
       }
       if (peerConnectionRef.current) {
         try {
-          peerConnectionRef.current.close();
+          const pc = peerConnectionRef.current;
+          pc.__listenerCleanup?.();
+          pc.close();
           peerConnectionRef.current = null;
         } catch (err) {
           logger.error('Error during peer connection cleanup on unmount:', err);
@@ -830,6 +1045,8 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
     errorState, // Granular error state for better UI feedback
     peerConnections, // Multi-viewer support
     viewerCount, // Number of connected viewers
+    connectionLifecycleStatus: lifecycleStatus,
+    hasTurnServer,
 
     // Actions
     startScreenShare,

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-function Diagnostics({ roomId, role }) {
+function Diagnostics({ roomId, role, alerts = {} }) {
   const [diagnostics, setDiagnostics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -81,6 +81,38 @@ function Diagnostics({ roomId, role }) {
     return new Date(timestamp).toLocaleString();
   };
 
+  const ALERT_COPY = {
+    network: {
+      title: 'Network instability detected',
+      description:
+        'We had trouble reaching the signaling or TURN services. Connections may drop until the network stabilizes.',
+      icon: '🌐',
+      className: 'text-yellow-800',
+    },
+    permission: {
+      title: 'Screen sharing permissions blocked',
+      description: 'The browser rejected a screen sharing request. Ask the host to allow permissions and try again.',
+      icon: '🔒',
+      className: 'text-red-800',
+    },
+    turn: {
+      title: 'TURN relay unavailable',
+      description:
+        'No TURN relays are configured. Configure TURN credentials to reach viewers behind strict firewalls.',
+      icon: '🛰️',
+      className: 'text-blue-800',
+    },
+  };
+
+  const DEFAULT_ALERT_COPY = {
+    title: 'Diagnostics notice',
+    description: 'A diagnostics update was recorded.',
+    icon: 'ℹ️',
+    className: 'text-gray-800',
+  };
+
+  const alertEntries = Object.values(alerts);
+
   // Get connection status color
   const getStatusColor = (status) => {
     switch (status) {
@@ -153,6 +185,29 @@ function Diagnostics({ roomId, role }) {
         {error && (
           <div className='bg-red-50 border border-red-200 rounded-lg p-3 mb-4'>
             <div className='text-red-600 text-sm'>⚠️ {error}</div>
+          </div>
+        )}
+
+        {alertEntries.length > 0 && (
+          <div className='bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4'>
+            <h4 className='font-semibold text-yellow-900 mb-2'>Connection Notices</h4>
+            <div className='space-y-3'>
+              {alertEntries.map((alert, index) => {
+                const { type, message, timestamp } = alert;
+                const copy = ALERT_COPY[type] || DEFAULT_ALERT_COPY;
+                return (
+                  <div key={`${type || 'alert'}-${timestamp || index}`} className='text-sm text-gray-800'>
+                    <div className={`flex items-center gap-2 font-medium ${copy.className}`}>
+                      <span>{copy.icon}</span>
+                      <span>{copy.title}</span>
+                    </div>
+                    <p className='mt-1 text-gray-700'>{copy.description}</p>
+                    {message && <p className='mt-1 text-xs text-gray-500'>{message}</p>}
+                    {timestamp && <p className='mt-1 text-xs text-gray-400'>Logged: {formatTimestamp(timestamp)}</p>}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
