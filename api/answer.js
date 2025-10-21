@@ -2,6 +2,7 @@ import { createCompleteHandler } from './_middleware.js';
 import {
   validateRoomId,
   validateRTCDescriptor,
+  validateViewerId,
   TTL_ROOM,
   sendError,
   checkRateLimit,
@@ -13,7 +14,7 @@ import {
 
 async function handleAnswer(req, res, { redis }) {
   if (req.method === 'POST') {
-    const { roomId, desc, role } = req.body || {};
+    const { roomId, desc, role, viewerId } = req.body || {};
 
     // Rate limiting: 100 requests per minute per IP for signaling
     const clientId = getClientIdentifier(req);
@@ -23,7 +24,17 @@ async function handleAnswer(req, res, { redis }) {
     // Authentication: Validate sender secret
     const senderSecret = extractSenderSecret(req);
     if (senderSecret) {
-      const authValidation = await validateSenderSecret(redis, roomId, role || 'viewer', senderSecret);
+      const effectiveRole = role || 'viewer';
+      let senderId = effectiveRole;
+      if (effectiveRole === 'viewer') {
+        const viewerValidation = validateViewerId(viewerId);
+        if (!viewerValidation.valid) {
+          return sendError(res, 400, viewerValidation.error);
+        }
+        senderId = viewerId;
+      }
+
+      const authValidation = await validateSenderSecret(redis, roomId, senderId, senderSecret, clientId);
       if (!authValidation.valid) {
         return sendError(res, 403, authValidation.error);
       }

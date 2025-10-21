@@ -264,6 +264,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
             roomId,
             desc: offer,
             role, // Include role for authentication
+            ...(role === 'viewer' && _viewerId ? { viewerId: _viewerId } : {}),
           }),
         });
 
@@ -301,6 +302,7 @@ export function useWebRTC(roomId, role, config, _viewerId = null) {
             roomId,
             desc: answer,
             role, // Include role for authentication
+            ...(role === 'viewer' && _viewerId ? { viewerId: _viewerId } : {}),
           }),
         });
 

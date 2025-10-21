@@ -3,6 +3,7 @@ import {
   sendError,
   validateRoomId,
   validateRole,
+  validateViewerId,
   validateICECandidate,
   TTL_ROOM,
   checkRateLimit,
@@ -24,8 +25,16 @@ async function handleCandidate(req, res, { redis }) {
     // Authentication: Validate sender secret
     const senderSecret = extractSenderSecret(req);
     if (senderSecret) {
-      const senderId = role === 'viewer' && viewerId ? viewerId : role;
-      const authValidation = await validateSenderSecret(redis, roomId, senderId, senderSecret);
+      let senderId = role;
+      if (role === 'viewer') {
+        const viewerValidation = validateViewerId(viewerId);
+        if (!viewerValidation.valid) {
+          return sendError(res, 400, viewerValidation.error);
+        }
+        senderId = viewerId;
+      }
+
+      const authValidation = await validateSenderSecret(redis, roomId, senderId, senderSecret, clientId);
       if (!authValidation.valid) {
         return sendError(res, 403, authValidation.error);
       }

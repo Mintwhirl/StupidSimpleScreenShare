@@ -339,20 +339,46 @@ export function asyncHandler(handler) {
 }
 
 // Sender authentication utilities
-export async function validateSenderSecret(redis, roomId, senderId, providedSecret) {
+export async function validateSenderSecret(redis, roomId, senderId, providedSecret, clientId = null) {
   if (!roomId || !senderId || !providedSecret) {
     return { valid: false, error: 'Missing authentication parameters' };
   }
 
   try {
     // Get the stored secret for this sender in this room
-    const storedSecret = await redis.get(`room:${roomId}:sender:${senderId}`);
+    const storedValue = await redis.get(`room:${roomId}:sender:${senderId}`);
 
-    if (!storedSecret) {
+    if (!storedValue) {
       return { valid: false, error: 'Sender not registered in this room' };
     }
 
-    if (storedSecret !== providedSecret) {
+    let storedSecret = null;
+    let storedClientId = null;
+
+    if (typeof storedValue === 'string') {
+      try {
+        const parsed = JSON.parse(storedValue);
+        if (parsed && typeof parsed === 'object') {
+          storedSecret = parsed.secret || null;
+          storedClientId = parsed.clientId || null;
+        }
+      } catch (error) {
+        storedSecret = storedValue;
+      }
+    } else if (storedValue && typeof storedValue === 'object') {
+      storedSecret = storedValue.secret || null;
+      storedClientId = storedValue.clientId || null;
+    }
+
+    if (!storedSecret && typeof storedValue === 'string') {
+      storedSecret = storedValue;
+    }
+
+    if (!storedSecret || storedSecret !== providedSecret) {
+      return { valid: false, error: 'Invalid sender secret' };
+    }
+
+    if (storedClientId && clientId && storedClientId !== clientId) {
       return { valid: false, error: 'Invalid sender secret' };
     }
 
