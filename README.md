@@ -64,6 +64,9 @@ vercel --prod
 AUTH_SECRET=your-secure-secret-key-here
 UPSTASH_REDIS_REST_URL=your-upstash-redis-url
 UPSTASH_REDIS_REST_TOKEN=your-upstash-redis-token
+# Optional development helpers (never use in production)
+ENABLE_DEV_REDIS_FALLBACK=true # Enables in-memory Redis stub when Upstash credentials are missing
+DISABLE_RATE_LIMITING=true      # Disables rate limiting middleware entirely
 ```
 
 ## License
