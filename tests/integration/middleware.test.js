@@ -72,7 +72,7 @@ describe('API Middleware Integration Tests', () => {
       await wrappedHandler(mockReq, mockRes);
 
       expect(setSecurityHeaders).toHaveBeenCalledWith(mockRes);
-      expect(setCorsHeaders).toHaveBeenCalledWith(mockRes);
+      expect(setCorsHeaders).toHaveBeenCalledWith(mockReq, mockRes);
     });
 
     it('should handle OPTIONS requests', async () => {
@@ -187,6 +187,26 @@ describe('API Middleware Integration Tests', () => {
 
       expect(mockRateLimitFn).toHaveBeenCalledWith('test-id', mockRes);
       expect(mockHandler).not.toHaveBeenCalled();
+    });
+
+    it('should throttle repeated calls once the limit is exceeded', async () => {
+      const mockRateLimitFn = vi
+        .fn()
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({
+          status: 429,
+          json: { error: 'Rate limit exceeded' },
+        });
+      const mockGetRateLimitId = vi.fn().mockReturnValue('test-id');
+
+      const wrappedHandler = createRateLimitedHandler(mockHandler, mockRateLimitFn, mockGetRateLimitId);
+
+      await wrappedHandler(mockReq, mockRes);
+      await wrappedHandler(mockReq, mockRes);
+
+      expect(mockGetRateLimitId).toHaveBeenCalledTimes(2);
+      expect(mockRateLimitFn).toHaveBeenCalledTimes(2);
+      expect(mockHandler).toHaveBeenCalledTimes(1);
     });
   });
 
