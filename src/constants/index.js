@@ -20,6 +20,38 @@ export const CONNECTION_STATES = {
   FAILED: 'failed',
 };
 
+export const HOST_CONNECTION_STATUS = {
+  IDLE: 'idle',
+  REGISTERING: 'registering-sender',
+  ACQUIRING_MEDIA: 'acquiring-media',
+  WAITING_FOR_VIEWER: 'waiting-for-viewer-answer',
+  ANSWER_RECEIVED: 'viewer-answer-received',
+  CONNECTED: 'viewer-connected',
+  DISCONNECTED: 'viewer-disconnected',
+  ERROR: 'error',
+};
+
+export const VIEWER_CONNECTION_STATUS = {
+  READY: 'ready-for-connection',
+  REGISTERING: 'registering-sender',
+  WAITING_FOR_OFFER: 'waiting-for-host-offer',
+  ANSWERING: 'answering-offer',
+  CONNECTED: 'connected-to-host',
+  DISCONNECTED: 'viewer-disconnected',
+  ERROR: 'error',
+};
+
+export const VIEWER_PEER_STATUS = {
+  WAITING_FOR_OFFER: 'waiting-for-offer',
+  WAITING_FOR_ANSWER: 'waiting-for-answer',
+  ANSWERING: 'answering',
+  ANSWER_RECEIVED: 'answer-received',
+  CONNECTING: 'connecting',
+  CONNECTED: 'connected',
+  DISCONNECTED: 'disconnected',
+  FAILED: 'failed',
+};
+
 // User Roles
 export const ROLES = {
   HOST: 'host',
@@ -82,6 +114,83 @@ export const STATUS_COLORS = {
   ERROR: 'text-red-600',
   INFO: 'text-blue-600',
   DEFAULT: 'text-gray-600',
+};
+
+export const HOST_STATUS_LABELS = {
+  [HOST_CONNECTION_STATUS.IDLE]: 'Ready to share',
+  [HOST_CONNECTION_STATUS.REGISTERING]: 'Registering host with signaling server',
+  [HOST_CONNECTION_STATUS.ACQUIRING_MEDIA]: 'Awaiting screen share permission',
+  [HOST_CONNECTION_STATUS.WAITING_FOR_VIEWER]: 'Waiting for viewer offer',
+  [HOST_CONNECTION_STATUS.ANSWER_RECEIVED]: 'Viewer answered offer',
+  [HOST_CONNECTION_STATUS.CONNECTED]: 'Viewer connected',
+  [HOST_CONNECTION_STATUS.DISCONNECTED]: 'Viewer disconnected',
+  [HOST_CONNECTION_STATUS.ERROR]: 'Connection error',
+};
+
+export const HOST_STATUS_COLORS = {
+  [HOST_CONNECTION_STATUS.IDLE]: STATUS_COLORS.INFO,
+  [HOST_CONNECTION_STATUS.REGISTERING]: STATUS_COLORS.WARNING,
+  [HOST_CONNECTION_STATUS.ACQUIRING_MEDIA]: STATUS_COLORS.WARNING,
+  [HOST_CONNECTION_STATUS.WAITING_FOR_VIEWER]: STATUS_COLORS.WARNING,
+  [HOST_CONNECTION_STATUS.ANSWER_RECEIVED]: STATUS_COLORS.INFO,
+  [HOST_CONNECTION_STATUS.CONNECTED]: STATUS_COLORS.SUCCESS,
+  [HOST_CONNECTION_STATUS.DISCONNECTED]: STATUS_COLORS.DEFAULT,
+  [HOST_CONNECTION_STATUS.ERROR]: STATUS_COLORS.ERROR,
+};
+
+export const VIEWER_STATUS_LABELS = {
+  [VIEWER_CONNECTION_STATUS.READY]: 'Ready to connect',
+  [VIEWER_CONNECTION_STATUS.REGISTERING]: 'Registering with signaling server',
+  [VIEWER_CONNECTION_STATUS.WAITING_FOR_OFFER]: 'Waiting for host offer',
+  [VIEWER_CONNECTION_STATUS.ANSWERING]: 'Answering host offer',
+  [VIEWER_CONNECTION_STATUS.CONNECTED]: 'Viewing host stream',
+  [VIEWER_CONNECTION_STATUS.DISCONNECTED]: 'Disconnected from host',
+  [VIEWER_CONNECTION_STATUS.ERROR]: 'Connection error',
+};
+
+export const VIEWER_STATUS_COLORS = {
+  [VIEWER_CONNECTION_STATUS.READY]: STATUS_COLORS.INFO,
+  [VIEWER_CONNECTION_STATUS.REGISTERING]: STATUS_COLORS.WARNING,
+  [VIEWER_CONNECTION_STATUS.WAITING_FOR_OFFER]: STATUS_COLORS.WARNING,
+  [VIEWER_CONNECTION_STATUS.ANSWERING]: STATUS_COLORS.INFO,
+  [VIEWER_CONNECTION_STATUS.CONNECTED]: STATUS_COLORS.SUCCESS,
+  [VIEWER_CONNECTION_STATUS.DISCONNECTED]: STATUS_COLORS.DEFAULT,
+  [VIEWER_CONNECTION_STATUS.ERROR]: STATUS_COLORS.ERROR,
+};
+
+export const VIEWER_PEER_BADGES = {
+  [VIEWER_PEER_STATUS.WAITING_FOR_OFFER]: {
+    label: 'Waiting for host offer',
+    className: 'bg-yellow-100 text-yellow-800',
+  },
+  [VIEWER_PEER_STATUS.WAITING_FOR_ANSWER]: {
+    label: 'Waiting for viewer answer',
+    className: 'bg-yellow-100 text-yellow-800',
+  },
+  [VIEWER_PEER_STATUS.ANSWERING]: {
+    label: 'Answering signaling request',
+    className: 'bg-blue-100 text-blue-800',
+  },
+  [VIEWER_PEER_STATUS.ANSWER_RECEIVED]: {
+    label: 'Viewer answer received',
+    className: 'bg-blue-100 text-blue-800',
+  },
+  [VIEWER_PEER_STATUS.CONNECTING]: {
+    label: 'Negotiating connection',
+    className: 'bg-indigo-100 text-indigo-800',
+  },
+  [VIEWER_PEER_STATUS.CONNECTED]: {
+    label: 'Viewer connected',
+    className: 'bg-green-100 text-green-800',
+  },
+  [VIEWER_PEER_STATUS.DISCONNECTED]: {
+    label: 'Viewer disconnected',
+    className: 'bg-gray-100 text-gray-800',
+  },
+  [VIEWER_PEER_STATUS.FAILED]: {
+    label: 'Connection failed',
+    className: 'bg-red-100 text-red-800',
+  },
 };
 
 // Background Colors (Tailwind classes)

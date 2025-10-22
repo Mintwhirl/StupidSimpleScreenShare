@@ -16,6 +16,7 @@ export const RoomProvider = ({ children }) => {
   const [viewerId, setViewerId] = useState('');
   const [role, setRole] = useState('viewer'); // 'host' or 'viewer'
   const [senderSecret, setSenderSecret] = useState(null); // Secret for chat authentication
+  const [diagnosticAlerts, setDiagnosticAlerts] = useState({});
 
   // UI state management (moved from App.jsx to eliminate prop drilling)
   const [showChat, setShowChat] = useState(false);
@@ -53,6 +54,26 @@ export const RoomProvider = ({ children }) => {
     setViewerId('');
     setRole('viewer');
     setSenderSecret(null);
+    setDiagnosticAlerts({});
+  }, []);
+
+  const setDiagnosticAlert = useCallback((type, message) => {
+    if (!type) return;
+    setDiagnosticAlerts((prev) => {
+      const next = { ...prev };
+      if (!message) {
+        if (next[type]) {
+          delete next[type];
+        }
+        return next;
+      }
+      next[type] = { type, message, timestamp: Date.now() };
+      return next;
+    });
+  }, []);
+
+  const resetDiagnosticAlerts = useCallback(() => {
+    setDiagnosticAlerts({});
   }, []);
 
   // UI state actions (moved from App.jsx to eliminate prop drilling)
@@ -104,6 +125,7 @@ export const RoomProvider = ({ children }) => {
     viewerId,
     role,
     senderSecret,
+    diagnosticAlerts,
     showChat,
     showDiagnostics,
     currentView,
@@ -113,6 +135,8 @@ export const RoomProvider = ({ children }) => {
     updateViewerId,
     updateRole,
     updateSenderSecret,
+    setDiagnosticAlert,
+    resetDiagnosticAlerts,
     resetRoom,
     toggleChat,
     toggleDiagnostics,

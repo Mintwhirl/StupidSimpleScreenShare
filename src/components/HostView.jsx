@@ -2,37 +2,29 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import VideoPlayer from './VideoPlayer';
 import { useWebRTC } from '../hooks/useWebRTC';
 import { useRoomContext } from '../contexts/RoomContext';
-import { API_ENDPOINTS } from '../constants';
+import { HOST_STATUS_LABELS, HOST_STATUS_COLORS, HOST_CONNECTION_STATUS, VIEWER_PEER_BADGES } from '../constants';
 
 function HostView({ config, onGoHome }) {
   console.log('HostView: Component is rendering');
-  const { roomId, updateSenderSecret } = useRoomContext();
+  const { roomId, updateSenderSecret, setDiagnosticAlert } = useRoomContext();
   console.log('HostView: roomId =', roomId, 'updateSenderSecret =', typeof updateSenderSecret);
   const [isSharing, setIsSharing] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState('disconnected');
-  const [viewerCount, setViewerCount] = useState(0);
   const [error, setError] = useState(null);
   const [shareButtonText, setShareButtonText] = useState('Start Sharing');
   const [copyStatus, setCopyStatus] = useState(null); // For copy feedback
+  const shouldUseTurn = config?.useTurn !== false;
 
   const localVideoRef = useRef(null);
   const {
     startScreenShare,
     stopScreenShare,
     connectionState,
+    connectionLifecycleStatus,
     peerConnections,
     error: webrtcError,
-  } = useWebRTC(roomId, 'host', config);
-
-  // Update connection status based on WebRTC state
-  useEffect(() => {
-    setConnectionStatus(connectionState);
-  }, [connectionState]);
-
-  // Update viewer count based on peer connections
-  useEffect(() => {
-    setViewerCount(Object.keys(peerConnections).length);
-  }, [peerConnections]);
+    errorState,
+    hasTurnServer,
+  } = useWebRTC(roomId, 'host', config, null, { onSenderSecret: updateSenderSecret });
 
   // Handle WebRTC errors
   useEffect(() => {
@@ -41,38 +33,32 @@ function HostView({ config, onGoHome }) {
     }
   }, [webrtcError]);
 
-  // Register host as sender for chat when component mounts
   useEffect(() => {
-    const registerHostSender = async () => {
-      console.log('HostView: Attempting to register host sender for room:', roomId);
-      if (!roomId) {
-        console.log('HostView: No roomId, skipping registration');
-        return;
-      }
+    if (!setDiagnosticAlert) return;
 
-      try {
-        console.log('HostView: Making registration request to:', API_ENDPOINTS.REGISTER_SENDER);
-        const response = await fetch(API_ENDPOINTS.REGISTER_SENDER, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomId, senderId: 'host' }),
-        });
+    if (errorState?.type && ['network', 'permission'].includes(errorState.type)) {
+      const message =
+        errorState.type === 'network'
+          ? `Network issue detected while sharing: ${errorState.message || 'Please verify your connection.'}`
+          : `Screen sharing permission issue: ${errorState.message || 'Grant screen share access and retry.'}`;
+      setDiagnosticAlert(errorState.type, message);
+    } else {
+      ['network', 'permission'].forEach((type) => setDiagnosticAlert(type, null));
+    }
+  }, [errorState, setDiagnosticAlert]);
 
-        console.log('HostView: Registration response status:', response.status);
-        if (response.ok) {
-          const data = await response.json();
-          console.log('HostView: Registration successful, secret received');
-          updateSenderSecret(data.secret);
-        } else {
-          console.warn('HostView: Failed to register host sender:', response.status);
-        }
-      } catch (err) {
-        console.warn('HostView: Failed to register host sender:', err);
-      }
-    };
+  useEffect(() => {
+    if (!setDiagnosticAlert) return;
 
-    registerHostSender();
-  }, [roomId, updateSenderSecret]);
+    if (shouldUseTurn && !hasTurnServer) {
+      setDiagnosticAlert(
+        'turn',
+        'TURN relays are not configured. Configure TURN credentials for reliable NAT traversal and better connectivity.'
+      );
+    } else {
+      setDiagnosticAlert('turn', null);
+    }
+  }, [shouldUseTurn, hasTurnServer, setDiagnosticAlert]);
 
   // Handle screen share start
   const handleStartSharing = async () => {
@@ -132,32 +118,25 @@ function HostView({ config, onGoHome }) {
       });
   };
 
-  // Memoized status helpers to prevent re-creation on every render
-  const statusColor = useMemo(() => {
-    switch (connectionStatus) {
-      case 'connected':
-        return 'text-green-600';
-      case 'connecting':
-        return 'text-yellow-600';
-      case 'disconnected':
-        return 'text-red-600';
-      default:
-        return 'text-gray-600';
-    }
-  }, [connectionStatus]);
+  const viewerCount = peerConnections.size;
+  const viewerEntries = useMemo(() => Array.from(peerConnections.values()), [peerConnections]);
 
   const statusText = useMemo(() => {
-    switch (connectionStatus) {
-      case 'connected':
-        return 'Connected';
-      case 'connecting':
-        return 'Connecting...';
-      case 'disconnected':
-        return 'Disconnected';
-      default:
-        return 'Unknown';
-    }
-  }, [connectionStatus]);
+    return HOST_STATUS_LABELS[connectionLifecycleStatus] || HOST_STATUS_LABELS[HOST_CONNECTION_STATUS.IDLE];
+  }, [connectionLifecycleStatus]);
+
+  const statusColor = useMemo(() => {
+    return HOST_STATUS_COLORS[connectionLifecycleStatus] || HOST_STATUS_COLORS[HOST_CONNECTION_STATUS.IDLE];
+  }, [connectionLifecycleStatus]);
+
+  const shareDisabled =
+    connectionState === 'connecting' ||
+    connectionLifecycleStatus === HOST_CONNECTION_STATUS.REGISTERING ||
+    connectionLifecycleStatus === HOST_CONNECTION_STATUS.ACQUIRING_MEDIA;
+
+  const isPreparingShare = !isSharing && shareDisabled;
+  const errorMessage = errorState?.message || error;
+  const errorDetails = errorState?.details;
 
   return (
     <div className='space-y-6'>
@@ -171,6 +150,23 @@ function HostView({ config, onGoHome }) {
           <div className='text-right'>
             <div className={`text-sm font-medium ${statusColor}`}>Status: {statusText}</div>
             <div className='text-sm text-gray-500'>Viewers: {viewerCount}</div>
+            <div className='mt-2 flex flex-wrap gap-2 justify-end'>
+              {viewerEntries.length === 0 ? (
+                <span className='text-xs text-gray-400'>No viewer connections yet</span>
+              ) : (
+                viewerEntries.map((viewer) => {
+                  const badge = VIEWER_PEER_BADGES[viewer.status] || {
+                    label: 'Awaiting status',
+                    className: 'bg-gray-100 text-gray-600',
+                  };
+                  return (
+                    <span key={viewer.id} className={`px-2 py-1 text-xs font-medium rounded-full ${badge.className}`}>
+                      {viewer.label || 'Viewer'} • {badge.label}
+                    </span>
+                  );
+                })
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -212,12 +208,12 @@ function HostView({ config, onGoHome }) {
         <div className='flex items-center justify-center space-x-4'>
           <button
             onClick={handleShareToggle}
-            disabled={connectionStatus === 'connecting'}
+            disabled={shareDisabled}
             className={`px-6 py-3 rounded-lg font-medium transition-colors ${
               isSharing ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-green-600 text-white hover:bg-green-700'
-            } ${connectionStatus === 'connecting' ? 'opacity-50 cursor-not-allowed' : ''}`}
+            } ${shareDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {connectionStatus === 'connecting' ? 'Connecting...' : shareButtonText}
+            {isPreparingShare ? 'Connecting...' : shareButtonText}
           </button>
 
           {isSharing && (
@@ -236,13 +232,14 @@ function HostView({ config, onGoHome }) {
       </div>
 
       {/* Error Display */}
-      {error && (
+      {errorMessage && (
         <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
           <div className='flex items-center'>
             <div className='text-red-600 mr-2'>⚠️</div>
             <div>
               <h4 className='text-red-800 font-medium'>Error</h4>
-              <p className='text-red-700 text-sm mt-1'>{error}</p>
+              <p className='text-red-700 text-sm mt-1'>{errorMessage}</p>
+              {errorDetails && <p className='text-red-600 text-xs mt-2 border-t border-red-200 pt-2'>{errorDetails}</p>}
             </div>
           </div>
         </div>

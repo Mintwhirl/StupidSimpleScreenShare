@@ -3,7 +3,15 @@ import VideoPlayer from './VideoPlayer';
 import { useWebRTC } from '../hooks/useWebRTC';
 import { useRoomContext } from '../contexts/RoomContext';
 import { validateViewerId } from '../utils/validation';
-import { CONNECTION_STATES, UI_TEXT, STATUS_COLORS, ERROR_MESSAGES, API_ENDPOINTS } from '../constants';
+import {
+  CONNECTION_STATES,
+  UI_TEXT,
+  STATUS_COLORS,
+  ERROR_MESSAGES,
+  VIEWER_STATUS_LABELS,
+  VIEWER_STATUS_COLORS,
+  VIEWER_CONNECTION_STATUS,
+} from '../constants';
 
 // Connection state machine for robust reconnection logic
 const connectionReducer = (state, action) => {
@@ -28,7 +36,7 @@ const connectionReducer = (state, action) => {
 };
 
 function ViewerView({ config, onGoHome }) {
-  const { roomId, viewerId, updateViewerId, updateSenderSecret } = useRoomContext();
+  const { roomId, viewerId, updateViewerId, updateSenderSecret, setDiagnosticAlert } = useRoomContext();
   const [error, setError] = useState(null);
   const [viewerIdError, setViewerIdError] = useState(null);
   const [connectionStateMachine, dispatch] = useReducer(connectionReducer, {
@@ -56,19 +64,27 @@ function ViewerView({ config, onGoHome }) {
     return validation.valid;
   }, []);
 
+  const shouldUseTurn = config?.useTurn !== false;
+
   const {
     connectToHost,
     disconnect,
     connectionState,
     remoteStream,
     error: webrtcError,
-  } = useWebRTC(roomId, 'viewer', config, viewerId);
+    connectionLifecycleStatus,
+    errorState,
+    hasTurnServer,
+  } = useWebRTC(roomId, 'viewer', config, viewerId, { onSenderSecret: updateSenderSecret });
 
   // Derive all status from WebRTC state - single source of truth
   const connectionStatus = connectionState;
   const isConnected = connectionState === CONNECTION_STATES.CONNECTED;
   const isConnecting = connectionState === CONNECTION_STATES.CONNECTING;
   const hostStatus = connectionState; // Use connectionState directly
+  const lifecycleStatusText =
+    VIEWER_STATUS_LABELS[connectionLifecycleStatus] || VIEWER_STATUS_LABELS[VIEWER_CONNECTION_STATUS.READY];
+  const lifecycleStatusColor = VIEWER_STATUS_COLORS[connectionLifecycleStatus] || STATUS_COLORS.DEFAULT;
 
   // Handle remote stream
   useEffect(() => {
@@ -76,39 +92,6 @@ function ViewerView({ config, onGoHome }) {
       remoteVideoRef.current.srcObject = remoteStream;
     }
   }, [remoteStream]);
-
-  // Register viewer as sender for chat when component mounts with valid roomId and viewerId
-  useEffect(() => {
-    const registerViewerSender = async () => {
-      console.log('ViewerView: Attempting to register viewer sender for room:', roomId, 'viewerId:', viewerId);
-      if (!roomId || !viewerId) {
-        console.log('ViewerView: No roomId or viewerId, skipping registration');
-        return;
-      }
-
-      try {
-        console.log('ViewerView: Making registration request to:', API_ENDPOINTS.REGISTER_SENDER);
-        const response = await fetch(API_ENDPOINTS.REGISTER_SENDER, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomId, senderId: viewerId }),
-        });
-
-        console.log('ViewerView: Registration response status:', response.status);
-        if (response.ok) {
-          const data = await response.json();
-          console.log('ViewerView: Registration successful, secret received');
-          updateSenderSecret(data.secret);
-        } else {
-          console.warn('ViewerView: Failed to register viewer sender:', response.status);
-        }
-      } catch (err) {
-        console.warn('ViewerView: Failed to register viewer sender:', err);
-      }
-    };
-
-    registerViewerSender();
-  }, [roomId, viewerId, updateSenderSecret]);
 
   // Handle WebRTC errors and clear errors on success
   useEffect(() => {
@@ -119,6 +102,30 @@ function ViewerView({ config, onGoHome }) {
       setError(null);
     }
   }, [webrtcError, connectionState]);
+
+  useEffect(() => {
+    if (!setDiagnosticAlert) return;
+
+    if (errorState?.type && ['network', 'permission'].includes(errorState.type)) {
+      const message =
+        errorState.type === 'network'
+          ? `Viewer network issue detected: ${errorState.message || 'Check your internet connection.'}`
+          : `Viewer permission issue detected: ${errorState.message || 'Allow screen capture and try again.'}`;
+      setDiagnosticAlert(errorState.type, message);
+    } else if (!errorState?.type) {
+      ['network', 'permission'].forEach((type) => setDiagnosticAlert(type, null));
+    }
+  }, [errorState, setDiagnosticAlert]);
+
+  useEffect(() => {
+    if (!setDiagnosticAlert) return;
+
+    if (shouldUseTurn && !hasTurnServer) {
+      setDiagnosticAlert('turn', 'TURN relays are not configured. Viewing may fail behind strict network firewalls.');
+    } else {
+      setDiagnosticAlert('turn', null);
+    }
+  }, [shouldUseTurn, hasTurnServer, setDiagnosticAlert]);
 
   // Handle connection to host
   const handleConnect = useCallback(async () => {
@@ -281,6 +288,7 @@ function ViewerView({ config, onGoHome }) {
           <div className='text-right'>
             <div className={`text-sm font-semibold ${getStatusColor()}`}>Connection: {getStatusText()}</div>
             <div className={`text-sm font-semibold ${getHostStatusColor()}`}>{getHostStatusText()}</div>
+            <div className={`text-xs mt-1 ${lifecycleStatusColor}`}>{lifecycleStatusText}</div>
           </div>
         </div>
       </div>
