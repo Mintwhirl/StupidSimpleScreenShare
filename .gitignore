@@ -15,3 +15,6 @@ coverage/
 tmp_*
 *.log
 !vercel_deploy.log
+
+# Build output
+dist/

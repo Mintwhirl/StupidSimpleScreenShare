@@ -72,10 +72,15 @@ describe('API Error Recovery - REAL Logic Tests', () => {
     it('should recover from offer sending API failure', async () => {
       const { result } = renderHook(() => useWebRTC('test-room-123', 'host', mockConfig));
 
-      // Mock offer sending to fail first, then succeed
-      global.fetch.mockRejectedValueOnce(new Error('Network error')).mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue({ ok: true }),
+      // Mock offer sending to fail first, then succeed (scope by URL)
+      let offerCalls = 0;
+      global.fetch.mockImplementation((url, init) => {
+        if (typeof url === 'string' && url.includes('/api/offer')) {
+          offerCalls += 1;
+          if (offerCalls === 1) return Promise.reject(new Error('Network error'));
+          return Promise.resolve({ ok: true, json: vi.fn().mockResolvedValue({ ok: true }) });
+        }
+        return Promise.resolve({ ok: true, json: vi.fn().mockResolvedValue({ ok: true }) });
       });
 
       await act(async () => {
@@ -99,17 +104,21 @@ describe('API Error Recovery - REAL Logic Tests', () => {
     it('should recover from offer sending 500 error', async () => {
       const { result } = renderHook(() => useWebRTC('test-room-123', 'host', mockConfig));
 
-      // Mock offer sending to return 500 first, then succeed
-      global.fetch
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 500,
-          json: vi.fn().mockResolvedValue({ error: 'Server error' }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: vi.fn().mockResolvedValue({ ok: true }),
-        });
+      // Mock offer sending to return 500 first, then succeed (scope by URL)
+      let offerCalls = 0;
+      global.fetch.mockImplementation((url, init) => {
+        if (typeof url === 'string' && url.includes('/api/offer')) {
+          offerCalls += 1;
+          if (offerCalls === 1)
+            return Promise.resolve({
+              ok: false,
+              status: 500,
+              json: vi.fn().mockResolvedValue({ error: 'Server error' }),
+            });
+          return Promise.resolve({ ok: true, json: vi.fn().mockResolvedValue({ ok: true }) });
+        }
+        return Promise.resolve({ ok: true, json: vi.fn().mockResolvedValue({ ok: true }) });
+      });
 
       await act(async () => {
         await result.current.startScreenShare();
@@ -133,13 +142,16 @@ describe('API Error Recovery - REAL Logic Tests', () => {
       vi.useFakeTimers();
       const { result } = renderHook(() => useWebRTC('test-room-123', 'host', mockConfig));
 
-      // Mock offer sending to timeout first, then succeed
-      global.fetch
-        .mockReturnValueOnce(new Promise(() => {})) // Never resolves
-        .mockResolvedValueOnce({
-          ok: true,
-          json: vi.fn().mockResolvedValue({ ok: true }),
-        });
+      // Mock offer sending to timeout first, then succeed (scope by URL)
+      let offerCalls = 0;
+      global.fetch.mockImplementation((url, init) => {
+        if (typeof url === 'string' && url.includes('/api/offer')) {
+          offerCalls += 1;
+          if (offerCalls === 1) return new Promise(() => {}); // never resolves
+          return Promise.resolve({ ok: true, json: vi.fn().mockResolvedValue({ ok: true }) });
+        }
+        return Promise.resolve({ ok: true, json: vi.fn().mockResolvedValue({ ok: true }) });
+      });
 
       await act(async () => {
         await result.current.startScreenShare();
@@ -175,10 +187,21 @@ describe('API Error Recovery - REAL Logic Tests', () => {
         await result.current.connectToHost();
       });
 
-      // Mock offer received to create PC
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue({ desc: { type: 'offer', sdp: 'mock-sdp' } }),
+      // Scoped mocks for offer (success) and answer (fail then succeed)
+      let answerCalls = 0;
+      global.fetch.mockImplementation((url, init) => {
+        if (typeof url === 'string' && url.includes('/api/offer')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ desc: { type: 'offer', sdp: 'mock-sdp' } }),
+          });
+        }
+        if (typeof url === 'string' && url.includes('/api/answer')) {
+          answerCalls += 1;
+          if (answerCalls === 1) return Promise.reject(new Error('Network error'));
+          return Promise.resolve({ ok: true, json: vi.fn().mockResolvedValue({ ok: true }) });
+        }
+        return Promise.resolve({ ok: true, json: vi.fn().mockResolvedValue({ ok: true }) });
       });
 
       await act(async () => {
@@ -221,10 +244,26 @@ describe('API Error Recovery - REAL Logic Tests', () => {
         await result.current.connectToHost();
       });
 
-      // Mock offer received to create PC
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue({ desc: { type: 'offer', sdp: 'mock-sdp' } }),
+      // Scoped mocks for offer (success) and answer (500 then succeed)
+      let answerCalls = 0;
+      global.fetch.mockImplementation((url, init) => {
+        if (typeof url === 'string' && url.includes('/api/offer')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ desc: { type: 'offer', sdp: 'mock-sdp' } }),
+          });
+        }
+        if (typeof url === 'string' && url.includes('/api/answer')) {
+          answerCalls += 1;
+          if (answerCalls === 1)
+            return Promise.resolve({
+              ok: false,
+              status: 500,
+              json: vi.fn().mockResolvedValue({ error: 'Server error' }),
+            });
+          return Promise.resolve({ ok: true, json: vi.fn().mockResolvedValue({ ok: true }) });
+        }
+        return Promise.resolve({ ok: true, json: vi.fn().mockResolvedValue({ ok: true }) });
       });
 
       await act(async () => {
@@ -445,10 +484,24 @@ describe('API Error Recovery - REAL Logic Tests', () => {
         await result.current.connectToHost();
       });
 
-      // Mock offer received to create PC
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue({ desc: { type: 'offer', sdp: 'mock-sdp' } }),
+      // Scoped mocks for offer (success) and candidate polling (fail then succeed)
+      let candidateCalls = 0;
+      global.fetch.mockImplementation((url, init) => {
+        if (typeof url === 'string' && url.includes('/api/offer')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ desc: { type: 'offer', sdp: 'mock-sdp' } }),
+          });
+        }
+        if (typeof url === 'string' && url.includes('/api/candidate')) {
+          candidateCalls += 1;
+          if (candidateCalls === 1) return Promise.reject(new Error('Network error'));
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ candidates: [{ candidate: 'candidate:1', sdpMid: '0', sdpMLineIndex: 0 }] }),
+          });
+        }
+        return Promise.resolve({ ok: true, json: vi.fn().mockResolvedValue({ ok: true }) });
       });
 
       await act(async () => {

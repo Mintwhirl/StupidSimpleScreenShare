@@ -8,6 +8,8 @@ const mockRedis = {
   exists: vi.fn(),
   expire: vi.fn(),
   quit: vi.fn(),
+  sadd: vi.fn(),
+  smembers: vi.fn(),
 };
 
 // Mock the API utilities

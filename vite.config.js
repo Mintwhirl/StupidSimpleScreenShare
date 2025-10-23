@@ -81,7 +81,7 @@ export default defineConfig({
       },
     },
     // Simple test configuration without projects
-    include: ['tests/**/*.test.js', 'src/**/*.test.js'],
+    include: ['tests/**/*.test.js', 'tests/**/*.test.jsx', 'src/**/*.test.js', 'src/**/*.test.jsx'],
     exclude: ['src/**/*.stories.*', '**/*.mdx'],
   },
 });

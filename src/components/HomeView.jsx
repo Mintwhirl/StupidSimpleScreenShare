@@ -169,79 +169,14 @@ function HomeView() {
           <p className='text-white text-sm font-medium'>Status: idle</p>
         </div>
 
-        {/* Preview Sections */}
-        <div className='space-y-6'>
-          {/* Local Preview */}
-          <div>
-            <h3 className='text-white text-sm font-bold mb-3 uppercase tracking-wide'>Local preview</h3>
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-              {/* Video Player Placeholder 1 */}
-              <div className='bg-purple-800 bg-opacity-40 border border-purple-400 border-opacity-30 rounded-xl p-3 flex flex-col items-center justify-center min-h-[120px]'>
-                <div className='flex items-center space-x-2 mb-2'>
-                  <svg className='w-4 h-4 text-white' fill='currentColor' viewBox='0 0 24 24'>
-                    <path d='M8 5v14l11-7z' />
-                  </svg>
-                  <span className='text-white text-xs'>0:00</span>
-                </div>
-                <div className='flex items-center space-x-2 mb-2'>
-                  <svg className='w-4 h-4 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z'
-                    />
-                  </svg>
-                  <svg className='w-4 h-4 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z'
-                    />
-                  </svg>
-                </div>
-                <div className='w-full h-0.5 bg-white bg-opacity-30 rounded'></div>
-              </div>
-
-              {/* Video Player Placeholder 2 */}
-              <div className='bg-purple-800 bg-opacity-40 border border-purple-400 border-opacity-30 rounded-xl p-3 flex flex-col items-center justify-center min-h-[120px]'>
-                <div className='flex items-center space-x-2 mb-2'>
-                  <svg className='w-4 h-4 text-white' fill='currentColor' viewBox='0 0 24 24'>
-                    <path d='M8 5v14l11-7z' />
-                  </svg>
-                  <span className='text-white text-xs'>0:00</span>
-                </div>
-                <div className='flex items-center space-x-2 mb-2'>
-                  <svg className='w-4 h-4 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z'
-                    />
-                  </svg>
-                  <svg className='w-4 h-4 text-white' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z'
-                    />
-                  </svg>
-                </div>
-                <div className='w-full h-0.5 bg-white bg-opacity-30 rounded'></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Remote Preview */}
-          <div>
-            <h3 className='text-white text-sm font-bold mb-3 uppercase tracking-wide'>Remote preview</h3>
-            <div className='bg-purple-800 bg-opacity-40 border border-purple-400 border-opacity-30 rounded-xl p-8 flex items-center justify-center min-h-[120px]'>
-              <p className='text-white text-sm opacity-60'>No remote connection</p>
-            </div>
-          </div>
+        {/* How It Works */}
+        <div className='mt-6 bg-purple-900 bg-opacity-20 border border-purple-400 border-opacity-30 rounded-2xl p-5'>
+          <h3 className='text-white text-sm font-bold mb-3 uppercase tracking-wide'>How it works</h3>
+          <ol className='list-decimal list-inside space-y-2 text-white text-sm opacity-90'>
+            <li>Create a room with “Start sharing my screen”.</li>
+            <li>Share the Room ID with viewers.</li>
+            <li>Viewers paste the ID and select “Join as viewer”.</li>
+          </ol>
         </div>
       </div>
     </div>

@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import VideoPlayer from './VideoPlayer';
 import { useWebRTC } from '../hooks/useWebRTC';
 import { useRoomContext } from '../contexts/RoomContext';
 import { HOST_STATUS_LABELS, HOST_STATUS_COLORS, HOST_CONNECTION_STATUS, VIEWER_PEER_BADGES } from '../constants';
@@ -68,7 +67,12 @@ function HostView({ config, onGoHome }) {
 
       const stream = await startScreenShare();
       if (stream && localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
+        try {
+          localVideoRef.current.srcObject = stream;
+        } catch (e) {
+          console.warn('[HostView] Failed to bind local stream to video element:', e);
+          setError('Unable to attach preview stream. Screen sharing may still work for viewers.');
+        }
         setIsSharing(true);
         setShareButtonText('Stop Sharing');
       }
@@ -84,7 +88,11 @@ function HostView({ config, onGoHome }) {
     try {
       await stopScreenShare();
       if (localVideoRef.current) {
-        localVideoRef.current.srcObject = null;
+        try {
+          localVideoRef.current.srcObject = null;
+        } catch (e) {
+          console.warn('[HostView] Failed to unbind local stream from video element:', e);
+        }
       }
       setIsSharing(false);
       setShareButtonText('Start Sharing');
@@ -171,6 +179,9 @@ function HostView({ config, onGoHome }) {
         </div>
       </div>
 
+      {/* Accessible heading for tests and screen readers */}
+      <h1 className='sr-only'>Host View</h1>
+
       {/* Room ID Section */}
       <div className='bg-white rounded-lg shadow-md p-6'>
         <h3 className='text-lg font-semibold text-gray-900 mb-4'>Room Information</h3>
@@ -245,24 +256,7 @@ function HostView({ config, onGoHome }) {
         </div>
       )}
 
-      {/* Local Video Preview */}
-      {isSharing && (
-        <div className='bg-white rounded-lg shadow-md p-6'>
-          <h3 className='text-lg font-semibold text-gray-900 mb-4'>Your Screen (Preview)</h3>
-          <div className='relative'>
-            <VideoPlayer
-              ref={localVideoRef}
-              className='w-full max-w-2xl mx-auto rounded-lg border border-gray-200'
-              muted
-              autoPlay
-              playsInline
-            />
-            <div className='absolute top-2 right-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs'>
-              You are sharing this screen
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Local Video Preview removed per design update */}
 
       {/* Instructions */}
       <div className='bg-blue-50 border border-blue-200 rounded-lg p-6'>

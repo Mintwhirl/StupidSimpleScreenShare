@@ -288,10 +288,12 @@ describe('WebRTC Polling - REAL Behavior Tests', () => {
     it('should use exponential backoff for polling intervals', async () => {
       const { result } = renderHook(() => useWebRTC('test-room-123', 'viewer', mockConfig));
 
-      // Mock fetch to always return 404 (no offer)
-      global.fetch.mockResolvedValue({
-        ok: false,
-        status: 404,
+      // Mock fetch to return 404 for offer endpoint only; other endpoints return ok
+      global.fetch.mockImplementation((url, init) => {
+        if (typeof url === 'string' && url.includes('/api/offer?')) {
+          return Promise.resolve({ ok: false, status: 404 });
+        }
+        return Promise.resolve({ ok: true, json: vi.fn().mockResolvedValue({ ok: true }) });
       });
 
       await act(async () => {
@@ -321,16 +323,21 @@ describe('WebRTC Polling - REAL Behavior Tests', () => {
     it('should stop polling on successful response', async () => {
       const { result } = renderHook(() => useWebRTC('test-room-123', 'viewer', mockConfig));
 
-      // Mock fetch to return 404 first, then success
-      global.fetch
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 404,
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve({ desc: { type: 'offer', sdp: 'mock-sdp' } }),
-        });
+      // Mock fetch to return 404 first offer poll, then success for offer only; others ok
+      let offerCalls = 0;
+      global.fetch.mockImplementation((url, init) => {
+        if (typeof url === 'string' && url.includes('/api/offer?')) {
+          offerCalls += 1;
+          if (offerCalls === 1) {
+            return Promise.resolve({ ok: false, status: 404 });
+          }
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ desc: { type: 'offer', sdp: 'mock-sdp' } }),
+          });
+        }
+        return Promise.resolve({ ok: true, json: vi.fn().mockResolvedValue({ ok: true }) });
+      });
 
       await act(async () => {
         await result.current.connectToHost();

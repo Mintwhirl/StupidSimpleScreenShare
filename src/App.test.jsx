@@ -80,12 +80,10 @@ describe('App Component', () => {
     expect(input).toHaveAttribute('placeholder', 'Paste room id here');
   });
 
-  it('renders preview sections', () => {
+  it('renders how it works hints', () => {
     render(<App />);
-
-    expect(screen.getByText('Local preview')).toBeInTheDocument();
-    expect(screen.getByText('Remote preview')).toBeInTheDocument();
-    expect(screen.getByText('No remote connection')).toBeInTheDocument();
+    expect(screen.getByText('How it works')).toBeInTheDocument();
+    expect(screen.getByText('Create a room with “Start sharing my screen”.')).toBeInTheDocument();
   });
 
   it('shows status as idle', () => {

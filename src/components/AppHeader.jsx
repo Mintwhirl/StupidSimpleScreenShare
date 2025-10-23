@@ -17,44 +17,32 @@ function AppHeader({ currentView, showChat, showDiagnostics, onToggleChat, onTog
             {currentView !== 'home' && <span className='ml-4 text-sm text-purple-300'>Room: {roomId}</span>}
           </div>
 
-          <div className='flex items-center space-x-4'>
+          <div className='flex items-center space-x-2 sm:space-x-3'>
             {currentView !== 'home' && (
               <>
                 <button
                   onClick={onToggleChat}
-                  className={`px-3 py-1 text-sm rounded transition-all ${
+                  className={`px-3 py-1 text-xs sm:text-sm rounded-xl font-bold uppercase tracking-wide transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-pink-400/60 ${
                     showChat
-                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500 shadow-opacity-50'
-                      : 'bg-white bg-opacity-20 text-gray-800 hover:bg-opacity-30'
+                      ? 'bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg shadow-pink-500/30'
+                      : 'bg-purple-900/30 border border-purple-400/40 text-white hover:bg-purple-800/40'
                   }`}
-                  style={{
-                    color: showChat ? 'white' : '#1f2937',
-                    backgroundColor: showChat ? '#2563eb' : 'rgba(255, 255, 255, 0.2)',
-                  }}
                 >
                   Chat
                 </button>
                 <button
                   onClick={onToggleDiagnostics}
-                  className={`px-3 py-1 text-sm rounded transition-all ${
+                  className={`px-3 py-1 text-xs sm:text-sm rounded-xl font-bold uppercase tracking-wide transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-pink-400/60 ${
                     showDiagnostics
-                      ? 'bg-green-600 text-white shadow-lg shadow-green-500 shadow-opacity-50'
-                      : 'bg-white bg-opacity-20 text-gray-800 hover:bg-opacity-30'
+                      ? 'bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg shadow-pink-500/30'
+                      : 'bg-purple-900/30 border border-purple-400/40 text-white hover:bg-purple-800/40'
                   }`}
-                  style={{
-                    color: showDiagnostics ? 'white' : '#1f2937',
-                    backgroundColor: showDiagnostics ? '#16a34a' : 'rgba(255, 255, 255, 0.2)',
-                  }}
                 >
                   Diagnostics
                 </button>
                 <button
                   onClick={onGoHome}
-                  className='px-3 py-1 text-sm bg-white bg-opacity-20 text-gray-800 rounded hover:bg-opacity-30 transition-all'
-                  style={{
-                    color: '#1f2937',
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  }}
+                  className='px-3 py-1 text-xs sm:text-sm rounded-xl font-bold uppercase tracking-wide transition-all duration-300 text-white bg-transparent border border-purple-400/40 hover:bg-purple-800/40 focus:outline-none focus:ring-2 focus:ring-pink-400/60'
                 >
                   Home
                 </button>

@@ -89,9 +89,15 @@ function ViewerView({ config, onGoHome }) {
   // Handle remote stream
   useEffect(() => {
     if (remoteStream && remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = remoteStream;
+      try {
+        remoteVideoRef.current.srcObject = remoteStream;
+      } catch (e) {
+        // Gracefully handle environments where setting srcObject can throw
+        console.warn('[ViewerView] Failed to bind remote stream to video element:', e);
+        setError('Unable to attach video stream. Please try reconnecting.');
+      }
     }
-  }, [remoteStream]);
+  }, [remoteStream, setError]);
 
   // Handle WebRTC errors and clear errors on success
   useEffect(() => {
@@ -276,6 +282,8 @@ function ViewerView({ config, onGoHome }) {
 
   return (
     <div className='space-y-6'>
+      {/* Accessible heading for tests and screen readers */}
+      <h1 className='sr-only'>Viewer View</h1>
       {/* Header */}
       <div className='bg-white rounded-lg shadow-md p-6'>
         <div className='flex items-center justify-between'>

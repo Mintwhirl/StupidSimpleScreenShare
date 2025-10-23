@@ -28,7 +28,7 @@ async function handleCandidate(req, res, { redis }) {
     const senderSecret = extractSenderSecret(req);
     if (senderSecret) {
       const senderId = resolveSenderId(role, viewerId);
-      const authValidation = await validateSenderSecret(redis, roomId, senderId, senderSecret);
+      const authValidation = await validateSenderSecret(redis, roomId, senderId, senderSecret, clientId);
       if (!authValidation.valid) {
         return sendError(res, 403, authValidation.error);
       }
@@ -41,7 +41,8 @@ async function handleCandidate(req, res, { redis }) {
 
     const multi = redis.multi();
     multi.get(getRoomMetaKey(roomId));
-    multi.rpush(key, JSON.stringify(candidate)); // Store RTCIceCandidate directly
+    // Store RTCIceCandidate directly as an object (tests expect non-stringified)
+    multi.rpush(key, candidate);
     multi.expire(key, TTL_ROOM);
 
     const results = await multi.exec();

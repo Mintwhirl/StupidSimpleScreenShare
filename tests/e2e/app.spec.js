@@ -19,19 +19,17 @@ test.describe('Stupid Simple Screen Share App', () => {
     await expect(page.getByRole('button', { name: /join a room as a viewer to watch screen sharing/i })).toBeVisible();
 
     // Check that the room ID input is present
-    await expect(page.getByLabelText(/enter room id to join a screen sharing session/i)).toBeVisible();
+    await expect(page.getByLabel(/enter room id to join a screen sharing session/i)).toBeVisible();
 
-    // Check that preview sections are present
-    await expect(page.getByText('Local preview')).toBeVisible();
-    await expect(page.getByText('Remote preview')).toBeVisible();
-    await expect(page.getByText('No remote connection')).toBeVisible();
+    // Preview sections removed per design update
+    await expect(page.getByText('How it works')).toBeVisible();
 
     // Check status indicator
     await expect(page.getByText('Status: idle')).toBeVisible();
   });
 
   test('should handle room ID input', async ({ page }) => {
-    const input = page.getByLabelText(/enter room id to join a screen sharing session/i);
+    const input = page.getByLabel(/enter room id to join a screen sharing session/i);
 
     await input.fill('test-room-123');
     await expect(input).toHaveValue('test-room-123');
@@ -61,12 +59,12 @@ test.describe('Stupid Simple Screen Share App', () => {
 
   test('should have proper accessibility attributes', async ({ page }) => {
     // Check ARIA labels
-    await expect(page.getByLabelText(/start sharing your screen to create a new room/i)).toBeVisible();
-    await expect(page.getByLabelText(/stop screen sharing and return to home/i)).toBeVisible();
-    await expect(page.getByLabelText(/start recording the screen sharing session/i)).toBeVisible();
-    await expect(page.getByLabelText(/toggle diagnostics panel to view connection information/i)).toBeVisible();
-    await expect(page.getByLabelText(/join a room as a viewer to watch screen sharing/i)).toBeVisible();
-    await expect(page.getByLabelText(/enter room id to join a screen sharing session/i)).toBeVisible();
+    await expect(page.getByLabel(/start sharing your screen to create a new room/i)).toBeVisible();
+    await expect(page.getByLabel(/stop screen sharing and return to home/i)).toBeVisible();
+    await expect(page.getByLabel(/start recording the screen sharing session/i)).toBeVisible();
+    await expect(page.getByLabel(/toggle diagnostics panel to view connection information/i)).toBeVisible();
+    await expect(page.getByLabel(/join a room as a viewer to watch screen sharing/i)).toBeVisible();
+    await expect(page.getByLabel(/enter room id to join a screen sharing session/i)).toBeVisible();
   });
 
   test('should be responsive on mobile', async ({ page }) => {
@@ -81,7 +79,7 @@ test.describe('Stupid Simple Screen Share App', () => {
     await expect(page.getByRole('button', { name: /join a room as a viewer to watch screen sharing/i })).toBeVisible();
 
     // Check that the room ID input is still visible
-    await expect(page.getByLabelText(/enter room id to join a screen sharing session/i)).toBeVisible();
+    await expect(page.getByLabel(/enter room id to join a screen sharing session/i)).toBeVisible();
   });
 
   test('should have proper focus states', async ({ page }) => {
