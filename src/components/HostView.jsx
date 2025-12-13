@@ -1,19 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useSimpleWebRTC } from '../hooks/useSimpleWebRTC';
-import { useRoomContext } from '../contexts/RoomContext';
 
 function HostView({ _config, onGoHome }) {
-  const { roomId } = useRoomContext();
   const [isSharing, setIsSharing] = useState(false);
-  const [copyStatus, setCopyStatus] = useState(null);
 
-  const {
-    startScreenShare,
-    disconnect,
-    connectionState,
-    error,
-    _reset
-  } = useSimpleWebRTC(roomId, 'host');
+  const { startScreenShare, disconnect, connectionState, error, _reset } = useSimpleWebRTC('host');
 
   // Update sharing state based on connection state
   useEffect(() => {
@@ -49,57 +40,42 @@ function HostView({ _config, onGoHome }) {
 
   const shareButtonText = isSharing ? 'Stop Sharing' : 'Start Sharing';
 
-  // Copy room ID to clipboard
-  const copyRoomId = () => {
-    navigator.clipboard
-      .writeText(roomId)
-      .then(() => {
-        setCopyStatus('success');
-        setTimeout(() => setCopyStatus(null), 2000);
-      })
-      .catch((err) => {
-        console.error('Failed to copy room ID:', err);
-        setCopyStatus('error');
-        setTimeout(() => setCopyStatus(null), 2000);
-      });
+  const getStatusText = () => {
+    switch (connectionState) {
+      case 'idle':
+        return 'Idle';
+      case 'connecting':
+        return 'Connecting...';
+      case 'connected':
+        return 'Sharing Active';
+      case 'disconnected':
+        return 'Disconnected';
+      case 'failed':
+        return 'Error';
+      default:
+        return 'Unknown';
+    }
   };
 
-  const getStatusText = () => {
-  switch (connectionState) {
-    case 'idle':
-      return 'Idle';
-    case 'connecting':
-      return 'Connecting...';
-    case 'connected':
-      return 'Sharing Active';
-    case 'disconnected':
-      return 'Disconnected';
-    case 'failed':
-      return 'Error';
-    default:
-      return 'Unknown';
-  }
-};
+  const getStatusColor = () => {
+    switch (connectionState) {
+      case 'idle':
+        return 'text-gray-600';
+      case 'connecting':
+        return 'text-yellow-600';
+      case 'connected':
+        return 'text-green-600';
+      case 'disconnected':
+        return 'text-gray-500';
+      case 'failed':
+        return 'text-red-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
 
-const getStatusColor = () => {
-  switch (connectionState) {
-    case 'idle':
-      return 'text-gray-600';
-    case 'connecting':
-      return 'text-yellow-600';
-    case 'connected':
-      return 'text-green-600';
-    case 'disconnected':
-      return 'text-gray-500';
-    case 'failed':
-      return 'text-red-600';
-    default:
-      return 'text-gray-600';
-  }
-};
-
-const shareDisabled = connectionState === 'connecting';
-const isPreparingShare = !isSharing && shareDisabled;
+  const shareDisabled = connectionState === 'connecting';
+  const isPreparingShare = !isSharing && shareDisabled;
 
   return (
     <div className='space-y-6'>
@@ -108,7 +84,7 @@ const isPreparingShare = !isSharing && shareDisabled;
         <div className='flex items-center justify-between'>
           <div>
             <h2 className='text-2xl font-bold text-gray-900 mb-2'>🖥️ Screen Sharing Room</h2>
-            <p className='text-gray-600'>Share your screen with others. Viewers can join using the room ID below.</p>
+            <p className='text-gray-600'>Share your screen with others. Click Start Sharing to begin.</p>
           </div>
           <div className='text-right'>
             <div className={`text-sm font-medium ${getStatusColor()}`}>Status: {getStatusText()}</div>
@@ -119,37 +95,6 @@ const isPreparingShare = !isSharing && shareDisabled;
 
       {/* Accessible heading for tests and screen readers */}
       <h1 className='sr-only'>Host View</h1>
-
-      {/* Room ID Section */}
-      <div className='bg-white rounded-lg shadow-md p-6'>
-        <h3 className='text-lg font-semibold text-gray-900 mb-4'>Room Information</h3>
-        <div className='flex items-center space-x-4'>
-          <div className='flex-1'>
-            <label className='block text-sm font-medium text-gray-700 mb-2'>Room ID</label>
-            <div className='flex items-center space-x-2'>
-              <input
-                type='text'
-                value={roomId}
-                readOnly
-                className='flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 font-mono text-sm'
-              />
-              <button
-                onClick={copyRoomId}
-                className={`px-4 py-2 text-white rounded-lg transition-colors ${
-                  copyStatus === 'success'
-                    ? 'bg-green-600'
-                    : copyStatus === 'error'
-                      ? 'bg-red-600'
-                      : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-              >
-                {copyStatus === 'success' ? 'Copied!' : copyStatus === 'error' ? 'Failed!' : 'Copy'}
-              </button>
-            </div>
-          </div>
-        </div>
-        <p className='text-sm text-gray-500 mt-2'>Share this room ID with others so they can view your screen.</p>
-      </div>
 
       {/* Screen Share Controls */}
       <div className='bg-white rounded-lg shadow-md p-6'>
@@ -201,7 +146,7 @@ const isPreparingShare = !isSharing && shareDisabled;
         <div className='space-y-2 text-sm text-blue-800'>
           <p>• Click "Start Sharing" to begin screen sharing</p>
           <p>• Select the screen or application you want to share</p>
-          <p>• Share the Room ID with viewers so they can join</p>
+          <p>• Viewers can connect by clicking the View button on this site</p>
           <p>• Use the Chat feature to communicate with viewers</p>
           <p>• Click "Stop Sharing" when you're done</p>
         </div>

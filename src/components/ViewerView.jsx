@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import VideoPlayer from './VideoPlayer';
 import { useSimpleWebRTC } from '../hooks/useSimpleWebRTC';
-import { useRoomContext } from '../contexts/RoomContext';
 
 function ViewerView({ _config, onGoHome }) {
-  const { roomId } = useRoomContext();
   const [error, setError] = useState(null);
 
   const remoteVideoRef = useRef(null);
@@ -15,8 +13,8 @@ function ViewerView({ _config, onGoHome }) {
     connectionState,
     remoteStream,
     error: webrtcError,
-    _reset
-  } = useSimpleWebRTC(roomId, 'viewer');
+    _reset,
+  } = useSimpleWebRTC('viewer');
 
   // Derive all status from WebRTC state - single source of truth
   const isConnected = connectionState === 'connected';
@@ -141,10 +139,8 @@ function ViewerView({ _config, onGoHome }) {
       <div className='bg-white rounded-lg shadow-md p-6'>
         <div className='flex items-center justify-between'>
           <div>
-            <h2 className='text-2xl font-bold text-gray-900 mb-2'>👀 Viewing Room</h2>
-            <p className='text-gray-900'>
-              Room ID: <span className='font-mono font-semibold bg-gray-100 px-2 py-1 rounded'>{roomId}</span>
-            </p>
+            <h2 className='text-2xl font-bold text-gray-900 mb-2'>👀 Screen Sharing Viewer</h2>
+            <p className='text-gray-600'>Click Connect to view the host's screen</p>
           </div>
           <div className='text-right'>
             <div className={`text-sm font-semibold ${getStatusColor()}`}>Connection: {getStatusText()}</div>
@@ -153,7 +149,6 @@ function ViewerView({ _config, onGoHome }) {
         </div>
       </div>
 
-      
       {/* Connection Controls */}
       <div className='bg-white rounded-lg shadow-md p-6'>
         <h3 className='text-lg font-semibold text-gray-900 mb-4'>Connection Controls</h3>
@@ -210,7 +205,6 @@ function ViewerView({ _config, onGoHome }) {
                 <p className='text-red-700 text-sm font-medium'>Common fixes:</p>
                 <ul className='text-red-700 text-sm list-disc list-inside space-y-1'>
                   <li>Make sure the host has started sharing</li>
-                  <li>Check the room ID is correct</li>
                   <li>Try connecting again</li>
                 </ul>
               </div>

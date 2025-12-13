@@ -2,8 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Pusher from 'pusher-js';
 import { getIceServers } from '../config/turn.js';
 
+// Single shared channel for all users
+const CHANNEL_NAME = 'presence-screenshare';
+
 // Simple WebRTC hook using Pusher for signaling
-export function useSimpleWebRTC(roomId, role) {
+export function useSimpleWebRTC(role) {
   const [connectionState, setConnectionState] = useState('idle');
   const [remoteStream, setRemoteStream] = useState(null);
   const [localStream, setLocalStream] = useState(null);
@@ -16,19 +19,16 @@ export function useSimpleWebRTC(roomId, role) {
   const bufferedIceCandidates = useRef([]);
   const isMountedRef = useRef(true);
 
-  // Handler declarations to avoid "accessed before declaration"
-  let createAndSendOffer, handleOffer, handleAnswer;
-
   // Initialize Pusher
   useEffect(() => {
-    if (!roomId || !pusherRef.current) {
+    if (!pusherRef.current) {
       const pusherKey = import.meta.env.VITE_PUSHER_KEY;
       const pusherCluster = import.meta.env.VITE_PUSHER_CLUSTER || 'us-east-1';
 
       pusherRef.current = new Pusher(pusherKey, {
         cluster: pusherCluster,
         authEndpoint: '/api/pusher-auth',
-        forceTLS: true
+        forceTLS: true,
       });
     }
 
@@ -38,19 +38,19 @@ export function useSimpleWebRTC(roomId, role) {
         pusherRef.current = null;
       }
     };
-  }, [roomId]);
+  }, []);
 
   // Create peer connection
   const createPeerConnection = useCallback(() => {
     const pc = new RTCPeerConnection({
-      iceServers: getIceServers(true)
+      iceServers: getIceServers(true),
     });
 
     // Handle ICE candidates
     pc.onicecandidate = (event) => {
       if (event.candidate && channelRef.current) {
         channelRef.current.trigger('client-ice', {
-          candidate: event.candidate
+          candidate: event.candidate,
         });
         console.log('ICE sent');
       }
@@ -93,7 +93,7 @@ export function useSimpleWebRTC(roomId, role) {
   }, []);
 
   // Define handlers
-  createAndSendOffer = useCallback(async () => {
+  const createAndSendOffer = useCallback(async () => {
     if (!peerConnectionRef.current || !channelRef.current) return;
 
     try {
@@ -101,7 +101,7 @@ export function useSimpleWebRTC(roomId, role) {
       await peerConnectionRef.current.setLocalDescription(offer);
 
       channelRef.current.trigger('client-offer', {
-        offer: offer
+        offer: offer,
       });
       console.log('Offer sent');
     } catch (err) {
@@ -110,29 +110,32 @@ export function useSimpleWebRTC(roomId, role) {
     }
   }, []);
 
-  handleOffer = useCallback(async (offer) => {
-    if (!peerConnectionRef.current) {
-      peerConnectionRef.current = createPeerConnection();
-    }
-
-    try {
-      await peerConnectionRef.current.setRemoteDescription(offer);
-      const answer = await peerConnectionRef.current.createAnswer();
-      await peerConnectionRef.current.setLocalDescription(answer);
-
-      if (channelRef.current) {
-        channelRef.current.trigger('client-answer', {
-          answer: answer
-        });
-        console.log('Answer sent');
+  const handleOffer = useCallback(
+    async (offer) => {
+      if (!peerConnectionRef.current) {
+        peerConnectionRef.current = createPeerConnection();
       }
-    } catch (err) {
-      console.error('Error handling offer:', err);
-      setError('Failed to handle offer');
-    }
-  }, [createPeerConnection]);
 
-  handleAnswer = useCallback(async (answer) => {
+      try {
+        await peerConnectionRef.current.setRemoteDescription(offer);
+        const answer = await peerConnectionRef.current.createAnswer();
+        await peerConnectionRef.current.setLocalDescription(answer);
+
+        if (channelRef.current) {
+          channelRef.current.trigger('client-answer', {
+            answer: answer,
+          });
+          console.log('Answer sent');
+        }
+      } catch (err) {
+        console.error('Error handling offer:', err);
+        setError('Failed to handle offer');
+      }
+    },
+    [createPeerConnection]
+  );
+
+  const handleAnswer = useCallback(async (answer) => {
     if (!peerConnectionRef.current) return;
 
     try {
@@ -144,11 +147,11 @@ export function useSimpleWebRTC(roomId, role) {
     }
   }, []);
 
-  reset = useCallback(() => {
+  const reset = useCallback(() => {
     console.log('Reset triggered');
     // Stop local stream
     if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current.getTracks().forEach((track) => track.stop());
       localStreamRef.current = null;
     }
     setLocalStream(null);
@@ -166,21 +169,20 @@ export function useSimpleWebRTC(roomId, role) {
     // Unsubscribe from channel
     if (channelRef.current) {
       channelRef.current.unbind_all();
-      pusherRef.current.unsubscribe(`presence-screenshare-${roomId}`);
+      pusherRef.current.unsubscribe(CHANNEL_NAME);
       channelRef.current = null;
     }
-  }, [roomId]);
+  }, []);
 
-  // Subscribe to room channel
+  // Subscribe to channel
   const subscribeToChannel = useCallback(() => {
-    if (!pusherRef.current || !roomId) return;
+    if (!pusherRef.current || channelRef.current) return;
 
-    const channelName = `presence-screenshare-${roomId}`;
-    channelRef.current = pusherRef.current.subscribe(channelName);
+    channelRef.current = pusherRef.current.subscribe(CHANNEL_NAME);
 
     channelRef.current.bind('pusher:subscription_succeeded', () => {
       console.log('Pusher subscribed');
-      console.log('Channel:', channelName);
+      console.log('Channel:', CHANNEL_NAME);
     });
 
     channelRef.current.bind('pusher:subscription_error', (err) => {
@@ -231,7 +233,7 @@ export function useSimpleWebRTC(roomId, role) {
       console.log('Reset event received');
       reset();
     });
-  }, [roomId, role, createAndSendOffer, handleOffer, handleAnswer, reset]);
+  }, [role, createAndSendOffer, handleOffer, handleAnswer, reset]);
 
   // Start screen sharing (host)
   const startScreenShare = useCallback(async () => {
@@ -247,7 +249,7 @@ export function useSimpleWebRTC(roomId, role) {
       // Get screen share stream (video only)
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
-        audio: false
+        audio: false,
       });
 
       setLocalStream(stream);
@@ -257,7 +259,7 @@ export function useSimpleWebRTC(roomId, role) {
       peerConnectionRef.current = createPeerConnection();
 
       // Add tracks to peer connection
-      stream.getTracks().forEach(track => {
+      stream.getTracks().forEach((track) => {
         peerConnectionRef.current.addTrack(track, stream);
       });
     } catch (err) {
@@ -281,7 +283,7 @@ export function useSimpleWebRTC(roomId, role) {
       // Signal that viewer is ready
       if (channelRef.current) {
         channelRef.current.trigger('client-viewer-ready', {
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       }
 
@@ -319,6 +321,6 @@ export function useSimpleWebRTC(roomId, role) {
     startScreenShare,
     connectToHost,
     disconnect,
-    reset
+    reset,
   };
 }
