@@ -1,104 +1,40 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { useWebRTC } from '../hooks/useWebRTC';
+import { useState, useEffect, useRef } from 'react';
+import { useSimpleWebRTC } from '../hooks/useSimpleWebRTC';
 import { useRoomContext } from '../contexts/RoomContext';
-import { HOST_STATUS_LABELS, HOST_STATUS_COLORS, HOST_CONNECTION_STATUS, VIEWER_PEER_BADGES } from '../constants';
 
-function HostView({ config, onGoHome }) {
-  console.log('HostView: Component is rendering');
-  const { roomId, updateSenderSecret, setDiagnosticAlert } = useRoomContext();
-  console.log('HostView: roomId =', roomId, 'updateSenderSecret =', typeof updateSenderSecret);
+function HostView({ _config, onGoHome }) {
+  const { roomId } = useRoomContext();
   const [isSharing, setIsSharing] = useState(false);
-  const [error, setError] = useState(null);
-  const [shareButtonText, setShareButtonText] = useState('Start Sharing');
-  const [copyStatus, setCopyStatus] = useState(null); // For copy feedback
-  const shouldUseTurn = config?.useTurn !== false;
+  const [copyStatus, setCopyStatus] = useState(null);
 
-  const localVideoRef = useRef(null);
   const {
     startScreenShare,
-    stopScreenShare,
+    disconnect,
     connectionState,
-    connectionLifecycleStatus,
-    peerConnections,
-    error: webrtcError,
-    errorState,
-    hasTurnServer,
-  } = useWebRTC(roomId, 'host', config, null, { onSenderSecret: updateSenderSecret });
+    error,
+    _reset
+  } = useSimpleWebRTC(roomId, 'host');
 
-  // Handle WebRTC errors
+  // Update sharing state based on connection state
   useEffect(() => {
-    if (webrtcError) {
-      setError(webrtcError);
-    }
-  }, [webrtcError]);
-
-  useEffect(() => {
-    if (!setDiagnosticAlert) return;
-
-    if (errorState?.type && ['network', 'permission'].includes(errorState.type)) {
-      const message =
-        errorState.type === 'network'
-          ? `Network issue detected while sharing: ${errorState.message || 'Please verify your connection.'}`
-          : `Screen sharing permission issue: ${errorState.message || 'Grant screen share access and retry.'}`;
-      setDiagnosticAlert(errorState.type, message);
-    } else {
-      ['network', 'permission'].forEach((type) => setDiagnosticAlert(type, null));
-    }
-  }, [errorState, setDiagnosticAlert]);
-
-  useEffect(() => {
-    if (!setDiagnosticAlert) return;
-
-    if (shouldUseTurn && !hasTurnServer) {
-      setDiagnosticAlert(
-        'turn',
-        'TURN relays are not configured. Configure TURN credentials for reliable NAT traversal and better connectivity.'
-      );
-    } else {
-      setDiagnosticAlert('turn', null);
-    }
-  }, [shouldUseTurn, hasTurnServer, setDiagnosticAlert]);
+    setIsSharing(connectionState === 'connected');
+  }, [connectionState]);
 
   // Handle screen share start
   const handleStartSharing = async () => {
     try {
-      setError(null);
-      setShareButtonText('Starting...');
-
-      const stream = await startScreenShare();
-      if (stream && localVideoRef.current) {
-        try {
-          localVideoRef.current.srcObject = stream;
-        } catch (e) {
-          console.warn('[HostView] Failed to bind local stream to video element:', e);
-          setError('Unable to attach preview stream. Screen sharing may still work for viewers.');
-        }
-        setIsSharing(true);
-        setShareButtonText('Stop Sharing');
-      }
+      await startScreenShare();
     } catch (err) {
       console.error('Error starting screen share:', err);
-      setError('Failed to start screen sharing. Please check your browser permissions.');
-      setShareButtonText('Start Sharing');
     }
   };
 
   // Handle screen share stop
   const handleStopSharing = async () => {
     try {
-      await stopScreenShare();
-      if (localVideoRef.current) {
-        try {
-          localVideoRef.current.srcObject = null;
-        } catch (e) {
-          console.warn('[HostView] Failed to unbind local stream from video element:', e);
-        }
-      }
-      setIsSharing(false);
-      setShareButtonText('Start Sharing');
+      await disconnect();
     } catch (err) {
       console.error('Error stopping screen share:', err);
-      setError('Failed to stop screen sharing.');
     }
   };
 
@@ -110,6 +46,8 @@ function HostView({ config, onGoHome }) {
       handleStartSharing();
     }
   };
+
+  const shareButtonText = isSharing ? 'Stop Sharing' : 'Start Sharing';
 
   // Copy room ID to clipboard
   const copyRoomId = () => {
@@ -126,25 +64,42 @@ function HostView({ config, onGoHome }) {
       });
   };
 
-  const viewerCount = peerConnections.size;
-  const viewerEntries = useMemo(() => Array.from(peerConnections.values()), [peerConnections]);
+  const getStatusText = () => {
+  switch (connectionState) {
+    case 'idle':
+      return 'Idle';
+    case 'connecting':
+      return 'Connecting...';
+    case 'connected':
+      return 'Sharing Active';
+    case 'disconnected':
+      return 'Disconnected';
+    case 'failed':
+      return 'Error';
+    default:
+      return 'Unknown';
+  }
+};
 
-  const statusText = useMemo(() => {
-    return HOST_STATUS_LABELS[connectionLifecycleStatus] || HOST_STATUS_LABELS[HOST_CONNECTION_STATUS.IDLE];
-  }, [connectionLifecycleStatus]);
+const getStatusColor = () => {
+  switch (connectionState) {
+    case 'idle':
+      return 'text-gray-600';
+    case 'connecting':
+      return 'text-yellow-600';
+    case 'connected':
+      return 'text-green-600';
+    case 'disconnected':
+      return 'text-gray-500';
+    case 'failed':
+      return 'text-red-600';
+    default:
+      return 'text-gray-600';
+  }
+};
 
-  const statusColor = useMemo(() => {
-    return HOST_STATUS_COLORS[connectionLifecycleStatus] || HOST_STATUS_COLORS[HOST_CONNECTION_STATUS.IDLE];
-  }, [connectionLifecycleStatus]);
-
-  const shareDisabled =
-    connectionState === 'connecting' ||
-    connectionLifecycleStatus === HOST_CONNECTION_STATUS.REGISTERING ||
-    connectionLifecycleStatus === HOST_CONNECTION_STATUS.ACQUIRING_MEDIA;
-
-  const isPreparingShare = !isSharing && shareDisabled;
-  const errorMessage = errorState?.message || error;
-  const errorDetails = errorState?.details;
+const shareDisabled = connectionState === 'connecting';
+const isPreparingShare = !isSharing && shareDisabled;
 
   return (
     <div className='space-y-6'>
@@ -156,25 +111,8 @@ function HostView({ config, onGoHome }) {
             <p className='text-gray-600'>Share your screen with others. Viewers can join using the room ID below.</p>
           </div>
           <div className='text-right'>
-            <div className={`text-sm font-medium ${statusColor}`}>Status: {statusText}</div>
-            <div className='text-sm text-gray-500'>Viewers: {viewerCount}</div>
-            <div className='mt-2 flex flex-wrap gap-2 justify-end'>
-              {viewerEntries.length === 0 ? (
-                <span className='text-xs text-gray-400'>No viewer connections yet</span>
-              ) : (
-                viewerEntries.map((viewer) => {
-                  const badge = VIEWER_PEER_BADGES[viewer.status] || {
-                    label: 'Awaiting status',
-                    className: 'bg-gray-100 text-gray-600',
-                  };
-                  return (
-                    <span key={viewer.id} className={`px-2 py-1 text-xs font-medium rounded-full ${badge.className}`}>
-                      {viewer.label || 'Viewer'} • {badge.label}
-                    </span>
-                  );
-                })
-              )}
-            </div>
+            <div className={`text-sm font-medium ${getStatusColor()}`}>Status: {getStatusText()}</div>
+            <div className='text-sm text-gray-500'>Viewers: {connectionState === 'connected' ? 1 : 0}</div>
           </div>
         </div>
       </div>
@@ -227,7 +165,7 @@ function HostView({ config, onGoHome }) {
             {isPreparingShare ? 'Connecting...' : shareButtonText}
           </button>
 
-          {isSharing && (
+          {connectionState === 'connected' && (
             <div className='flex items-center space-x-2 text-green-600'>
               <div className='w-2 h-2 bg-green-600 rounded-full animate-pulse'></div>
               <span className='text-sm font-medium'>Sharing Active</span>
@@ -243,14 +181,13 @@ function HostView({ config, onGoHome }) {
       </div>
 
       {/* Error Display */}
-      {errorMessage && (
+      {error && (
         <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
           <div className='flex items-center'>
             <div className='text-red-600 mr-2'>⚠️</div>
             <div>
               <h4 className='text-red-800 font-medium'>Error</h4>
-              <p className='text-red-700 text-sm mt-1'>{errorMessage}</p>
-              {errorDetails && <p className='text-red-600 text-xs mt-2 border-t border-red-200 pt-2'>{errorDetails}</p>}
+              <p className='text-red-700 text-sm mt-1'>{error}</p>
             </div>
           </div>
         </div>

@@ -10,6 +10,15 @@ storybook-static
 test-results/
 playwright-report/
 coverage/
+test-*.html
+test-*.js
+test-*.cjs
+tests-simple/
+src-simple/
+package-simple.json
+playwright.config.simple.js
+vite.config.simple.js
+run-tests.js
 
 # Temporary files
 tmp_*
@@ -18,3 +27,13 @@ tmp_*
 
 # Build output
 dist/
+
+# Windows reserved device names
+nul
+NUL
+con
+CON
+prn
+PRN
+aux
+AUX

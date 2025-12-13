@@ -1,70 +1,13 @@
-import { useState, useEffect, useRef, useCallback, useReducer } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import VideoPlayer from './VideoPlayer';
-import { useWebRTC } from '../hooks/useWebRTC';
+import { useSimpleWebRTC } from '../hooks/useSimpleWebRTC';
 import { useRoomContext } from '../contexts/RoomContext';
-import { validateViewerId } from '../utils/validation';
-import {
-  CONNECTION_STATES,
-  UI_TEXT,
-  STATUS_COLORS,
-  ERROR_MESSAGES,
-  VIEWER_STATUS_LABELS,
-  VIEWER_STATUS_COLORS,
-  VIEWER_CONNECTION_STATUS,
-} from '../constants';
 
-// Connection state machine for robust reconnection logic
-const connectionReducer = (state, action) => {
-  switch (action.type) {
-    case 'CONNECT_REQUESTED':
-      return { ...state, status: 'connecting', error: null, reconnectAttempts: 0 };
-    case 'CONNECT_SUCCESS':
-      return { ...state, status: 'connected', error: null, reconnectAttempts: 0 };
-    case 'CONNECT_FAILED':
-      return { ...state, status: 'failed', error: action.error, reconnectAttempts: state.reconnectAttempts + 1 };
-    case 'DISCONNECT_REQUESTED':
-      return { ...state, status: 'disconnecting', error: null };
-    case 'DISCONNECT_SUCCESS':
-      return { ...state, status: 'disconnected', error: null, reconnectAttempts: 0 };
-    case 'RECONNECT_REQUESTED':
-      return { ...state, status: 'reconnecting', error: null };
-    case 'RESET':
-      return { status: 'idle', error: null, reconnectAttempts: 0 };
-    default:
-      return state;
-  }
-};
-
-function ViewerView({ config, onGoHome }) {
-  const { roomId, viewerId, updateViewerId, updateSenderSecret, setDiagnosticAlert } = useRoomContext();
+function ViewerView({ _config, onGoHome }) {
+  const { roomId } = useRoomContext();
   const [error, setError] = useState(null);
-  const [viewerIdError, setViewerIdError] = useState(null);
-  const [connectionStateMachine, dispatch] = useReducer(connectionReducer, {
-    status: 'idle',
-    error: null,
-    reconnectAttempts: 0,
-  });
 
   const remoteVideoRef = useRef(null);
-  const reconnectTimeoutRef = useRef(null);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // Validation functions (only for viewerId since roomId comes from context)
-  const validateViewerIdInput = useCallback((value) => {
-    const validation = validateViewerId(value);
-    setViewerIdError(validation.valid ? null : validation.error);
-    return validation.valid;
-  }, []);
-
-  const shouldUseTurn = config?.useTurn !== false;
 
   const {
     connectToHost,
@@ -72,211 +15,121 @@ function ViewerView({ config, onGoHome }) {
     connectionState,
     remoteStream,
     error: webrtcError,
-    connectionLifecycleStatus,
-    errorState,
-    hasTurnServer,
-  } = useWebRTC(roomId, 'viewer', config, viewerId, { onSenderSecret: updateSenderSecret });
+    _reset
+  } = useSimpleWebRTC(roomId, 'viewer');
 
   // Derive all status from WebRTC state - single source of truth
-  const connectionStatus = connectionState;
-  const isConnected = connectionState === CONNECTION_STATES.CONNECTED;
-  const isConnecting = connectionState === CONNECTION_STATES.CONNECTING;
-  const hostStatus = connectionState; // Use connectionState directly
-  const lifecycleStatusText =
-    VIEWER_STATUS_LABELS[connectionLifecycleStatus] || VIEWER_STATUS_LABELS[VIEWER_CONNECTION_STATUS.READY];
-  const lifecycleStatusColor = VIEWER_STATUS_COLORS[connectionLifecycleStatus] || STATUS_COLORS.DEFAULT;
+  const isConnected = connectionState === 'connected';
+  const isConnecting = connectionState === 'connecting';
 
   // Handle remote stream
   useEffect(() => {
     if (remoteStream && remoteVideoRef.current) {
       try {
         remoteVideoRef.current.srcObject = remoteStream;
+        // Safari often needs explicit play() call even with autoplay
+        remoteVideoRef.current.play().catch(console.warn);
       } catch (e) {
-        // Gracefully handle environments where setting srcObject can throw
         console.warn('[ViewerView] Failed to bind remote stream to video element:', e);
         setError('Unable to attach video stream. Please try reconnecting.');
       }
     }
-  }, [remoteStream, setError]);
+  }, [remoteStream]);
 
   // Handle WebRTC errors and clear errors on success
   useEffect(() => {
     if (webrtcError) {
       setError(webrtcError);
-    } else if (connectionState === CONNECTION_STATES.CONNECTED) {
-      // Clear errors when connection succeeds
+    } else if (connectionState === 'connected') {
       setError(null);
     }
   }, [webrtcError, connectionState]);
 
-  useEffect(() => {
-    if (!setDiagnosticAlert) return;
-
-    if (errorState?.type && ['network', 'permission'].includes(errorState.type)) {
-      const message =
-        errorState.type === 'network'
-          ? `Viewer network issue detected: ${errorState.message || 'Check your internet connection.'}`
-          : `Viewer permission issue detected: ${errorState.message || 'Allow screen capture and try again.'}`;
-      setDiagnosticAlert(errorState.type, message);
-    } else if (!errorState?.type) {
-      ['network', 'permission'].forEach((type) => setDiagnosticAlert(type, null));
-    }
-  }, [errorState, setDiagnosticAlert]);
-
-  useEffect(() => {
-    if (!setDiagnosticAlert) return;
-
-    if (shouldUseTurn && !hasTurnServer) {
-      setDiagnosticAlert('turn', 'TURN relays are not configured. Viewing may fail behind strict network firewalls.');
-    } else {
-      setDiagnosticAlert('turn', null);
-    }
-  }, [shouldUseTurn, hasTurnServer, setDiagnosticAlert]);
-
   // Handle connection to host
   const handleConnect = useCallback(async () => {
-    // Clear previous errors
-    setError(null);
-    setViewerIdError(null);
-
-    // Validate viewer ID if provided
-    if (viewerId && !validateViewerIdInput(viewerId)) {
-      return; // Validation errors are already set by validation functions
-    }
-
     try {
       setError(null);
-      dispatch({ type: 'CONNECT_REQUESTED' });
-
-      // Connect to host - let WebRTC handle room validation via offer polling
-      // If room doesn't exist, offer polling will timeout with appropriate error
       await connectToHost();
-
-      dispatch({ type: 'CONNECT_SUCCESS' });
     } catch (err) {
       console.error('[ViewerView] Error connecting to host:', err);
-      // Use the error from WebRTC if available, otherwise show generic error
-      setError(err.message || ERROR_MESSAGES.CONNECTION_FAILED);
-      dispatch({ type: 'CONNECT_FAILED', error: err.message });
+      setError(err.message || 'Failed to connect to host');
     }
-  }, [roomId, connectToHost, viewerId, validateViewerIdInput]);
+  }, [connectToHost]);
 
-  // Removed auto-connect logic - user must manually click "Connect to Host"
-
-  // Handle disconnection with state machine
+  // Handle disconnection
   const handleDisconnect = useCallback(async () => {
-    if (connectionStateMachine.status === 'disconnecting' || connectionStateMachine.status === 'disconnected') {
-      return; // Already disconnecting or disconnected
-    }
-
-    dispatch({ type: 'DISCONNECT_REQUESTED' });
-
     try {
       await disconnect();
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = null;
       }
-      dispatch({ type: 'DISCONNECT_SUCCESS' });
     } catch (err) {
       console.error('Error disconnecting:', err);
-      dispatch({ type: 'CONNECT_FAILED', error: 'Failed to disconnect properly' });
     }
-  }, [disconnect, connectionStateMachine.status]);
+  }, [disconnect]);
 
-  // Handle reconnection with proper state machine and feedback
+  // Handle reconnection
   const handleReconnect = useCallback(async () => {
-    if (connectionStateMachine.status === 'reconnecting' || connectionStateMachine.status === 'connecting') {
-      return; // Already reconnecting
-    }
-
-    // Clear any existing reconnect timeout
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-
-    dispatch({ type: 'RECONNECT_REQUESTED' });
-
     try {
-      // First disconnect cleanly
       await handleDisconnect();
-
-      // Wait for disconnect to complete before reconnecting
-      reconnectTimeoutRef.current = setTimeout(async () => {
+      setTimeout(async () => {
         try {
           await handleConnect();
         } catch (err) {
           console.error('Reconnection failed:', err);
-          dispatch({ type: 'CONNECT_FAILED', error: 'Reconnection failed' });
+          setError('Reconnection failed');
         }
       }, 1000);
     } catch (err) {
       console.error('Error during reconnection process:', err);
-      dispatch({ type: 'CONNECT_FAILED', error: 'Reconnection process failed' });
     }
-  }, [connectionStateMachine.status, handleDisconnect, handleConnect]);
-
-  // Generate cryptographically secure viewer ID
-  const generateViewerId = () => {
-    // Use crypto.randomUUID() for cryptographically secure randomness
-    const id = `viewer_${crypto.randomUUID().substring(0, 8)}`;
-    updateViewerId(id);
-    return id;
-  };
+  }, [handleDisconnect, handleConnect]);
 
   // Get connection status color
   const getStatusColor = () => {
-    switch (connectionStatus) {
-      case CONNECTION_STATES.CONNECTED:
-        return STATUS_COLORS.SUCCESS;
-      case CONNECTION_STATES.CONNECTING:
-        return STATUS_COLORS.WARNING;
-      case CONNECTION_STATES.DISCONNECTED:
-        return STATUS_COLORS.ERROR;
+    switch (connectionState) {
+      case 'connected':
+        return 'text-green-600';
+      case 'connecting':
+        return 'text-yellow-600';
+      case 'disconnected':
+        return 'text-red-600';
+      case 'failed':
+        return 'text-red-600';
       default:
-        return STATUS_COLORS.DEFAULT;
+        return 'text-gray-600';
     }
   };
 
   // Get connection status text
   const getStatusText = () => {
-    switch (connectionStatus) {
-      case CONNECTION_STATES.CONNECTED:
-        return UI_TEXT.CONNECTED;
-      case CONNECTION_STATES.CONNECTING:
-        return UI_TEXT.CONNECTING;
-      case CONNECTION_STATES.DISCONNECTED:
-        return UI_TEXT.DISCONNECTED;
+    switch (connectionState) {
+      case 'connected':
+        return 'Connected';
+      case 'connecting':
+        return 'Connecting';
+      case 'disconnected':
+        return 'Disconnected';
+      case 'failed':
+        return 'Error';
       default:
-        return UI_TEXT.UNKNOWN;
-    }
-  };
-
-  // Get host status color
-  const getHostStatusColor = () => {
-    switch (hostStatus) {
-      case CONNECTION_STATES.CONNECTED:
-        return STATUS_COLORS.SUCCESS;
-      case CONNECTION_STATES.CONNECTING:
-        return STATUS_COLORS.WARNING;
-      case CONNECTION_STATES.DISCONNECTED:
-        return STATUS_COLORS.ERROR;
-      default:
-        return STATUS_COLORS.DEFAULT;
+        return 'Idle';
     }
   };
 
   // Get host status text
   const getHostStatusText = () => {
-    switch (hostStatus) {
-      case CONNECTION_STATES.CONNECTED:
-        return UI_TEXT.HOST_ONLINE;
-      case CONNECTION_STATES.CONNECTING:
-        return UI_TEXT.CONNECTING_TO_HOST;
-      case CONNECTION_STATES.DISCONNECTED:
-        return UI_TEXT.HOST_OFFLINE;
+    switch (connectionState) {
+      case 'connected':
+        return 'Host Online';
+      case 'connecting':
+        return 'Connecting to Host';
+      case 'disconnected':
+        return 'Host Offline';
+      case 'failed':
+        return 'Connection Failed';
       default:
-        return UI_TEXT.UNKNOWN;
+        return 'Unknown';
     }
   };
 
@@ -295,46 +148,12 @@ function ViewerView({ config, onGoHome }) {
           </div>
           <div className='text-right'>
             <div className={`text-sm font-semibold ${getStatusColor()}`}>Connection: {getStatusText()}</div>
-            <div className={`text-sm font-semibold ${getHostStatusColor()}`}>{getHostStatusText()}</div>
-            <div className={`text-xs mt-1 ${lifecycleStatusColor}`}>{lifecycleStatusText}</div>
+            <div className={`text-sm font-semibold ${getStatusColor()}`}>{getHostStatusText()}</div>
           </div>
         </div>
       </div>
 
-      {/* Viewer ID Section */}
-      <div className='bg-white rounded-lg shadow-md p-6'>
-        <h3 className='text-lg font-semibold text-gray-900 mb-4'>Your Viewer ID</h3>
-        <div className='flex items-center space-x-4'>
-          <div className='flex-1'>
-            <input
-              type='text'
-              value={viewerId || ''}
-              onChange={(e) => {
-                updateViewerId(e.target.value);
-                // Real-time validation
-                if (e.target.value.trim()) {
-                  validateViewerIdInput(e.target.value);
-                } else {
-                  setViewerIdError(null);
-                }
-              }}
-              placeholder='Enter your name or leave blank for auto-generated ID'
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                viewerIdError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-              }`}
-            />
-            {viewerIdError && <p className='text-red-500 text-sm mt-1'>{viewerIdError}</p>}
-          </div>
-          <button
-            onClick={generateViewerId}
-            className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
-          >
-            Generate ID
-          </button>
-        </div>
-        <p className='text-sm text-gray-500 mt-2'>This ID helps identify you in the chat and diagnostics.</p>
-      </div>
-
+      
       {/* Connection Controls */}
       <div className='bg-white rounded-lg shadow-md p-6'>
         <h3 className='text-lg font-semibold text-gray-900 mb-4'>Connection Controls</h3>
@@ -349,7 +168,7 @@ function ViewerView({ config, onGoHome }) {
                   : 'bg-green-600 text-white hover:bg-green-700'
               }`}
             >
-              {isConnecting ? UI_TEXT.CONNECTING : UI_TEXT.CONNECT_TO_HOST}
+              {isConnecting ? 'Connecting...' : 'Connect to Host'}
             </button>
           ) : (
             <div className='flex items-center space-x-4'>
@@ -357,13 +176,13 @@ function ViewerView({ config, onGoHome }) {
                 onClick={handleReconnect}
                 className='px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors'
               >
-                {UI_TEXT.RECONNECT}
+                Reconnect
               </button>
               <button
                 onClick={handleDisconnect}
                 className='px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors'
               >
-                {UI_TEXT.DISCONNECT}
+                Disconnect
               </button>
             </div>
           )}
@@ -392,7 +211,7 @@ function ViewerView({ config, onGoHome }) {
                 <ul className='text-red-700 text-sm list-disc list-inside space-y-1'>
                   <li>Make sure the host has started sharing</li>
                   <li>Check the room ID is correct</li>
-                  <li>Try refreshing the page</li>
+                  <li>Try connecting again</li>
                 </ul>
               </div>
             </div>
@@ -418,6 +237,7 @@ function ViewerView({ config, onGoHome }) {
               className='w-full max-w-4xl mx-auto rounded-lg border border-gray-200 bg-black'
               autoPlay
               playsInline
+              muted
             />
             {!remoteStream && (
               <div className='absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg'>

@@ -1,73 +1,130 @@
 # Stupid Simple Screen Share
 
-A production-ready browser-based **one-to-one** screen sharing application built with React, WebRTC, and a stunning synthwave design theme.
+A simple browser-based screen sharing application built with React, WebRTC, and Pusher for real-time signaling.
 
 ## Features
 
-- **Browser-only P2P screen sharing** - No plugins, no downloads, no accounts required
-- **One-to-one connections** - One host shares screen with one viewer
-- **WebRTC with STUN/TURN support** - Direct peer-to-peer connections with relay fallback
-- **Built-in text chat** - Real-time two-way communication
-- **Ephemeral rooms** - Automatically expire after 1 hour for privacy
-- **Synthwave theme** - Retro-futuristic design with animated background
-- **Rate limiting** - Upstash-powered protection (50 rooms/hour, 60 chat msgs/min, 2000 API calls/hour)
-- **325 comprehensive tests** - Unit and integration tests with 71.75% code coverage
+- **One-to-one screen sharing** - Host shares their screen with a single viewer
+- **Real-time WebRTC streaming** - Direct peer-to-peer video connection
+- **Pusher signaling** - Reliable real-time signaling via Pusher Channels
+- **No downloads required** - Runs entirely in the browser
+- **Synthwave UI** - Beautiful retro-futuristic design
+- **Simple to use** - Just share a room ID to connect
 
 ## Architecture
 
 ```
-[Host Browser]  <-- P2P WebRTC (encrypted SRTP) -->  [Viewer Browser]
-       |                                                      |
-       --- Signaling (HTTPS) --> [Vercel + Upstash] <--------
+[Host Browser]  <-- WebRTC P2P -->  [Viewer Browser]
+       |                                |
+       --- Pusher Signaling <-- [Pusher]
 ```
 
 - **Frontend**: React 19 with Vite
-- **Signaling**: Vercel Serverless Functions + Upstash Redis
-- **Media**: Direct P2P between browsers (video never touches servers)
-- **Deployment**: Vercel with automated CI/CD
+- **Signaling**: Pusher Channels
+- **Media**: Direct WebRTC connection between browsers
+- **Deployment**: Vercel
 
 ## Quick Start
 
+### 1. Clone and Install
+
 ```bash
-# Clone and install
 git clone https://github.com/Mintwhirl/StupidSimpleScreenShare.git
 cd StupidSimpleScreenShare
 npm install
+```
 
-# Development
-npm run dev
+### 2. Set Up Pusher
 
-# Production
+1. Create a free account at [Pusher](https://dashboard.pusher.com/)
+2. Create a new app with these settings:
+   - Frontend: Vanilla JS
+   - Backend: Node.js
+   - Enable client events
+3. Copy your credentials
+
+### 3. Configure Environment
+
+Copy `.env.example` to `.env`:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your Pusher credentials:
+
+```bash
+PUSHER_APP_ID=your_app_id
+PUSHER_KEY=your_key
+PUSHER_SECRET=your_secret
+PUSHER_CLUSTER=your_cluster
+```
+
+### 4. Run Locally
+
+```bash
+vercel dev
+```
+
+### 5. Deploy to Vercel
+
+```bash
 npm run build
 vercel --prod
 ```
+
+Set your environment variables in the Vercel dashboard under Settings > Environment Variables.
 
 ## Usage
 
 ### For Hosts
 
-1. Click "Start sharing my screen" to create a room
-2. Share the room ID with your viewer
-3. Click "Start Sharing" and select your screen/application
-4. Use built-in chat to communicate
+1. Open the app and click **Host**
+2. Click **Start Sharing** and select your entire screen
+3. Share the Room ID with your viewer
+4. Your screen will appear on the viewer's device
 
 ### For Viewers
 
-1. Enter the room ID provided by the host
-2. The host's screen will appear automatically
-3. Use built-in chat to communicate
+1. Open the app and click **View**
+2. Enter the Room ID from the host
+3. Click **Connect to Host**
+4. The host's screen will appear automatically
 
-## Environment Variables
+### Browser Support
 
-```bash
-# Required for production
-AUTH_SECRET=your-secure-secret-key-here
-UPSTASH_REDIS_REST_URL=your-upstash-redis-url
-UPSTASH_REDIS_REST_TOKEN=your-upstash-redis-token
-# Optional development helpers (never use in production)
-ENABLE_DEV_REDIS_FALLBACK=true # Enables in-memory Redis stub when Upstash credentials are missing
-DISABLE_RATE_LIMITING=true      # Disables rate limiting middleware entirely
-```
+- **Host**: Chrome, Edge, Firefox (desktop)
+- **Viewer**: Chrome, Safari, Firefox (desktop or mobile)
+- Screen sharing requires HTTPS (automatic on Vercel)
+
+## Environment Variables for Vercel
+
+Required variables to configure in Vercel dashboard:
+- `VITE_PUSHER_KEY`
+- `VITE_PUSHER_CLUSTER`
+- `PUSHER_APP_ID`
+- `PUSHER_KEY`
+- `PUSHER_SECRET`
+- `PUSHER_CLUSTER`
+
+Optional variables:
+- `TURN_SERVER_URL`
+- `TURN_USERNAME`
+- `TURN_CREDENTIAL`
+
+## Troubleshooting
+
+### Connection Issues
+
+1. **Check Pusher credentials** - Ensure they're correctly set in production
+2. **Verify HTTPS** - WebRTC requires a secure connection
+3. **Try different browsers** - Chrome/Firefox work best for hosting
+
+### Screen Share Issues
+
+1. **Grant permissions** - Allow screen sharing when prompted
+2. **Select entire screen** - Don't select individual windows for best results
+3. **Check browser support** - Screen sharing isn't supported on mobile browsers
 
 ## License
 
