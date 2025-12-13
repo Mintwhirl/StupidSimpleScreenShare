@@ -1,12 +1,3 @@
-import {
-  getRoomMetaKey,
-  getOfferKey,
-  getAnswerKey,
-  getCandidateKey,
-  getChatKey,
-  getSenderKey,
-} from '../../shared/signaling/keys.js';
-
 /**
  * Application Constants
  * Centralized constants to prevent magic strings and improve maintainability
@@ -226,25 +217,7 @@ export const UI_DELAYS = {
   RECONNECT_DELAY: 1000,
 };
 
-// Redis Keys
-export const REDIS_KEYS = {
-  ROOM_META: getRoomMetaKey,
-  ROOM_OFFER: getOfferKey,
-  ROOM_ANSWER: getAnswerKey,
-  ROOM_CANDIDATES: getCandidateKey,
-  ROOM_CHAT: getChatKey,
-  ROOM_SENDER: getSenderKey,
-};
-
 // API Endpoints
 export const API_ENDPOINTS = {
-  CONFIG: '/api/config',
-  CREATE_ROOM: '/api/create-room',
-  OFFER: '/api/offer',
-  ANSWER: '/api/answer',
-  CANDIDATE: '/api/candidate',
-  CHAT: '/api/chat',
-  DIAGNOSTICS: '/api/diagnostics',
-  VIEWERS: '/api/viewers',
-  REGISTER_SENDER: '/api/register-sender',
+  PUSHER_AUTH: '/api/pusher-auth',
 };
