@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useSimpleWebRTC } from '../hooks/useSimpleWebRTC';
 import { useRoomContext } from '../contexts/RoomContext';
 
