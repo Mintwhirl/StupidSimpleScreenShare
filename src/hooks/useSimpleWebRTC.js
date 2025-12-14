@@ -77,19 +77,26 @@ export function useSimpleWebRTC(role) {
       pusherRef.current.connection.bind('error', (err) => {
         console.error('Pusher connection error (raw):', err);
         try {
-          console.error('Pusher connection error (json):', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
+          const errorJson = JSON.stringify(err, Object.getOwnPropertyNames(err), 2);
+          console.error('Pusher connection error (json):', errorJson);
         } catch (e) {
           // Ignore JSON stringify errors
         }
         const data = err?.error?.data || err?.data || err;
         console.error('Pusher connection error (data):', data);
-        const msg =
-          err?.error?.data?.message ||
-          err?.error?.message ||
-          err?.error?.data?.error ||
-          err?.error?.type ||
-          err?.message ||
-          'unknown';
+
+        // Extract the full message, especially for signature errors
+        const msg = err?.error?.data?.message || err?.error?.message || err?.message || 'unknown';
+
+        // If it's a signature error, try to get more details
+        if (msg && msg.includes('Invalid signature')) {
+          console.error('Full signature error message:', msg);
+          // Try to extract expected vs actual if available
+          if (data?.message) {
+            console.error('Full error message from data:', data.message);
+          }
+        }
+
         console.error('Pusher connection error (msg):', msg);
         setSignalingState('error');
         setError(`Signaling connection failed: ${msg}`);
@@ -247,10 +254,20 @@ export function useSimpleWebRTC(role) {
       console.log('Pusher not connected yet, waiting...');
       const checkConnection = () => {
         if (pusherRef.current?.connection.state === 'connected' && !channelRef.current) {
+          const currentSocketId = pusherRef.current.connection.socket_id;
           console.log('About to subscribe to Pusher channel:', CHANNEL_NAME);
           console.log('Auth endpoint:', '/api/pusher-auth');
           console.log('Pusher connection state:', pusherRef.current.connection.state);
-          console.log('Pusher socket_id:', pusherRef.current.connection.socket_id);
+          console.log('Pusher socket_id:', currentSocketId);
+
+          // Log socket_id consistency
+          if (window.lastSocketId && window.lastSocketId !== currentSocketId) {
+            console.warn('Socket ID changed!', {
+              old: window.lastSocketId,
+              new: currentSocketId,
+            });
+          }
+          window.lastSocketId = currentSocketId;
 
           channelRef.current = pusherRef.current.subscribe(CHANNEL_NAME);
         } else if (
@@ -270,10 +287,20 @@ export function useSimpleWebRTC(role) {
       return;
     }
 
+    const currentSocketId = pusherRef.current.connection.socket_id;
     console.log('About to subscribe to Pusher channel:', CHANNEL_NAME);
     console.log('Auth endpoint:', '/api/pusher-auth');
     console.log('Pusher connection state:', pusherRef.current.connection.state);
-    console.log('Pusher socket_id:', pusherRef.current.connection.socket_id);
+    console.log('Pusher socket_id:', currentSocketId);
+
+    // Log socket_id consistency
+    if (window.lastSocketId && window.lastSocketId !== currentSocketId) {
+      console.warn('Socket ID changed!', {
+        old: window.lastSocketId,
+        new: currentSocketId,
+      });
+    }
+    window.lastSocketId = currentSocketId;
 
     channelRef.current = pusherRef.current.subscribe(CHANNEL_NAME);
 
