@@ -18,33 +18,25 @@ function Diagnostics({ roomId, role, alerts = {} }) {
     return capabilities;
   };
 
-  // Fetch diagnostics data
-  const fetchDiagnostics = useCallback(async () => {
+  // Fetch diagnostics data (client-side only)
+  const fetchDiagnostics = useCallback(() => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/diagnostics?roomId=${roomId}&role=${role}`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch diagnostics: ${response.status}`);
-      }
-
-      const serverData = await response.json();
-
-      // Combine server data with client-side browser capabilities
+      // Client-side browser capabilities
       const browserCapabilities = detectBrowserCapabilities();
 
-      const combinedData = {
-        ...serverData,
-        connectionStatus: serverData.room?.status || 'unknown',
+      // Client-side diagnostics
+      const clientData = {
+        connectionStatus: 'unknown',
         role: role,
-        roomId: roomId,
+        roomId: roomId || 'shared',
         browser: browserCapabilities,
         timestamp: Date.now(),
       };
 
-      setDiagnostics(combinedData);
+      setDiagnostics(clientData);
     } catch (err) {
       console.error('Error fetching diagnostics:', err);
       setError(err.message);

@@ -1,176 +1,63 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useApi } from './useApi';
+import { useState, useEffect, useCallback } from 'react';
 
-export function useChat(roomId, role, sender, secret = null) {
+export function useChat(roomId, role, sender) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [lastMessageTime, setLastMessageTime] = useState(0);
+  const [isConnected] = useState(true); // Always connected for local chat
 
-  const { sendChatMessage: apiSendMessage, getChatMessages: apiGetMessages } = useApi();
-  const pollingIntervalRef = useRef(null);
-  const reconnectTimeoutRef = useRef(null);
-
-  // Poll for new messages
-  const pollMessages = useCallback(async () => {
-    if (!roomId || !isConnected) return;
-
-    try {
-      const data = await apiGetMessages(roomId, lastMessageTime);
-
-      if (data.messages && data.messages.length > 0) {
-        setMessages((prevMessages) => {
-          // Filter out duplicates and merge with existing messages
-          const existingIds = new Set(prevMessages.map((msg) => msg.id));
-          const newMessages = data.messages.filter((msg) => !existingIds.has(msg.id));
-
-          if (newMessages.length > 0) {
-            // Update last message time
-            const latestTime = Math.max(...newMessages.map((msg) => msg.timestamp));
-            setLastMessageTime(latestTime);
-
-            return [...prevMessages, ...newMessages].sort((a, b) => a.timestamp - b.timestamp);
-          }
-
-          return prevMessages;
-        });
-      }
-    } catch (err) {
-      console.error('Error polling messages:', err);
-      setError('Failed to fetch messages');
-      setIsConnected(false);
-
-      // Attempt to reconnect
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-
-      reconnectTimeoutRef.current = setTimeout(() => {
-        setIsConnected(true);
-        setError(null);
-      }, 5000);
-    }
-  }, [roomId, lastMessageTime, isConnected, apiGetMessages]);
-
-  // Start polling for messages
-  const startPolling = useCallback(() => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-    }
-
-    pollingIntervalRef.current = setInterval(pollMessages, 2000); // Poll every 2 seconds
-  }, [pollMessages]);
-
-  // Stop polling for messages
-  const stopPolling = useCallback(() => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = null;
-    }
-  }, []);
-
-  // Initialize chat connection
-  useEffect(() => {
-    if (roomId && sender) {
-      setIsConnected(true);
-      setError(null);
-      // Don't clear messages here - let loadInitialMessages handle it
-      startPolling();
-    } else {
-      setIsConnected(false);
-      stopPolling();
-    }
-
-    return () => {
-      stopPolling();
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-    };
-  }, [roomId, sender, secret, startPolling, stopPolling]);
-
-  // Send a message
+  // Send a message (stored locally)
   const sendMessage = useCallback(
     async (message, messageSender = sender) => {
-      if (!roomId || !messageSender || !message.trim()) {
-        throw new Error('Room ID, sender, and message are required');
+      if (!message || !message.trim()) {
+        throw new Error('Message cannot be empty');
       }
 
       try {
         setLoading(true);
         setError(null);
 
-        const data = await apiSendMessage(roomId, message, messageSender, secret);
+        // Create new message
+        const newMessage = {
+          id: Date.now() + Math.random(),
+          sender: messageSender || 'Anonymous',
+          message: message.trim(),
+          timestamp: Date.now(),
+          role: role,
+        };
 
-        if (data.ok) {
-          // Add the sent message to the local state immediately
-          const newMessage = {
-            id: data.message.id,
-            sender: messageSender,
-            message: message,
-            timestamp: data.message.timestamp,
-          };
+        // Add to local state
+        setMessages((prev) => [...prev, newMessage].sort((a, b) => a.timestamp - b.timestamp));
 
-          setMessages((prevMessages) => [...prevMessages, newMessage].sort((a, b) => a.timestamp - b.timestamp));
-          setLastMessageTime(data.message.timestamp);
-
-          return data.message;
-        } else {
-          throw new Error('Failed to send message');
-        }
+        return { success: true, message: newMessage };
       } catch (err) {
         console.error('Error sending message:', err);
-        setError(`Failed to send message: ${err.message}`);
+        setError('Failed to send message');
         throw err;
       } finally {
         setLoading(false);
       }
     },
-    [roomId, sender, secret, apiSendMessage]
+    [sender, role]
   );
 
-  // Load initial messages
-  const loadInitialMessages = useCallback(async () => {
-    if (!roomId) return;
-
+  // Load initial messages (empty for now)
+  const loadInitialMessages = useCallback(() => {
     try {
       setLoading(true);
       setError(null);
-
-      const data = await apiGetMessages(roomId, 0);
-
-      if (data.messages) {
-        setMessages(data.messages.sort((a, b) => a.timestamp - b.timestamp));
-
-        if (data.messages.length > 0) {
-          const latestTime = Math.max(...data.messages.map((msg) => msg.timestamp));
-          setLastMessageTime(latestTime);
-        }
-      }
+      setMessages([]);
     } catch (err) {
       console.error('Error loading initial messages:', err);
       setError('Failed to load messages');
     } finally {
       setLoading(false);
     }
-  }, [roomId, apiGetMessages]);
-
-  // Load initial messages when room changes
-  useEffect(() => {
-    if (roomId && sender) {
-      // Clear existing messages when room changes
-      setMessages([]);
-      setLastMessageTime(0);
-      setError(null);
-      loadInitialMessages();
-    }
-  }, [roomId, sender, loadInitialMessages]);
+  }, []);
 
   // Clear messages
   const clearMessages = useCallback(() => {
     setMessages([]);
-    setLastMessageTime(0);
     setError(null);
   }, []);
 
@@ -227,15 +114,12 @@ export function useChat(roomId, role, sender, secret = null) {
     return messages.map(formatMessage);
   }, [messages, formatMessage]);
 
-  // Cleanup on unmount
+  // Initialize with empty messages
   useEffect(() => {
-    return () => {
-      stopPolling();
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-    };
-  }, [stopPolling]);
+    if (roomId) {
+      loadInitialMessages();
+    }
+  }, [roomId, loadInitialMessages]);
 
   return {
     // State
@@ -243,7 +127,6 @@ export function useChat(roomId, role, sender, secret = null) {
     loading,
     error,
     isConnected,
-    lastMessageTime,
 
     // Actions
     sendMessage,
