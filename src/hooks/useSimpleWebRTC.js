@@ -3,7 +3,7 @@ import Pusher from 'pusher-js';
 import { getIceServers } from '../config/turn.js';
 
 // Single shared channel for all users
-const CHANNEL_NAME = 'presence-screenshare';
+const CHANNEL_NAME = 'private-screenshare';
 
 // Simple WebRTC hook using Pusher for signaling
 export function useSimpleWebRTC(role) {

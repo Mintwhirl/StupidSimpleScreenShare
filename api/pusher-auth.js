@@ -1,39 +1,87 @@
 // Pusher authentication endpoint for Vercel
-// Authenticates clients for private/presence channels
+// Authenticates clients for private channels
+
+import { parse as parseQueryString } from 'querystring';
+
+import Pusher from 'pusher';
 
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs',
 };
 
-export default async function handler(request) {
+export default async function handler(req, res) {
+  // Set headers
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+
   // Only allow POST requests
-  if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  if (req.method !== 'POST') {
+    console.log('Pusher auth: Method not allowed -', req.method);
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
   try {
-    const body = await request.json();
-    const { socket_id: socketId, channel_name: channelName } = body;
+    let socketId;
+    let channelName;
+
+    // Parse body based on content type
+    const contentType = req.headers['content-type'] || '';
+
+    console.log('Pusher auth request:', {
+      method: req.method,
+      contentType,
+    });
+
+    if (contentType.includes('application/x-www-form-urlencoded')) {
+      // Parse form-encoded data
+      const body = await new Promise((resolve, reject) => {
+        let data = '';
+        req.on('data', (chunk) => {
+          data += chunk;
+        });
+        req.on('end', () => resolve(data));
+        req.on('error', reject);
+      });
+
+      const parsed = parseQueryString(body);
+      socketId = parsed.socket_id;
+      channelName = parsed.channel_name;
+    } else if (contentType.includes('application/json')) {
+      // Parse JSON data
+      const body = await new Promise((resolve, reject) => {
+        let data = '';
+        req.on('data', (chunk) => {
+          data += chunk;
+        });
+        req.on('end', () => resolve(data));
+        req.on('error', reject);
+      });
+
+      const parsed = JSON.parse(body);
+      socketId = parsed.socket_id;
+      channelName = parsed.channel_name;
+    } else {
+      console.log('Pusher auth: Unsupported content type:', contentType);
+      res.status(400).json({ error: 'Unsupported content type' });
+      return;
+    }
 
     // Validate required fields
     if (!socketId || !channelName) {
-      console.error('Pusher auth missing fields:', { socketId: !!socketId, channelName: !!channelName });
-      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
+      console.log('Pusher auth: Missing fields:', {
+        hasSocketId: !!socketId,
+        hasChannelName: !!channelName,
       });
+      res.status(400).json({ error: 'Missing socket_id or channel_name' });
+      return;
     }
 
-    // Validate channel name starts with private- or presence-
-    if (!channelName.startsWith('private-') && !channelName.startsWith('presence-')) {
-      console.error('Pusher auth invalid channel type:', channelName);
-      return new Response(JSON.stringify({ error: 'Invalid channel type' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    // Validate channel name starts with private-
+    if (!channelName.startsWith('private-')) {
+      console.log('Pusher auth: Invalid channel type:', channelName);
+      res.status(400).json({ error: 'Invalid channel type' });
+      return;
     }
 
     // Environment variables from Vercel
@@ -47,59 +95,35 @@ export default async function handler(request) {
         hasKey: !!pusherKey,
         hasSecret: !!pusherSecret,
       });
-      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      res.status(500).json({ error: 'Server configuration error' });
+      return;
     }
 
     console.log('Pusher auth request:', {
       channel: channelName,
       socketId: `${socketId.substring(0, 8)}...`,
-      channelType: channelName.startsWith('presence-') ? 'presence' : 'private',
+      channelType: 'private',
     });
 
-    // Create auth string
-    const authString = `${socketId}:${channelName}`;
+    // Create Pusher instance
+    const pusher = new Pusher({
+      appId: pusherAppId,
+      key: pusherKey,
+      secret: pusherSecret,
+      useTLS: true,
+      cluster: process.env.PUSHER_CLUSTER,
+    });
 
-    // Using Web Crypto API for edge runtime
-    const encoder = new TextEncoder();
-    const keyData = encoder.encode(pusherSecret);
-    const messageData = encoder.encode(authString);
-
-    const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-
-    const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
-    const signature = Array.from(new Uint8Array(signatureBuffer))
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('');
-
-    const authData = {
-      auth: `${pusherKey.replace(/\n/g, '')}:${signature}`,
-    };
-
-    // Add channel_data for presence channels
-    if (channelName.startsWith('presence-')) {
-      authData.channel_data = JSON.stringify({
-        user_id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-        user_info: {},
-      });
-    }
+    // Authorize the channel
+    const auth = pusher.authorizeChannel(socketId, channelName);
 
     console.log('Pusher auth success:', { channel: channelName });
 
-    return new Response(JSON.stringify(authData), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-      },
-    });
+    // Return auth response
+    res.status(200).json(auth);
   } catch (error) {
     console.error('Pusher auth error:', error.message);
-    return new Response(JSON.stringify({ error: 'Authentication failed' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    console.error(error.stack);
+    res.status(400).json({ error: 'Authentication failed' });
   }
 }
