@@ -221,22 +221,36 @@ export function useSimpleWebRTC(role) {
     });
 
     channelRef.current.bind('pusher:subscription_error', (err) => {
-      console.error('Pusher subscribe error details:');
-      console.error('Error object:', JSON.stringify(err, null, 2));
-      console.error('Error type:', typeof err);
-      console.error('Error keys:', Object.keys(err || {}));
-      console.error('Channel name:', CHANNEL_NAME);
-      console.error('Auth endpoint:', '/api/pusher-auth');
+      console.error('Pusher subscription error:');
+      console.error('- Channel:', CHANNEL_NAME);
+      console.error('- Auth endpoint:', '/api/pusher-auth');
+      console.error('- Error:', JSON.stringify(err, null, 2));
 
-      let errorMessage = 'Failed to connect to signaling server';
-      if (err && err.error) {
-        errorMessage = `Signaling error: ${err.error}`;
-      } else if (err && typeof err === 'string') {
-        errorMessage = `Signaling error: ${err}`;
+      // Try to extract more error details
+      const errorDetails = {
+        message: 'Failed to connect to signaling server',
+        statusCode: null,
+        type: 'unknown',
+      };
+
+      if (err) {
+        errorDetails.type = typeof err;
+
+        if (typeof err === 'object') {
+          errorDetails.message = err.error || err.message || err.description || errorDetails.message;
+          errorDetails.statusCode = err.status || err.code || null;
+
+          // Log specific error fields
+          if (err.status) console.error('- HTTP Status:', err.status);
+          if (err.error) console.error('- Error:', err.error);
+          if (err.code) console.error('- Code:', err.code);
+        } else if (typeof err === 'string') {
+          errorDetails.message = err;
+        }
       }
 
       setSignalingState('error');
-      setError(errorMessage);
+      setError(errorDetails.message);
     });
 
     // Client events for signaling
