@@ -103,6 +103,7 @@ export default async function handler(req, res) {
       channel: channelName,
       socketId,
       socketIdPrefix: `${socketId.substring(0, 8)}...`,
+      socketIdLength: socketId.length,
       channelType: 'private',
     });
 

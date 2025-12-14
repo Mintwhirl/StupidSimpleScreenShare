@@ -45,6 +45,12 @@ export function useSimpleWebRTC(role) {
         forceTLS: true,
         authTransport: 'ajax',
         enabledTransports: ['ws', 'wss', 'xhr_streaming', 'xhr_polling'],
+        disableStats: true,
+        auth: {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        },
       });
 
       // Monitor Pusher connection state
@@ -269,7 +275,12 @@ export function useSimpleWebRTC(role) {
           }
           window.lastSocketId = currentSocketId;
 
-          channelRef.current = pusherRef.current.subscribe(CHANNEL_NAME);
+          // Add a small delay to ensure socket is fully ready
+          setTimeout(() => {
+            if (pusherRef.current && !channelRef.current) {
+              channelRef.current = pusherRef.current.subscribe(CHANNEL_NAME);
+            }
+          }, 100);
         } else if (
           pusherRef.current?.connection.state === 'disconnected' ||
           pusherRef.current?.connection.state === 'failed'
