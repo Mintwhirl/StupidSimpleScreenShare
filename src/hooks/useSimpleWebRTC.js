@@ -242,9 +242,38 @@ export function useSimpleWebRTC(role) {
   const subscribeToChannel = useCallback(() => {
     if (!pusherRef.current || channelRef.current) return;
 
+    // Wait for Pusher to be connected before subscribing
+    if (pusherRef.current.connection.state !== 'connected') {
+      console.log('Pusher not connected yet, waiting...');
+      const checkConnection = () => {
+        if (pusherRef.current?.connection.state === 'connected' && !channelRef.current) {
+          console.log('About to subscribe to Pusher channel:', CHANNEL_NAME);
+          console.log('Auth endpoint:', '/api/pusher-auth');
+          console.log('Pusher connection state:', pusherRef.current.connection.state);
+          console.log('Pusher socket_id:', pusherRef.current.connection.socket_id);
+
+          channelRef.current = pusherRef.current.subscribe(CHANNEL_NAME);
+        } else if (
+          pusherRef.current?.connection.state === 'disconnected' ||
+          pusherRef.current?.connection.state === 'failed'
+        ) {
+          console.log('Pusher connection lost, cannot subscribe');
+          setSignalingState('error');
+          setError('Pusher connection lost');
+        } else {
+          // Check again after delay
+          setTimeout(checkConnection, 100);
+        }
+      };
+
+      checkConnection();
+      return;
+    }
+
     console.log('About to subscribe to Pusher channel:', CHANNEL_NAME);
     console.log('Auth endpoint:', '/api/pusher-auth');
     console.log('Pusher connection state:', pusherRef.current.connection.state);
+    console.log('Pusher socket_id:', pusherRef.current.connection.socket_id);
 
     channelRef.current = pusherRef.current.subscribe(CHANNEL_NAME);
 
