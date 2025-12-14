@@ -1,15 +1,21 @@
 // Pusher authentication endpoint for Vercel
 // This endpoint authenticates clients for Pusher Channels
 
+import crypto from 'crypto';
+
 export const config = {
-  runtime: 'nodejs',
+  runtime: 'edge',
 };
 
 export default async function handler(request) {
-  // eslint-disable-next-line global-require
-  const crypto = require('crypto');
+  // Only allow POST requests
+  if (request.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 });
+  }
+
   try {
-    const { socket_id: socketId, channel_name: channelName } = await request.json();
+    const body = await request.json();
+    const { socket_id: socketId, channel_name: channelName } = body;
 
     // Environment variables from Vercel
     const pusherAppId = process.env.PUSHER_APP_ID;
@@ -26,8 +32,17 @@ export default async function handler(request) {
     // Create auth string
     const authString = `${socketId}:${channelName}`;
 
-    // Using Node.js crypto module for better compatibility
-    const signature = crypto.createHmac('sha256', pusherSecret).update(authString).digest('hex');
+    // Using Web Crypto API for edge runtime
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(pusherSecret);
+    const messageData = encoder.encode(authString);
+
+    const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+
+    const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+    const signature = Array.from(new Uint8Array(signatureBuffer))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
 
     const authData = {
       auth: `${pusherKey}:${signature}`,
