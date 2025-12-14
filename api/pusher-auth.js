@@ -1,8 +1,6 @@
 // Pusher authentication endpoint for Vercel
 // This endpoint authenticates clients for Pusher Channels
 
-import crypto from 'crypto';
-
 export const config = {
   runtime: 'edge',
 };
@@ -47,7 +45,7 @@ export default async function handler(request) {
     const authData = {
       auth: `${pusherKey}:${signature}`,
       channel_data: JSON.stringify({
-        user_id: crypto.randomUUID(),
+        user_id: Math.random().toString(36).substring(2, 15),
         user_info: {},
       }),
     };
