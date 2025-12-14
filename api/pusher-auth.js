@@ -101,7 +101,8 @@ export default async function handler(req, res) {
 
     console.log('Pusher auth request:', {
       channel: channelName,
-      socketId: `${socketId.substring(0, 8)}...`,
+      socketId,
+      socketIdPrefix: `${socketId.substring(0, 8)}...`,
       channelType: 'private',
     });
 
@@ -114,8 +115,23 @@ export default async function handler(req, res) {
       cluster: (process.env.PUSHER_CLUSTER || '').trim(),
     });
 
+    // Log the configuration for debugging
+    console.log('Pusher config:', {
+      appId: pusherAppId,
+      key: pusherKey,
+      secret: pusherSecret ? 'present' : 'missing',
+      cluster: (process.env.PUSHER_CLUSTER || '').trim(),
+    });
+
     // Authorize the channel
     const auth = pusher.authorizeChannel(socketId, channelName);
+
+    // Log the response structure (without exposing the actual signature)
+    console.log('Pusher auth response:', {
+      channel: channelName,
+      hasAuth: !!auth.auth,
+      authStarts: auth.auth ? `${auth.auth.substring(0, 20)}...` : 'none',
+    });
 
     console.log('Pusher auth success:', { channel: channelName });
 
