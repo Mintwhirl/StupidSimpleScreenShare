@@ -9,8 +9,8 @@ vi.mock('./hooks/useApi', () => ({
     config: {
       authSecret: 'test-secret',
       apiBase: '/api',
-      features: { chat: true, diagnostics: true, viewerCount: true },
-      rateLimits: { chat: 10, api: 100 },
+      features: { diagnostics: true, viewerCount: true },
+      rateLimits: { api: 100 },
     },
     loading: false,
     error: null,
@@ -35,16 +35,6 @@ vi.mock('./hooks/useWebRTC', () => ({
     connectToHost: vi.fn(),
     disconnect: vi.fn(),
     isConnected: false,
-  }),
-}));
-
-// Mock the useChat hook
-vi.mock('./hooks/useChat', () => ({
-  useChat: () => ({
-    messages: [],
-    sendMessage: vi.fn(),
-    loading: false,
-    error: null,
   }),
 }));
 

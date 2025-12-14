@@ -1,49 +1,21 @@
-import { useRoomManagement } from '../hooks/useRoomManagement';
 import { useRoomContext } from '../contexts/RoomContext';
 
 /**
  * HomeView Component
  *
- * Renders the main home screen with room creation and joining functionality.
+ * Renders the main home screen with Host/View buttons.
  * Extracted from App.jsx to improve component organization.
  */
 function HomeView() {
-  const { roomId, updateRoomId, toggleDiagnostics, handleNavigateToHost, handleNavigateToViewer } = useRoomContext();
-  const { handleCreateRoom, handleJoinRoom } = useRoomManagement();
+  const { handleNavigateToHost, handleNavigateToViewer } = useRoomContext();
 
-  // Handle room creation
-  const handleCreateRoomClick = async () => {
-    try {
-      const data = await handleCreateRoom();
-      updateRoomId(data.roomId);
-      handleNavigateToHost();
-    } catch (error) {
-      console.error('Room creation error:', error);
-      alert(`Failed to create room: ${error.message}. Please try again.`);
-    }
+  // Handle navigation
+  const handleHostClick = () => {
+    handleNavigateToHost();
   };
 
-  // Handle room joining
-  const handleJoinRoomClick = () => {
-    try {
-      const validRoomId = handleJoinRoom(roomId);
-      handleNavigateToViewer(validRoomId);
-    } catch (error) {
-      alert(error.message);
-    }
-  };
-
-  // Handle stop sharing
-  const handleStopSharing = () => {
-    // This will be implemented when we have the WebRTC connection
-    // For now, just go back to home
-    updateRoomId('');
-  };
-
-  // Handle start recording
-  const handleStartRecording = () => {
-    // This will be implemented when we add recording functionality
-    alert('Recording functionality will be implemented soon!');
+  const handleViewClick = () => {
+    handleNavigateToViewer();
   };
 
   return (
@@ -77,12 +49,12 @@ function HomeView() {
           {/* Top Row - Sharing Controls */}
           <div className='grid grid-cols-2 gap-3'>
             <button
-              onClick={handleCreateRoomClick}
+              onClick={handleHostClick}
               className='bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-opacity-50'
               style={{
                 boxShadow: '0 0 20px rgba(236, 72, 153, 0.4), 0 0 40px rgba(147, 51, 234, 0.3)',
               }}
-              aria-label='Start sharing your screen to create a new room'
+              aria-label='Start hosting screen share'
               onMouseEnter={(e) => {
                 e.target.style.boxShadow =
                   '0 0 30px rgba(236, 72, 153, 0.8), 0 0 60px rgba(147, 51, 234, 0.6), 0 0 90px rgba(236, 72, 153, 0.4)';
@@ -91,58 +63,15 @@ function HomeView() {
                 e.target.style.boxShadow = '0 0 20px rgba(236, 72, 153, 0.4), 0 0 40px rgba(147, 51, 234, 0.3)';
               }}
             >
-              Start sharing my screen
+              Host
             </button>
             <button
-              onClick={handleStopSharing}
-              className='bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50'
-              aria-label='Stop screen sharing and return to home'
-            >
-              Stop sharing
-            </button>
-          </div>
-
-          {/* Middle Row - Recording and Diagnostics */}
-          <div className='grid grid-cols-2 gap-3'>
-            <button
-              onClick={handleStartRecording}
-              className='bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50'
-              aria-label='Start recording the screen sharing session'
-            >
-              Start Recording
-            </button>
-            <button
-              onClick={toggleDiagnostics}
-              className='bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50'
-              aria-label='Toggle diagnostics panel to view connection information'
-            >
-              <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'
-                />
-                <path
-                  strokeLinecap='round'
-                  strokeLinejoin='round'
-                  strokeWidth={2}
-                  d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
-                />
-              </svg>
-              <span>Diagnostics</span>
-            </button>
-          </div>
-
-          {/* Bottom Row - Room Link and ID */}
-          <div className='grid grid-cols-2 gap-3'>
-            <button
-              onClick={handleJoinRoomClick}
+              onClick={handleViewClick}
               className='bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50'
               style={{
                 boxShadow: '0 0 20px rgba(59, 130, 246, 0.4), 0 0 40px rgba(6, 182, 212, 0.3)',
               }}
-              aria-label='Join a room as a viewer to watch screen sharing'
+              aria-label='View screen share'
               onMouseEnter={(e) => {
                 e.target.style.boxShadow =
                   '0 0 30px rgba(59, 130, 246, 0.8), 0 0 60px rgba(6, 182, 212, 0.6), 0 0 90px rgba(59, 130, 246, 0.4)';
@@ -151,32 +80,31 @@ function HomeView() {
                 e.target.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.4), 0 0 40px rgba(6, 182, 212, 0.3)';
               }}
             >
-              Open room link (viewer)
+              View
             </button>
-            <input
-              type='text'
-              placeholder='Paste room id here'
-              value={roomId}
-              onChange={(e) => updateRoomId(e.target.value)}
-              className='bg-purple-800 bg-opacity-50 hover:bg-opacity-70 text-white placeholder-gray-300 font-bold py-3 px-4 rounded-xl text-sm uppercase tracking-wide transition-all duration-300 border border-purple-400 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-opacity-50'
-              aria-label='Enter room ID to join a screen sharing session'
-            />
           </div>
-        </div>
 
-        {/* Status Indicator */}
-        <div className='text-center mb-6'>
-          <p className='text-white text-sm font-medium'>Status: idle</p>
-        </div>
-
-        {/* How It Works */}
-        <div className='mt-6 bg-purple-900 bg-opacity-20 border border-purple-400 border-opacity-30 rounded-2xl p-5'>
-          <h3 className='text-white text-sm font-bold mb-3 uppercase tracking-wide'>How it works</h3>
-          <ol className='list-decimal list-inside space-y-2 text-white text-sm opacity-90'>
-            <li>Create a room with “Start sharing my screen”.</li>
-            <li>Share the Room ID with viewers.</li>
-            <li>Viewers paste the ID and select “Join as viewer”.</li>
-          </ol>
+          {/* How It Works */}
+          <div className='bg-purple-900 bg-opacity-20 border border-purple-400 border-opacity-30 rounded-2xl p-5'>
+            <h3 className='text-white text-sm font-bold mb-3 uppercase tracking-wide'>How it works</h3>
+            <p className='font-semibold'>
+              Either person can host or view. Works with Chrome, Brave, Edge, Firefox, or Safari on Windows/macOS.
+            </p>
+            <div>
+              <p className='font-semibold text-cyan-300'>Host:</p>
+              <p>Click Host - choose your entire screen - keep this tab open.</p>
+            </div>
+            <div>
+              <p className='font-semibold text-pink-300'>Viewer:</p>
+              <p>Click View - you should see the host within ~10 seconds.</p>
+            </div>
+            <div className='mt-3 pt-3 border-t border-purple-400 border-opacity-30'>
+              <p className='text-xs opacity-75'>
+                <span className='font-semibold'>Compatibility note:</span> Screen capture permission prompts vary by
+                browser/OS. If you don't see video, try a different browser or disable strict tracking features.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

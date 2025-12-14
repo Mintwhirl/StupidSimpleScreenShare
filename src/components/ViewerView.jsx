@@ -13,6 +13,7 @@ function ViewerView({ _config, onGoHome }) {
     connectionState,
     remoteStream,
     error: webrtcError,
+    signalingState,
     _reset,
   } = useSimpleWebRTC('viewer');
 
@@ -139,11 +140,16 @@ function ViewerView({ _config, onGoHome }) {
       <div className='bg-white rounded-lg shadow-md p-6'>
         <div className='flex items-center justify-between'>
           <div>
-            <h2 className='text-2xl font-bold text-gray-900 mb-2'>👀 Screen Sharing Viewer</h2>
-            <p className='text-gray-600'>Click Connect to view the host's screen</p>
+            <h2 className='text-2xl font-bold text-gray-900 mb-2'>👀 Viewer</h2>
+            <p className='text-gray-600'>Watch the host's screen. Enter Room ID if you have one.</p>
           </div>
           <div className='text-right'>
             <div className={`text-sm font-semibold ${getStatusColor()}`}>Connection: {getStatusText()}</div>
+            <div
+              className={`text-sm ${signalingState === 'connected' ? 'text-green-600' : signalingState === 'error' ? 'text-red-600' : 'text-gray-500'}`}
+            >
+              Signaling: {signalingState}
+            </div>
             <div className={`text-sm font-semibold ${getStatusColor()}`}>{getHostStatusText()}</div>
           </div>
         </div>

@@ -16,9 +16,7 @@ export function useApi() {
         environment: 'production',
         apiBase: '/api',
         features: {
-          chat: true,
-          diagnostics: false,
-          recording: false,
+          diagnostics: true,
         },
       });
       setLoading(false);

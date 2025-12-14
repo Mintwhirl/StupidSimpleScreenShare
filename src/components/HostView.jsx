@@ -4,7 +4,7 @@ import { useSimpleWebRTC } from '../hooks/useSimpleWebRTC';
 function HostView({ _config, onGoHome }) {
   const [isSharing, setIsSharing] = useState(false);
 
-  const { startScreenShare, disconnect, connectionState, error, _reset } = useSimpleWebRTC('host');
+  const { startScreenShare, disconnect, connectionState, error, signalingState, _reset } = useSimpleWebRTC('host');
 
   // Update sharing state based on connection state
   useEffect(() => {
@@ -83,11 +83,16 @@ function HostView({ _config, onGoHome }) {
       <div className='bg-white rounded-lg shadow-md p-6'>
         <div className='flex items-center justify-between'>
           <div>
-            <h2 className='text-2xl font-bold text-gray-900 mb-2'>🖥️ Screen Sharing Room</h2>
-            <p className='text-gray-600'>Share your screen with others. Click Start Sharing to begin.</p>
+            <h2 className='text-2xl font-bold text-gray-900 mb-2'>🖥️ Host Screen</h2>
+            <p className='text-gray-600'>Share your screen. Viewers can join with the Room ID.</p>
           </div>
           <div className='text-right'>
             <div className={`text-sm font-medium ${getStatusColor()}`}>Status: {getStatusText()}</div>
+            <div
+              className={`text-sm ${signalingState === 'connected' ? 'text-green-600' : signalingState === 'error' ? 'text-red-600' : 'text-gray-500'}`}
+            >
+              Signaling: {signalingState}
+            </div>
             <div className='text-sm text-gray-500'>Viewers: {connectionState === 'connected' ? 1 : 0}</div>
           </div>
         </div>

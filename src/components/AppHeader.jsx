@@ -6,7 +6,7 @@ import { useRoomContext } from '../contexts/RoomContext';
  * Renders the application header for non-home views.
  * Extracted from App.jsx to improve component organization.
  */
-function AppHeader({ currentView, showChat, showDiagnostics, onToggleChat, onToggleDiagnostics, onGoHome }) {
+function AppHeader({ currentView, showDiagnostics, onToggleDiagnostics, onGoHome }) {
   const { roomId } = useRoomContext();
   return (
     <header className='bg-black bg-opacity-30 backdrop-blur-sm border-b border-purple-500 border-opacity-30 mb-8'>
@@ -20,16 +20,6 @@ function AppHeader({ currentView, showChat, showDiagnostics, onToggleChat, onTog
           <div className='flex items-center space-x-2 sm:space-x-3'>
             {currentView !== 'home' && (
               <>
-                <button
-                  onClick={onToggleChat}
-                  className={`px-3 py-1 text-xs sm:text-sm rounded-xl font-bold uppercase tracking-wide transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-pink-400/60 ${
-                    showChat
-                      ? 'bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white shadow-lg shadow-pink-500/30'
-                      : 'bg-purple-900/30 border border-purple-400/40 text-white hover:bg-purple-800/40'
-                  }`}
-                >
-                  Chat
-                </button>
                 <button
                   onClick={onToggleDiagnostics}
                   className={`px-3 py-1 text-xs sm:text-sm rounded-xl font-bold uppercase tracking-wide transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-pink-400/60 ${

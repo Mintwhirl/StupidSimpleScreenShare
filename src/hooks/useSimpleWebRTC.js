@@ -11,6 +11,7 @@ export function useSimpleWebRTC(role) {
   const [remoteStream, setRemoteStream] = useState(null);
   const [localStream, setLocalStream] = useState(null);
   const [error, setError] = useState(null);
+  const [signalingState, setSignalingState] = useState('disconnected');
 
   const peerConnectionRef = useRef(null);
   const pusherRef = useRef(null);
@@ -22,14 +23,44 @@ export function useSimpleWebRTC(role) {
   // Initialize Pusher
   useEffect(() => {
     if (!pusherRef.current) {
-      const pusherKey = import.meta.env.VITE_PUSHER_KEY || '8d28db7417b8942c9587';
-      const pusherCluster = import.meta.env.VITE_PUSHER_CLUSTER || 'us2';
+      const pusherKey = import.meta.env.VITE_PUSHER_KEY;
+      const pusherCluster = import.meta.env.VITE_PUSHER_CLUSTER;
+
+      if (!pusherKey || !pusherCluster) {
+        console.error('Missing Pusher configuration');
+        setSignalingState('error');
+        setError('Missing signaling server configuration');
+        return;
+      }
+
+      console.log('Pusher config:', {
+        key: pusherKey ? 'present' : 'missing',
+        cluster: pusherCluster,
+        authEndpoint: '/api/pusher-auth',
+      });
 
       pusherRef.current = new Pusher(pusherKey, {
         cluster: pusherCluster,
         authEndpoint: '/api/pusher-auth',
         forceTLS: true,
         authTransport: 'ajax',
+      });
+
+      // Monitor Pusher connection state
+      pusherRef.current.connection.bind('connected', () => {
+        console.log('Pusher connected');
+        setSignalingState('connected');
+      });
+
+      pusherRef.current.connection.bind('disconnected', () => {
+        console.log('Pusher disconnected');
+        setSignalingState('disconnected');
+      });
+
+      pusherRef.current.connection.bind('error', (err) => {
+        console.error('Pusher connection error:', err);
+        setSignalingState('error');
+        setError('Signaling connection failed');
       });
     }
 
@@ -179,6 +210,9 @@ export function useSimpleWebRTC(role) {
   const subscribeToChannel = useCallback(() => {
     if (!pusherRef.current || channelRef.current) return;
 
+    console.log('Subscribing to channel:', CHANNEL_NAME);
+    console.log('Auth endpoint:', '/api/pusher-auth');
+
     channelRef.current = pusherRef.current.subscribe(CHANNEL_NAME);
 
     channelRef.current.bind('pusher:subscription_succeeded', () => {
@@ -187,8 +221,22 @@ export function useSimpleWebRTC(role) {
     });
 
     channelRef.current.bind('pusher:subscription_error', (err) => {
-      console.error('Failed to subscribe to Pusher channel:', err);
-      setError('Failed to connect to signaling server');
+      console.error('Pusher subscribe error details:');
+      console.error('Error object:', JSON.stringify(err, null, 2));
+      console.error('Error type:', typeof err);
+      console.error('Error keys:', Object.keys(err || {}));
+      console.error('Channel name:', CHANNEL_NAME);
+      console.error('Auth endpoint:', '/api/pusher-auth');
+
+      let errorMessage = 'Failed to connect to signaling server';
+      if (err && err.error) {
+        errorMessage = `Signaling error: ${err.error}`;
+      } else if (err && typeof err === 'string') {
+        errorMessage = `Signaling error: ${err}`;
+      }
+
+      setSignalingState('error');
+      setError(errorMessage);
     });
 
     // Client events for signaling
@@ -319,6 +367,7 @@ export function useSimpleWebRTC(role) {
     remoteStream,
     localStream,
     error,
+    signalingState,
     startScreenShare,
     connectToHost,
     disconnect,

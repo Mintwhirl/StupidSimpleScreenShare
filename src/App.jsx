@@ -19,7 +19,7 @@ function AppContent() {
   const [browserIssues, setBrowserIssues] = useState([]);
 
   // Get all state from context (eliminates prop drilling)
-  const { currentView, showChat, showDiagnostics, handleGoHome, toggleChat, toggleDiagnostics } = useRoomContext();
+  const { currentView, showDiagnostics, handleGoHome, toggleDiagnostics } = useRoomContext();
 
   // Check browser compatibility when view changes (pass currentView as role)
   useEffect(() => {
@@ -74,9 +74,7 @@ function AppContent() {
             {/* Header for non-home views */}
             <AppHeader
               currentView={currentView}
-              showChat={showChat}
               showDiagnostics={showDiagnostics}
-              onToggleChat={toggleChat}
               onToggleDiagnostics={toggleDiagnostics}
               onGoHome={handleGoHome}
             />
@@ -91,7 +89,7 @@ function AppContent() {
             </main>
 
             {/* Sidebar Panels */}
-            <SidebarPanels currentView={currentView} showChat={showChat} showDiagnostics={showDiagnostics} />
+            <SidebarPanels currentView={currentView} showDiagnostics={showDiagnostics} />
           </div>
         )}
       </div>
