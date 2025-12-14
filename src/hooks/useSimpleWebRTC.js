@@ -22,8 +22,8 @@ export function useSimpleWebRTC(role) {
   // Initialize Pusher
   useEffect(() => {
     if (!pusherRef.current) {
-      const pusherKey = import.meta.env.VITE_PUSHER_KEY;
-      const pusherCluster = import.meta.env.VITE_PUSHER_CLUSTER || 'us-east-1';
+      const pusherKey = import.meta.env.VITE_PUSHER_KEY || '8d28db7417b8942c9587';
+      const pusherCluster = import.meta.env.VITE_PUSHER_CLUSTER || 'us2';
 
       pusherRef.current = new Pusher(pusherKey, {
         cluster: pusherCluster,
