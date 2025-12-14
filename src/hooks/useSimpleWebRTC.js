@@ -29,12 +29,13 @@ export function useSimpleWebRTC(role) {
       if (!pusherKey || !pusherCluster) {
         console.error('Missing Pusher configuration');
         setSignalingState('error');
-        setError('Missing signaling server configuration');
+        setError('Missing VITE_PUSHER_KEY or VITE_PUSHER_CLUSTER');
         return;
       }
 
       console.log('Pusher config:', {
-        key: pusherKey ? 'present' : 'missing',
+        keyPresent: !!pusherKey,
+        key: pusherKey.substring(0, 6) + '...',
         cluster: pusherCluster,
         authEndpoint: '/api/pusher-auth',
       });
@@ -311,7 +312,8 @@ export function useSimpleWebRTC(role) {
     channelRef.current = pusherRef.current.subscribe(CHANNEL_NAME);
 
     channelRef.current.bind('pusher:subscription_succeeded', () => {
-      console.log('Pusher subscription_succeeded:', CHANNEL_NAME);
+      console.log('✅ Pusher subscription_succeeded:', CHANNEL_NAME);
+      setSignalingState('connected');
     });
 
     channelRef.current.bind('pusher:subscription_error', (err) => {

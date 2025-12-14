@@ -88,14 +88,20 @@ export default async function handler(req, res) {
     const pusherAppId = (process.env.PUSHER_APP_ID || '').trim();
     const pusherKey = (process.env.PUSHER_KEY || '').trim();
     const pusherSecret = (process.env.PUSHER_SECRET || '').trim();
+    const pusherCluster = (process.env.PUSHER_CLUSTER || '').trim();
 
-    if (!pusherAppId || !pusherKey || !pusherSecret) {
-      console.error('Pusher credentials missing:', {
-        hasAppId: !!pusherAppId,
-        hasKey: !!pusherKey,
-        hasSecret: !!pusherSecret,
+    const missing = [];
+    if (!pusherAppId) missing.push('PUSHER_APP_ID');
+    if (!pusherKey) missing.push('PUSHER_KEY');
+    if (!pusherSecret) missing.push('PUSHER_SECRET');
+    if (!pusherCluster) missing.push('PUSHER_CLUSTER');
+
+    if (missing.length > 0) {
+      console.error('Pusher credentials missing:', missing);
+      res.status(500).json({
+        error: 'Server configuration error',
+        missing,
       });
-      res.status(500).json({ error: 'Server configuration error' });
       return;
     }
 
