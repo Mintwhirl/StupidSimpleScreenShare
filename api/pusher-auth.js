@@ -52,11 +52,16 @@ export default async function handler(request) {
 
     return new Response(JSON.stringify(authData), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+      },
     });
   } catch (error) {
     console.error('Pusher auth error:', error);
-    return new Response(JSON.stringify({ error: 'Authentication failed' }), {
+    console.error('Request body:', request.body);
+    console.error('Request headers:', Object.fromEntries(request.headers.entries()));
+    return new Response(JSON.stringify({ error: 'Authentication failed', details: error.message }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });

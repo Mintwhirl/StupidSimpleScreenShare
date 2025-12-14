@@ -29,6 +29,7 @@ export function useSimpleWebRTC(role) {
         cluster: pusherCluster,
         authEndpoint: '/api/pusher-auth',
         forceTLS: true,
+        authTransport: 'ajax',
       });
     }
 
