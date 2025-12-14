@@ -1,7 +1,7 @@
 // Pusher configuration sanity check endpoint (no secrets)
 
 export const config = {
-  runtime: 'edge',
+  runtime: 'nodejs',
 };
 
 export default async function handler(req, res) {
