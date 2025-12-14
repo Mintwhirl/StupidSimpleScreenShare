@@ -46,11 +46,6 @@ export function useSimpleWebRTC(role) {
         authTransport: 'ajax',
         enabledTransports: ['ws', 'wss', 'xhr_streaming', 'xhr_polling'],
         disableStats: true,
-        auth: {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        },
       });
 
       // Monitor Pusher connection state

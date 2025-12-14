@@ -139,8 +139,18 @@ export default async function handler(req, res) {
     // Return auth response
     res.status(200).json(auth);
   } catch (error) {
-    console.error('Pusher auth error:', error.message);
-    console.error(error.stack);
-    res.status(400).json({ error: 'Authentication failed' });
+    console.error('Pusher auth error:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+
+    // Log additional details for debugging
+    if (error.type === 'PusherError') {
+      console.error('Pusher error type:', error.type);
+    }
+
+    res.status(400).json({
+      error: 'Authentication failed',
+      details: error.message,
+    });
   }
 }
