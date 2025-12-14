@@ -43,7 +43,7 @@ export default async function handler(request) {
       .join('');
 
     const authData = {
-      auth: `${pusherKey}:${signature}`,
+      auth: `${pusherKey.replace(/\n/g, '')}:${signature}`,
       channel_data: JSON.stringify({
         user_id: Math.random().toString(36).substring(2, 15),
         user_info: {},
