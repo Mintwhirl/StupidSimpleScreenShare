@@ -1,6 +1,12 @@
 // Pusher authentication endpoint for Vercel
 // This endpoint authenticates clients for Pusher Channels
 
+import crypto from 'crypto';
+
+export const config = {
+  runtime: 'nodejs18',
+};
+
 export default async function handler(request) {
   try {
     const { socket_id: socketId, channel_name: channelName } = await request.json();
@@ -11,59 +17,35 @@ export default async function handler(request) {
     const pusherSecret = process.env.PUSHER_SECRET;
 
     if (!pusherAppId || !pusherKey || !pusherSecret) {
-      return new Response(
-        JSON.stringify({ error: 'Pusher credentials not configured' }),
-        {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
+      return new Response(JSON.stringify({ error: 'Pusher credentials not configured' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Create auth string
     const authString = `${socketId}:${channelName}`;
 
-    // Using Web Crypto API for Vercel edge runtime compatibility
-    const encoder = new TextEncoder();
-    const keyData = encoder.encode(pusherSecret);
-    const messageData = encoder.encode(authString);
-
-    const cryptoKey = await crypto.subtle.importKey(
-      'raw',
-      keyData,
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign']
-    );
-
-    const signatureBuffer = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
-    const signature = Array.from(new Uint8Array(signatureBuffer))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+    // Using Node.js crypto module for better compatibility
+    const signature = crypto.createHmac('sha256', pusherSecret).update(authString).digest('hex');
 
     const authData = {
       auth: `${pusherKey}:${signature}`,
       channel_data: JSON.stringify({
         user_id: crypto.randomUUID(),
-        user_info: {}
-      })
+        user_info: {},
+      }),
     };
 
-    return new Response(
-      JSON.stringify(authData),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
+    return new Response(JSON.stringify(authData), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('Pusher auth error:', error);
-    return new Response(
-      JSON.stringify({ error: 'Authentication failed' }),
-      {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
+    return new Response(JSON.stringify({ error: 'Authentication failed' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
