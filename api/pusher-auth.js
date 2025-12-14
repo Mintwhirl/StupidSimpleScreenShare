@@ -1,13 +1,13 @@
 // Pusher authentication endpoint for Vercel
 // This endpoint authenticates clients for Pusher Channels
 
-import crypto from 'crypto';
-
 export const config = {
   runtime: 'nodejs',
 };
 
 export default async function handler(request) {
+  // eslint-disable-next-line global-require
+  const crypto = require('crypto');
   try {
     const { socket_id: socketId, channel_name: channelName } = await request.json();
 
