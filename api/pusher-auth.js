@@ -20,6 +20,15 @@ export default async function handler(request) {
     const pusherKey = process.env.PUSHER_KEY;
     const pusherSecret = process.env.PUSHER_SECRET;
 
+    // Debug logging
+    console.log('Auth request:', { socketId, channelName });
+    console.log('Environment check:', {
+      hasAppId: !!pusherAppId,
+      hasKey: !!pusherKey,
+      hasSecret: !!pusherSecret,
+      keyPrefix: pusherKey ? `${pusherKey.substring(0, 8)}...` : 'null',
+    });
+
     if (!pusherAppId || !pusherKey || !pusherSecret) {
       return new Response(JSON.stringify({ error: 'Pusher credentials not configured' }), {
         status: 500,
