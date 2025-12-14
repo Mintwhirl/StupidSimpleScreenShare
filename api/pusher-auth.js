@@ -85,9 +85,9 @@ export default async function handler(req, res) {
     }
 
     // Environment variables from Vercel
-    const pusherAppId = process.env.PUSHER_APP_ID;
-    const pusherKey = process.env.PUSHER_KEY;
-    const pusherSecret = process.env.PUSHER_SECRET;
+    const pusherAppId = (process.env.PUSHER_APP_ID || '').trim();
+    const pusherKey = (process.env.PUSHER_KEY || '').trim();
+    const pusherSecret = (process.env.PUSHER_SECRET || '').trim();
 
     if (!pusherAppId || !pusherKey || !pusherSecret) {
       console.error('Pusher credentials missing:', {
@@ -111,7 +111,7 @@ export default async function handler(req, res) {
       key: pusherKey,
       secret: pusherSecret,
       useTLS: true,
-      cluster: process.env.PUSHER_CLUSTER,
+      cluster: (process.env.PUSHER_CLUSTER || '').trim(),
     });
 
     // Authorize the channel

@@ -23,8 +23,8 @@ export function useSimpleWebRTC(role) {
   // Initialize Pusher
   useEffect(() => {
     if (!pusherRef.current) {
-      const pusherKey = import.meta.env.VITE_PUSHER_KEY;
-      const pusherCluster = import.meta.env.VITE_PUSHER_CLUSTER;
+      const pusherKey = (import.meta.env.VITE_PUSHER_KEY || '').trim();
+      const pusherCluster = (import.meta.env.VITE_PUSHER_CLUSTER || '').trim();
 
       if (!pusherKey || !pusherCluster) {
         console.error('Missing Pusher configuration');
